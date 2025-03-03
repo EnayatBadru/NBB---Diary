@@ -1,0 +1,42 @@
+/* caracteres especiais */
+@charset "UTF-8";
+
+/* google-font: poppins */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+/* reset */
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    text-decoration: none;
+    list-style: none;
+    font-family: "Poppins", serif;
+}
+
+html{
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+}
+
+body {
+    width: 100vw;
+    height: 100vh;
+    font-size: 1em;
+}
+
+/* colors */
+:root{
+    --background-color: #B3E5FC; /* serenidade, calma, confianca e tranquilidade */
+    --button-color: #A8D5BA;  /* paz, harmonia, natureza, renovacao */
+    --destaque-color: #D6CDEA; /* sutileza, versatilidade, tranquilidade, neutralidade  */
+
+    --primary-color: #ffffff; /* limpeza, ordem, simplicidade */
+    --secondary-color: #f2f2f2f2; /* sutileza, versatilidade, tranquilidade, neutralidade  */
+}
+
+@media screen and (max-width: 768px){
+    body{
+        font-size: 0.9em;
+    }
+}
