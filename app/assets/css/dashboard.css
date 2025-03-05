@@ -56,6 +56,15 @@ body{
   height: 500vh;
 }
 
+#main{
+  position: absolute;
+  /* background: rgba(255, 255, 0, 0.392); */
+  width: 100vw;
+  height: 200px;
+  top: 135px;
+  padding: 10px 70px;
+}
+
 @media screen and (max-width: 800px){
 
   #menu{
