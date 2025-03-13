@@ -36,9 +36,15 @@ a.logoTxt {
 
 #menu a {
   font-size: 1.2em;
-  text-transform: capitalize;
+  text-transform: uppercase;
   letter-spacing: 1px;
   color: #1d2b3a;
+  transition: all .2s ease;
+}
+
+#menu a:hover {
+  opacity: .8;
+  transition: all .2s ease;
 }
 
 #nav,
@@ -58,7 +64,6 @@ body {
   width: 100vw;
   overflow-x: hidden;
   height: 500vh;
-  /* background: yellow; */
 }
 
 #main {
@@ -69,7 +74,13 @@ body {
 }
 
 #main>section{
-  padding: 0 80px;
+  padding: 0 70px;
+  transition: all .3s ease-in-out;
+}
+
+#body.sticky #main>section{
+  padding: 0 30px;
+  transition: all .3s ease-in-out;
 }
 
 #home {
@@ -160,7 +171,6 @@ body {
   border-radius: 6px;
   text-transform: uppercase;
   font-weight: bolder;
-  /* outline: 2px solid #fff; */
   transition: all 0.4s ease-in-out;
   box-shadow: 2px 2px 2px rgba(0,0,0, .2);
 }
@@ -176,6 +186,10 @@ body {
 }
 
 @media screen and (max-width: 800px) {
+  #header {
+    padding-inline: 20px;
+  }
+
   #menu {
     flex-direction: column;
     position: absolute;
@@ -271,12 +285,26 @@ body {
   }
 
   .title {
-    font-size: 1.5em;
+    font-size: 1.2em;
+    text-align: left;
   }
 
   #home>img,
   #home::after,
   #home::before {
     display: none;
+  }
+
+  #main>section{
+    padding: 0 20px;
+  }
+
+  .lorem {
+    text-align: start;
+    font-size: 0.9em;
+  }
+
+  .lorem.active{
+    text-align: justify;
   }
 }
