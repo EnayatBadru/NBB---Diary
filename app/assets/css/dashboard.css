@@ -79,12 +79,6 @@ body {
 
 #main > section {
   padding: 0 70px;
-  transition: all 0.3s ease-in-out;
-}
-
-#body.sticky #main > section {
-  padding: 0 30px;
-  transition: all 0.3s ease-in-out;
 }
 
 #home {
@@ -319,6 +313,10 @@ body {
   }
 
   #home {
+    padding: 0 20px;
+  }
+
+  #main > section {
     padding: 0 20px;
   }
 
