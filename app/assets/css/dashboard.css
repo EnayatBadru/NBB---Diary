@@ -63,7 +63,6 @@ body {
   max-width: 100vw;
   width: 100vw;
   overflow-x: hidden;
-  height: 500vh;
 }
 
 #main {
@@ -74,16 +73,16 @@ body {
   position: absolute;
   width: 100vw;
   top: 135px;
-  border-top: 1px solid #fff;
 }
 
 #main > section {
   padding: 0 70px;
+  height: 100vh;
 }
 
 #home {
   width: 100%;
-  height: calc(100vh - 135px);
+  height: calc(100vh - 135px) !important;
   position: relative;
   display: flex;
   flex-wrap: wrap;
@@ -187,8 +186,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 2em;
+  gap: 3em;
   width: 50%;
 }
 
