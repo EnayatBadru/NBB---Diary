@@ -196,7 +196,7 @@ body {
     left: 0;
     top: 132.5px;
     width: 100vw;
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.1);
     backdrop-filter: blur(10px);
     height: 0;
     opacity: 0;
@@ -278,6 +278,11 @@ body {
     opacity: 0;
     transition: all 0.3s ease;
     pointer-events: none;
+  }
+
+  #menu a {
+    color: #fff;
+    font-weight: bolder;
   }
 
   .text {
