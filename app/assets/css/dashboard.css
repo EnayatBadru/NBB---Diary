@@ -177,9 +177,10 @@ body {
   transition: all 0.4s ease-in-out;
 }
 
-#home > img {
-  width: 40%;
-  height: 50%;
+#home > a img {
+  width: 400px;
+  height: 400px;
+  object-fit: contain;
 }
 
 #about {
@@ -195,7 +196,14 @@ body {
   text-align: center;
 }
 
-@media screen and (max-width: 800px) {
+@media screen  and (min-width: 840px) and  (max-width: 940px)  {
+  #home > a img {
+    width: 350px;
+    height: 350px;
+  }
+}
+
+@media screen and (max-width: 840px) {
   #header {
     padding-inline: 20px;
   }
@@ -304,7 +312,7 @@ body {
     text-align: left;
   }
 
-  #home > img,
+  #home > a img,
   #home::after,
   #home::before {
     display: none;
