@@ -73,7 +73,7 @@ body {
   gap: 3em;
   position: absolute;
   width: 100vw;
-  top: 135px;
+  /* top: 135px; */
 }
 
 #main > section {
@@ -82,7 +82,8 @@ body {
 
 #home {
   width: 100%;
-  height: calc(100vh - 135px) !important;
+  height: 100vh;
+  /* height: calc(100vh - 135px) !important; */
   position: relative;
   display: flex;
   flex-wrap: wrap;
