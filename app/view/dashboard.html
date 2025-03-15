@@ -33,6 +33,10 @@
     <script src="../assets/js/dashboard.js" defer></script>
     <script src="" defer></script>
 
+    <!-- library -->
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js" defer></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js" defer></script>
+
     <!-- api -->
 
     <!-- title -->
@@ -93,7 +97,37 @@
         </section>
 
         <section id="contact">
+            <form action="#" method="post">
+                <span class="title">entre em contacto</span>
 
+                <div class="user">
+                    <input type="text" name="user" id="user" minlength="3" maxlength="50" required="required"
+                        autocomplete="off">
+                    <label for="user">
+                        <span><ion-icon name="person-sharp"></ion-icon></span>
+                        <span>nome do usuario</span>
+                    </label>
+                </div>
+                <div class="">
+                    <input type="email" name="email" id="email" minlength="3" maxlength="50" required="required"
+                        autocomplete="off">
+                    <label for="email">
+                        <ion-icon name="mail-outline"></ion-icon>
+                        <span>digite o email</span>
+                    </label>
+                </div>
+                <div class="textarea">
+                    <textarea name="problem" id="problem" minlength="3" maxlength="1000" required="required" rows="5"
+                        cols="100%" autocomplete="off"></textarea>
+                    <label for="problem">
+                        <ion-icon name="alert-circle-outline"></ion-icon>
+                        <span>descreva o seu problema</span>
+                    </label>
+                </div>
+                <div class="footerForm">
+                    <button type="submit">cadastrar</button>
+                </div>
+            </form>
         </section>
     </main>
 
