@@ -501,6 +501,13 @@ body {
   #menu a {
     color: #fff;
     font-weight: bolder;
+    display: none;
+    transition: all .3s ease;
+  }
+
+  #menu.active a{
+    display: flex;
+    transition: all .3s ease;
   }
 
   .text {
