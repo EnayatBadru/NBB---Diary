@@ -26,10 +26,12 @@
     <link rel="shortcut icon" href="../../assets/img/logo.png" type="image/x-icon">
 
     <!-- css -->
-    <link rel="stylesheet" href="../assets/css/default.css">
+    <link rel="stylesheet" href="../../assets/css/default.css">
+    <link rel="stylesheet" href="../../assets/css/headerAnimation.css">
+    <link rel="stylesheet" href="../../assets/css/customerIndex.css">
 
     <!-- js -->
-    <script src="" defer></script>
+    <script src="../../assets/js/dashboard.js" defer></script>
 
     <!-- library -->
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js" defer></script>
@@ -40,7 +42,73 @@
     <!-- title -->
     <title>Pagina Inicial</title>
 </head>
+
 <body>
-    pagina 1 do usuario em desenvolvimento
+    <header id="header">
+        <a href="following.html" class="logoTxt">
+            <span>nbb</span>
+            <span>-</span>
+            <span>diary</span>
+        </a>
+
+        <nav id="nav">
+            <button class="btn-mobile" type="menu">
+                <span class="toggle-menu"></span>
+            </button>
+
+            <ul id="menu">
+                <!-- <li><a href="#">início</a></li> -->
+                <li><a href="#">agendar consultas</a></li>
+                <li><a href="#">mensagens</a></li>
+                <li><a href="#">exercicios</a></li>
+                <li><a href="#">perfil</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main id="main">
+        <section id="welcome">
+            <div class="welcome">
+                <span class="first">Bom Dia</span>
+                <span class="second">Nome_Aleatorio</span>
+                <span class="third">Seja bem vindo(a) ao
+                    <span class="logo">NDD - Diary</span>
+                </span>
+            </div>
+        </section>
+
+        <section id="history">
+            <p class="title">
+                Historico de consultas
+            </p>
+            <div class="contentHistory">
+                <div class="cardZero">
+                    <div class="cardZeroContent"></div>
+                </div>
+                <div class="card">
+                    <div class="cardTitle">
+                        <span class="icon">
+                            <ion-icon name="person-sharp"></ion-icon>
+                        </span>
+                        <span class="icon"></span>
+                        <span class="cardText">Agendamento</span>
+                    </div>
+                    <div class="cardBody">
+                        <div class="item">
+                            <span class="name">
+                                consulta marcada
+                            </span>
+                            <span class="date">
+                                27-02-2025
+                            </span>
+                            <span>as 10h</span>
+                        </div>
+                    </div>
+                    <div class="cardFooter"></div>
+                </div>
+            </div>
+        </section>
+    </main>
 </body>
+
 </html>
