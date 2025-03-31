@@ -1,16 +1,15 @@
-#menu li{
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
+#menu li {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
 
-#menu li::after{
-    content: '|';
-    width: 1px;
-    height: 100%;
-    /* background: #1d2b3a; */
+#menu li::after {
+  content: "|";
+  width: 1px;
+  height: 100%;
 }
 
 #welcome {
@@ -21,6 +20,25 @@
   align-items: center;
   justify-content: center;
   background: var(--background-color);
-    font-size: 1.5em;
+  font-size: 1.5em;
 }
 
+.welcome{
+    display: flex;
+    flex-direction: column;    
+    align-items: center;
+    justify-content: center;
+    gap: .5em;
+    letter-spacing: 1px;
+}
+
+#welcome .logo{
+    font-weight: bolder;
+    
+}
+
+@media screen and (max-width: 840px) {
+#menu li::after {
+    display: none;
+}
+}
