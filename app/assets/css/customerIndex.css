@@ -37,6 +37,14 @@
     
 }
 
+.container_welcome{
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
 @media screen and (max-width: 840px) {
 #menu li::after {
     display: none;
