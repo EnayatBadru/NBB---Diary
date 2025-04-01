@@ -62,7 +62,6 @@ a.logoTxt {
 body {
   max-width: 100vw;
   width: 100vw;
-  height: 200vh;
   overflow-x: hidden;
   background: #fbfbfb;
 }
@@ -72,9 +71,8 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 3em;
-  position: absolute;
+  padding: 50px 0;
   width: 100vw;
-  /* top: 135px; */
 }
 
 #main > section {
