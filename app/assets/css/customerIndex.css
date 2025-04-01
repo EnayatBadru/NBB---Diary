@@ -86,7 +86,7 @@
   outline: none;
   transition: all 0.3s ease-in-out;
 }
-.cardZeroL:hover {
+/* .cardZeroL:hover {
   background: greenyellow;
   transition: all 0.3s ease-in-out;
 }
@@ -128,7 +128,7 @@
   top: 20%;
   left: 60%;
   transition: all 0.3s ease-in-out;
-}
+} */
 
 .card {
   display: flex;
