@@ -5,41 +5,37 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- metaTags -->
+    <!-- Meta Tags -->
     <meta name="description" content="Dashboard">
     <meta name="keywords" content="Dashboard, PHP, MVC, CRUD">
-
-    <!-- author -->
     <meta name="author" content="NBB">
+
     <!-- 
-    create by : 
+    Criado por: 
         * -- Umme Aymanah Abacar Nzé -- * (N)
         * -- Edivânia Jarmindo Bila -- * (B)
         * -- Enayatolah Agibo Badrú -- * (B)
-
         (NBB) - Diary
-    
-        at 27.02.2025
+        em 27.02.2025
     -->
 
-    <!-- favicons -->
+    <!-- Favicon -->
     <link rel="shortcut icon" href="../assets/img/logo.png" type="image/x-icon">
 
-    <!-- css -->
+    <!-- CSS -->
     <link rel="stylesheet" href="../assets/css/default.css">
     <link rel="stylesheet" href="../assets/css/dashboard.css">
 
-    <!-- js -->
-    <script src="../assets/js/dashboard.js" defer></script>
-    <script src="" defer></script>
-
-    <!-- library -->
+    <!-- Biblioteca Ionicons -->
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js" defer></script>
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js" defer></script>
 
-    <!-- api -->
+    <!-- Firebase Scripts (Versão 8.x) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-    <!-- title -->
+    <!-- Título -->
     <title>Dashboard</title>
 </head>
 
@@ -74,9 +70,7 @@
                         Transforme desafios em oportunidades com o apoio de especialistas em saúde mental. Conecte-se e
                         cresça, encontrando o equilíbrio que você merece, a qualquer hora e em qualquer lugar.
                     </p>
-                    <!-- <a class="link__text" href="sign/up.html">começar a usar</a> -->
-                    <!-- <button class="link__text" type="button">comecar a usar</button> -->
-                    <a class="link__text" href="customer/index.html">começar a usar</a>
+                    <button id="start-button" class="link__text" type="button" disabled>comecar a usar</button>
                 </div>
             </div>
             <a href="following.html" target="_parent"><img src="../assets/img/logo.png" alt="banner"></a>
@@ -91,7 +85,7 @@
                     adaptados à realidade de Moçambique, unimos tecnologia e empatia para conectar pacientes a
                     profissionais de saúde mental altamente qualificados. Nosso ambiente foi desenvolvido para
                     proporcionar uma experiência personalizada, com consultas remotas que se encaixam no seu dia a dia.
-                    seja para apoio emocional, orientação ou transformação pessoal. Aqui, você encontra privacidade,
+                    Seja para apoio emocional, orientação ou transformação pessoal. Aqui, você encontra privacidade,
                     facilidade de uso e um compromisso genuíno com o seu bem-estar. Junte-se a nós nessa jornada e
                     descubra como a inovação pode transformar a maneira de cuidar da mente e viver com mais equilíbrio.
                 </p>
@@ -136,7 +130,7 @@
             <div class="footerCopy">
                 <p>todos os direitos reservados:</p>
                 <p class="nameFooter">nbb - diary</p>
-                <p class="copyRight">&copy;2025 - nbb diary</p>
+                <p class="copyRight">©2025 - nbb diary</p>
             </div>
 
             <div class="socialMedia">
@@ -172,6 +166,73 @@
         </div>
     </main>
 
+    <!-- JavaScript Externo -->
+    <script src="../assets/js/dashboard.js" defer></script>
+
+    <!-- Configuração e Lógica do Firebase -->
+    <script>
+        // Configurações do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAbKVhAbVOuzlPXpfYlCl8lRyXbxOeJqZE",
+            authDomain: "ndd-diary-2f5d6.firebaseapp.com",
+            projectId: "ndd-diary-2f5d6",
+            storageBucket: "ndd-diary-2f5d6.firebasestorage.app",
+            messagingSenderId: "582152839503",
+            appId: "1:582152839503:web:67f06b4aaee3041cdd253a",
+            measurementId: "G-H783JCC73Q"
+        };
+
+        // Inicialização do Firebase com tratamento de erro
+        try {
+            firebase.initializeApp(firebaseConfig);
+            console.log("Firebase inicializado com sucesso!");
+        } catch (error) {
+            console.error("Erro ao inicializar o Firebase:", error);
+            alert("Ocorreu um erro ao carregar a aplicação. Por favor, tente novamente mais tarde.");
+        }
+
+        // Garantir que o DOM esteja pronto antes de manipular elementos
+        document.addEventListener('DOMContentLoaded', function() {
+            // Verificação do estado de autenticação
+            if (firebase.auth) {
+                firebase.auth().onAuthStateChanged(user => {
+                    const startButton = document.getElementById('start-button');
+                    if (!startButton) {
+                        console.error("Botão 'start-button' não encontrado no DOM.");
+                        return;
+                    }
+
+                    // Habilita o botão após a verificação do estado de autenticação
+                    startButton.disabled = false;
+
+                    if (user) {
+                        // Usuário autenticado: redireciona para o dashboard
+                        startButton.addEventListener('click', function() {
+                            try {
+                                window.location.href = 'customer/index.html';
+                            } catch (error) {
+                                console.error("Erro ao redirecionar para o dashboard:", error);
+                                alert("Erro ao acessar o dashboard. Tente novamente.");
+                            }
+                        });
+                    } else {
+                        // Usuário não autenticado: redireciona para a página de login
+                        startButton.addEventListener('click', function() {
+                            try {
+                                window.location.href = 'sign/in.html';
+                            } catch (error) {
+                                console.error("Erro ao redirecionar para a página de login:", error);
+                                alert("Erro ao acessar a página de login. Tente novamente.");
+                            }
+                        });
+                    }
+                });
+            } else {
+                console.error("Autenticação do Firebase não disponível.");
+                alert("Erro crítico: Autenticação não disponível. Contate o suporte.");
+            }
+        });
+    </script>
 </body>
 
 </html>
