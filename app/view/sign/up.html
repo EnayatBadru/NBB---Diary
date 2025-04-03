@@ -5,82 +5,125 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- metaTags -->
-    <meta name="description" content="sign in - faca o login no sistem NDD-Diary,
-    é um sistema de diario virtual para pessoas que precisam de ajuda de um profissional de saude mental">
-    <meta name="keywords" content="psychologist, psicologia, saúde mental, cerebro, NDD, Diary, NDD-Diary">
+    <!-- Meta Tags -->
+    <meta name="description"
+        content="Cadastro - NDD-Diary, um sistema de diário virtual para pessoas que precisam de ajuda de um profissional de saúde mental.">
+    <meta name="keywords" content="psicologia, saúde mental, NDD, Diário, NDD-Diary">
 
-    <!-- author -->
+    <!-- Autor -->
     <meta name="author" content="NBB">
-    <!-- 
-    create by : 
-        * -- Umme Aymanah Abacar Nzé -- * (N)
-        * -- Edivânia Jarmindo Bila -- * (B)
-        * -- Enayatolah Agibo Badrú -- * (B)
 
-        (NBB) - Diary
-    
-        at 27.02.2025
-    -->
-
-    <!-- favicons -->
+    <!-- Favicon -->
     <link rel="shortcut icon" href="../../assets/img/logo.png" type="image/x-icon">
 
-    <!-- css -->
+    <!-- CSS -->
     <link rel="stylesheet" href="../../assets/css/default.css">
     <link rel="stylesheet" href="../../assets/css/sign.css">
 
-    <!-- js -->
-    <script src="" defer></script>
-    <script src="" defer></script>
+    <!-- Firebase SDK: App e Auth (compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-auth-compat.js"></script>
 
-    <!-- api -->
-
-    <!-- library -->
+    <!-- Bibliotecas -->
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js" defer></script>
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js" defer></script>
 
-    <!-- title -->
-    <title>cadastrar</title>
+    <!-- Título -->
+    <title>Cadastrar</title>
 </head>
 
 <body>
-    <form action="#" method="post" autocomplete="off">
-        <span class="title">cadastrar</span>
+    <form id="signup-form" autocomplete="off">
+        <span class="title">Cadastrar</span>
 
         <div class="user">
-            <input type="text" name="user" id="user" minlength="3" maxlength="50" required="required"
-                autocomplete="off">
+            <input type="text" name="user" id="user" minlength="3" maxlength="50" required autocomplete="off">
             <label for="user">
                 <span><ion-icon name="person-sharp"></ion-icon></span>
-                <span>nome do usuario</span>
+                <span>Nome do usuário (email)</span>
             </label>
         </div>
         <div class="password">
-            <input type="password" name="password" id="password" required="required" autocomplete="off">
+            <input type="password" name="password" id="password" minlength="8" maxlength="20" required
+                autocomplete="off">
             <label for="password">
                 <span><ion-icon name="key-sharp"></ion-icon></span>
-                <span>senha</span>
+                <span>Senha</span>
             </label>
         </div>
         <div class="password">
-            <input type="password" name="password" id="password" required="required" autocomplete="off">
-            <label for="password">
+            <input type="password" name="confirm-password" id="confirm-password" minlength="8" maxlength="20" required
+                autocomplete="off">
+            <label for="confirm-password">
                 <span><ion-icon name="key-sharp"></ion-icon></span>
-                <span>confirmar senha</span>
+                <span>Confirmar senha</span>
             </label>
         </div>
         <div class="footerForm">
-            <button type="submit">cadastrar</button>
+            <button type="submit">Cadastrar</button>
             <div class="account">
                 <span>Já possui uma conta?</span>
                 <span><a href="in.html">Entrar!</a></span>
             </div>
-            <!-- <span class="forgot">
-                <a href="forgotPassword.html">forgot password?</a>
-            </span> -->
         </div>
     </form>
+
+    <script>
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAbKVhAbVOuzlPXpfYlCl8lRyXbxOeJqZE",
+            authDomain: "ndd-diary-2f5d6.firebaseapp.com",
+            projectId: "ndd-diary-2f5d6",
+            storageBucket: "ndd-diary-2f5d6.firebasestorage.app",
+            messagingSenderId: "582152839503",
+            appId: "1:582152839503:web:67f06b4aaee3041cdd253a",
+            measurementId: "G-H783JCC73Q"
+        };
+
+        // Inicializa o Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        // Referências aos elementos do formulário
+        const signupForm = document.getElementById('signup-form');
+        const emailInput = document.getElementById('user');
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirm-password');
+
+        // Evento para cadastro de usuário
+        signupForm.addEventListener('submit', function (event) {
+            event.preventDefault(); // Previne o envio padrão do formulário
+
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
+
+            console.log("Tentando cadastrar novo usuário...");
+            console.log("Email:", email);
+            console.log("Senha:", password);
+            console.log("Confirmação de senha:", confirmPassword);
+
+            // Verifica se as senhas coincidem
+            if (password !== confirmPassword) {
+                console.error("Erro: As senhas não coincidem.");
+                alert("Erro: As senhas não coincidem.");
+                return;
+            }
+
+            // Cria o usuário com email e senha
+            firebase.auth().createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // Cadastro bem-sucedido
+                    const user = userCredential.user;
+                    console.log("Usuário cadastrado com sucesso:", user);
+                    alert("Cadastro efetuado com sucesso! Bem-vindo, " + user.email);
+                    // Aqui você pode redirecionar o usuário ou atualizar a interface
+                })
+                .catch((error) => {
+                    console.error("Erro durante o cadastro:", error.code, error.message);
+                    alert("Erro ao cadastrar: " + error.message);
+                });
+        });
+    </script>
 </body>
 
 </html>
