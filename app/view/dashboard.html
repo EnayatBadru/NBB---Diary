@@ -127,7 +127,7 @@
           </label>
         </div>
         <div class="footerForm">
-          <button type="submit">submeter</button>
+          <button id="submit-button" type="submit">submeter</button>
         </div>
       </form>
     </section>
@@ -272,18 +272,31 @@
     document.getElementById('contact-form').addEventListener('submit', function (event) {
       event.preventDefault(); // Previne o envio padrão do formulário
 
+      // Obter o botão de submit do formulário
+      const submitButton = this.querySelector('button[type="submit"]');
+      if (!submitButton) {
+        console.error("Botão de submit não encontrado no formulário de contato.");
+        return;
+      }
+
+      // Desabilita o botão enquanto envia o e-mail
+      submitButton.disabled = true;
+
       try {
         emailjs.sendForm("service_ek92wsg", "template_nlh8hkq", this)
           .then(function () {
             alert("Mensagem enviada com sucesso!");
             document.getElementById('contact-form').reset();
+            submitButton.disabled = false; // Reabilita após o sucesso
           }, function (error) {
             console.error("Erro ao enviar mensagem:", error);
             alert("Erro ao enviar mensagem. Tente novamente.");
+            submitButton.disabled = false; // Reabilita em caso de erro
           });
       } catch (error) {
         console.error("Erro no envio do formulário:", error);
         alert("Erro inesperado. Tente novamente mais tarde.");
+        submitButton.disabled = false; // Reabilita em caso de erro
       }
     });
   </script>
