@@ -2,15 +2,15 @@
 <html lang="pt-br">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Meta Tags -->
-    <meta name="description" content="Dashboard">
-    <meta name="keywords" content="Dashboard, PHP, MVC, CRUD">
-    <meta name="author" content="NBB">
+  <!-- Meta Tags -->
+  <meta name="description" content="Dashboard">
+  <meta name="keywords" content="Dashboard, PHP, MVC, CRUD">
+  <meta name="author" content="NBB">
 
-    <!-- 
+  <!-- 
     Criado por: 
         * -- Umme Aymanah Abacar Nzé -- * (N)
         * -- Edivânia Jarmindo Bila -- * (B)
@@ -19,269 +19,274 @@
         em 27.02.2025
   -->
 
-    <!-- Favicon -->
-    <link rel="shortcut icon" href="../assets/img/logo.png" type="image/x-icon">
+  <!-- Favicon -->
+  <link rel="shortcut icon" href="../assets/img/logo.png" type="image/x-icon">
 
-    <!-- CSS -->
-    <link rel="stylesheet" href="../assets/css/default.css">
-    <link rel="stylesheet" href="../assets/css/dashboard.css">
+  <!-- CSS -->
+  <link rel="stylesheet" href="../assets/css/default.css">
+  <link rel="stylesheet" href="../assets/css/dashboard.css">
 
-    <!-- Biblioteca -->
+  <!-- Biblioteca -->
 
-    <!-- Firebase Scripts (Versão 8.x) -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <!-- Firebase Scripts (Versão 8.x) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-    <!-- EmailJS Script -->
-    <script type="text/javascript" src="https://cdn.emailjs.com/dist/email.min.js"></script>
+  <!-- EmailJS Script -->
+  <script type="text/javascript" src="https://cdn.emailjs.com/dist/email.min.js"></script>
 
-    <!-- Título -->
-    <title>Dashboard</title>
+  <!-- Título -->
+  <title>Dashboard</title>
 </head>
 
 <body id="body">
-    <header id="header">
-        <a href="following.html" class="logoTxt">
-            <span>nbb</span>
-            <span>-</span>
-            <span>diary</span>
-        </a>
+  <header id="header">
+    <a href="following.html" class="logoTxt">
+      <span>nbb</span>
+      <span>-</span>
+      <span>diary</span>
+    </a>
 
-        <nav id="nav">
-            <button class="btn-mobile" type="menu">
-                <span class="toggle-menu"></span>
-            </button>
+    <nav id="nav">
+      <button class="btn-mobile" type="menu">
+        <span class="toggle-menu"></span>
+      </button>
 
-            <ul id="menu">
-                <li><a href="#home">início</a></li>
-                <li><a href="#about">sobre</a></li>
-                <li><a href="#contact">contacto</a></li>
-                <li><a href="sign/in.html">logar</a></li>
-            </ul>
-        </nav>
-    </header>
+      <ul id="menu">
+        <li><a href="#home">início</a></li>
+        <li><a href="#about">sobre</a></li>
+        <li><a href="#contact">contacto</a></li>
+        <li><a href="sign/in.html">logar</a></li>
+      </ul>
+    </nav>
+  </header>
 
-    <main id="main">
-        <section id="home">
-            <div class="text">
-                <h1 class="title">Sua Jornada para o Bem-Estar Começa Aqui</h1>
-                <div class="container__text">
-                    <p class="lorem">
-                        Transforme desafios em oportunidades com o apoio de especialistas em saúde mental. Conecte-se e
-                        cresça, encontrando o equilíbrio que você merece, a qualquer hora e em qualquer lugar.
-                    </p>
-                    <button id="start-button" class="link__text" type="button" disabled>comecar a usar</button>
-                </div>
-            </div>
-            <a href="following.html" target="_parent"><img src="../assets/img/logo.png" alt="banner"></a>
-        </section>
-
-        <section id="about">
-            <h1 class="title">Conectando Mentes, Transformando Vidas</h1>
-            <div class="container__about">
-                <p class="lorem active">
-                    Na NBB, nossa missão é democratizar o acesso ao cuidado psicológico, criando um espaço
-                    digital seguro e acolhedor para você. Inspirados por plataformas internacionais de referência e
-                    adaptados à realidade de Moçambique, unimos tecnologia e empatia para conectar pacientes a
-                    profissionais de saúde mental altamente qualificados. Nosso ambiente foi desenvolvido para
-                    proporcionar uma experiência personalizada, com consultas remotas que se encaixam no seu dia a dia.
-                    Seja para apoio emocional, orientação ou transformação pessoal. Aqui, você encontra privacidade,
-                    facilidade de uso e um compromisso genuíno com o seu bem-estar. Junte-se a nós nessa jornada e
-                    descubra como a inovação pode transformar a maneira de cuidar da mente e viver com mais equilíbrio.
-                </p>
-            </div>
-        </section>
-
-        <section id="contact">
-            <form id="contact-form" action="#" method="post">
-                <span class="title">entre em contacto</span>
-
-                <div class="user">
-                    <input type="text" name="user" id="user" minlength="3" maxlength="50" required="required"
-                        autocomplete="off">
-                    <label for="user">
-                        <span class="icon">
-                            <img src="../assets/img/icons/user.png" alt="user-icon" class="icon-img">
-                        </span>
-                        <span>nome do usuario</span>
-                    </label>
-                </div>
-                <div>
-                    <input type="email" name="email" id="email" minlength="3" maxlength="50" required="required"
-                        autocomplete="off">
-                    <label for="email">
-                        <span class="icon">
-                            <img src="../assets/img/icons/envelope.png" alt="email-icon" class="icon-img">
-                        </span>
-                        <span>digite o email</span>
-                    </label>
-                </div>
-                <div class="textarea">
-                    <textarea name="problem" id="problem" minlength="3" maxlength="1000" required="required" rows="5"
-                        cols="100%" autocomplete="off"></textarea>
-                    <label for="problem">
-                        <span class="icon">
-                            <img src="../assets/img/icons/error.png" alt="email-icon" class="icon-img">
-                        </span>
-                        <span>descreva o seu problema</span>
-                    </label>
-                </div>
-                <div class="footerForm">
-                    <button type="submit">submeter</button>
-                </div>
-            </form>
-        </section>
-
-        <div id="footer">
-            <div class="footerCopy">
-                <p>todos os direitos reservados:</p>
-                <p class="nameFooter">nbb - diary</p>
-                <p class="copyRight">©2025 - nbb diary</p>
-            </div>
-
-            <div class="socialMedia">
-                <span class="icon">
-                    <abbr title="whatsapp">
-                        <a href="">
-                            <span>
-                                <img src="../assets/img/icons/whatsapp.png" alt="whatsapp-icon" class="icon-img">
-                            </span>
-                        </a>
-                    </abbr>
-                </span>
-                <span class="icon">
-                    <abbr title="facebook">
-                        <a href="">
-                            <span>
-                                <img src="../assets/img/icons/facebook (1).png" alt="facebook-icon" class="icon-img">
-                            </span>
-                        </a>
-                    </abbr>
-                </span>
-                <span class="icon">
-                    <abbr title="instagram">
-                        <a href="">
-                            <span>
-                                <img src="../assets/img/icons/instagram (1).png" alt="instagram-icon" class="icon-img">
-                            </span>
-                        </a>
-                    </abbr>
-                </span>
-                <span class="icon">
-                    <abbr title="youtube">
-                        <a href="">
-                            <span>
-                                <img src="../assets/img/icons/youtube (2).png" alt="youtube-icon" class="icon-img">
-                            </span>
-                        </a>
-                    </abbr>
-                </span>
-            </div>
+  <main id="main">
+    <section id="home">
+      <div class="text">
+        <h1 class="title">Sua Jornada para o Bem-Estar Começa Aqui</h1>
+        <div class="container__text">
+          <p class="lorem">
+            Transforme desafios em oportunidades com o apoio de especialistas em saúde mental. Conecte-se e
+            cresça, encontrando o equilíbrio que você merece, a qualquer hora e em qualquer lugar.
+          </p>
+          <!-- O botão inicia desabilitado -->
+          <button id="start-button" class="link__text" type="button" disabled>comecar a usar</button>
         </div>
-    </main>
+      </div>
+      <a href="following.html" target="_parent"><img src="../assets/img/logo.png" alt="banner"></a>
+    </section>
 
-    <!-- JavaScript Externo -->
-    <script src="../assets/js/dashboard.js" defer></script>
+    <section id="about">
+      <h1 class="title">Conectando Mentes, Transformando Vidas</h1>
+      <div class="container__about">
+        <p class="lorem active">
+          Na NBB, nossa missão é democratizar o acesso ao cuidado psicológico, criando um espaço
+          digital seguro e acolhedor para você. Inspirados por plataformas internacionais de referência e
+          adaptados à realidade de Moçambique, unimos tecnologia e empatia para conectar pacientes a
+          profissionais de saúde mental altamente qualificados. Nosso ambiente foi desenvolvido para
+          proporcionar uma experiência personalizada, com consultas remotas que se encaixam no seu dia a dia.
+          Seja para apoio emocional, orientação ou transformação pessoal. Aqui, você encontra privacidade,
+          facilidade de uso e um compromisso genuíno com o seu bem-estar. Junte-se a nós nessa jornada e
+          descubra como a inovação pode transformar a maneira de cuidar da mente e viver com mais equilíbrio.
+        </p>
+      </div>
+    </section>
 
-    <!-- Configuração e Lógica do Firebase -->
-    <script>
-        // Configurações do Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyAbKVhAbVOuzlPXpfYlCl8lRyXbxOeJqZE",
-            authDomain: "ndd-diary-2f5d6.firebaseapp.com",
-            projectId: "ndd-diary-2f5d6",
-            storageBucket: "ndd-diary-2f5d6.firebasestorage.app",
-            messagingSenderId: "582152839503",
-            appId: "1:582152839503:web:67f06b4aaee3041cdd253a",
-            measurementId: "G-H783JCC73Q"
-        };
+    <section id="contact">
+      <form id="contact-form" action="#" method="post">
+        <span class="title">entre em contacto</span>
 
-        // Inicialização do Firebase com tratamento de erro
-        try {
-            firebase.initializeApp(firebaseConfig);
-            console.log("Firebase inicializado com sucesso!");
-        } catch (error) {
-            console.error("Erro ao inicializar o Firebase:", error);
-            alert("Ocorreu um erro ao carregar a aplicação. Por favor, tente novamente mais tarde.");
-        }
+        <div class="user">
+          <input type="text" name="user" id="user" minlength="3" maxlength="50" required="required" autocomplete="off">
+          <label for="user">
+            <span class="icon">
+              <img src="../assets/img/icons/user.png" alt="user-icon" class="icon-img">
+            </span>
+            <span>nome do usuario</span>
+          </label>
+        </div>
+        <div>
+          <input type="email" name="email" id="email" minlength="3" maxlength="50" required="required" autocomplete="off">
+          <label for="email">
+            <span class="icon">
+              <img src="../assets/img/icons/envelope.png" alt="email-icon" class="icon-img">
+            </span>
+            <span>digite o email</span>
+          </label>
+        </div>
+        <div class="textarea">
+          <textarea name="problem" id="problem" minlength="3" maxlength="1000" required="required" rows="5" cols="100%"
+            autocomplete="off"></textarea>
+          <label for="problem">
+            <span class="icon">
+              <img src="../assets/img/icons/error.png" alt="email-icon" class="icon-img">
+            </span>
+            <span>descreva o seu problema</span>
+          </label>
+        </div>
+        <div class="footerForm">
+          <button type="submit">submeter</button>
+        </div>
+      </form>
+    </section>
 
-        // Tratamento global de erros
-        window.onerror = function (msg, url, lineNo, columnNo, error) {
-            console.error("Erro global: ", msg, " em ", url, " linha:", lineNo, " coluna:", columnNo, " erro:", error);
-            return false;
-        };
+    <div id="footer">
+      <div class="footerCopy">
+        <p>todos os direitos reservados:</p>
+        <p class="nameFooter">nbb - diary</p>
+        <p class="copyRight">©2025 - nbb diary</p>
+      </div>
 
-        // Garantir que o DOM esteja pronto antes de manipular elementos
-        document.addEventListener('DOMContentLoaded', function () {
-            // Verificação do estado de autenticação para o botão "start-button"
-            if (firebase.auth) {
-                firebase.auth().onAuthStateChanged(user => {
-                    const startButton = document.getElementById('start-button');
-                    if (!startButton) {
-                        console.error("Botão 'start-button' não encontrado no DOM.");
-                        return;
-                    }
-                    startButton.disabled = false;
+      <div class="socialMedia">
+        <span class="icon">
+          <abbr title="whatsapp">
+            <a href="">
+              <span>
+                <img src="../assets/img/icons/whatsapp.png" alt="whatsapp-icon" class="icon-img">
+              </span>
+            </a>
+          </abbr>
+        </span>
+        <span class="icon">
+          <abbr title="facebook">
+            <a href="">
+              <span>
+                <img src="../assets/img/icons/facebook (1).png" alt="facebook-icon" class="icon-img">
+              </span>
+            </a>
+          </abbr>
+        </span>
+        <span class="icon">
+          <abbr title="instagram">
+            <a href="">
+              <span>
+                <img src="../assets/img/icons/instagram (1).png" alt="instagram-icon" class="icon-img">
+              </span>
+            </a>
+          </abbr>
+        </span>
+        <span class="icon">
+          <abbr title="youtube">
+            <a href="">
+              <span>
+                <img src="../assets/img/icons/youtube (2).png" alt="youtube-icon" class="icon-img">
+              </span>
+            </a>
+          </abbr>
+        </span>
+      </div>
+    </div>
+  </main>
 
-                    if (user) {
-                        startButton.addEventListener('click', function () {
-                            try {
-                                // window.location.href = 'customer/index.html';
-                                window.location.href = 'splash.html';
-                            } catch (error) {
-                                console.error("Erro ao redirecionar para o dashboard:", error);
-                                alert("Erro ao acessar o dashboard. Tente novamente.");
-                            }
-                        });
-                    } else {
-                        startButton.addEventListener('click', function () {
-                            try {
-                                window.location.href = 'sign/in.html';
-                            } catch (error) {
-                                console.error("Erro ao redirecionar para a página de login:", error);
-                                alert("Erro ao acessar a página de login. Tente novamente.");
-                            }
-                        });
-                    }
-                });
-            } else {
-                console.error("Autenticação do Firebase não disponível.");
-                alert("Erro crítico: Autenticação não disponível. Contate o suporte.");
-            }
+  <!-- JavaScript Externo -->
+  <script src="../assets/js/dashboard.js" defer></script>
+
+  <!-- Configuração e Lógica do Firebase -->
+  <script>
+    // Configurações do Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyAbKVhAbVOuzlPXpfYlCl8lRyXbxOeJqZE",
+      authDomain: "ndd-diary-2f5d6.firebaseapp.com",
+      projectId: "ndd-diary-2f5d6",
+      storageBucket: "ndd-diary-2f5d6.firebasestorage.app",
+      messagingSenderId: "582152839503",
+      appId: "1:582152839503:web:67f06b4aaee3041cdd253a",
+      measurementId: "G-H783JCC73Q"
+    };
+
+    // Inicialização do Firebase com tratamento de erro
+    try {
+      firebase.initializeApp(firebaseConfig);
+      console.log("Firebase inicializado com sucesso!");
+    } catch (error) {
+      console.error("Erro ao inicializar o Firebase:", error);
+      alert("Ocorreu um erro ao carregar a aplicação. Por favor, tente novamente mais tarde.");
+    }
+
+    // Tratamento global de erros
+    window.onerror = function (msg, url, lineNo, columnNo, error) {
+      console.error("Erro global: ", msg, " em ", url, " linha:", lineNo, " coluna:", columnNo, " erro:", error);
+      return false;
+    };
+
+    // Garantir que o DOM esteja pronto antes de manipular elementos
+    document.addEventListener('DOMContentLoaded', function () {
+      // Verificação do estado de autenticação para o botão "start-button"
+      if (firebase.auth) {
+        firebase.auth().onAuthStateChanged(user => {
+          const startButton = document.getElementById('start-button');
+          if (!startButton) {
+            console.error("Botão 'start-button' não encontrado no DOM.");
+            return;
+          }
+          // Habilita o botão somente se não houver processo em andamento (inicialmente, ele já vem desabilitado)
+          startButton.disabled = false;
+
+          if (user) {
+            startButton.addEventListener('click', function () {
+              // Ao clicar, desabilita o botão para evitar cliques duplicados
+              startButton.disabled = true;
+              try {
+                window.location.href = 'customer/index.html';
+              } catch (error) {
+                console.error("Erro ao redirecionar para o dashboard:", error);
+                alert("Erro ao acessar o dashboard. Tente novamente.");
+                startButton.disabled = false; // Reabilita o botão em caso de erro
+              }
+            });
+          } else {
+            startButton.addEventListener('click', function () {
+              // Ao clicar, desabilita o botão para evitar cliques duplicados
+              startButton.disabled = true;
+              try {
+                window.location.href = 'sign/in.html';
+              } catch (error) {
+                console.error("Erro ao redirecionar para a página de login:", error);
+                alert("Erro ao acessar a página de login. Tente novamente.");
+                startButton.disabled = false; // Reabilita o botão em caso de erro
+              }
+            });
+          }
         });
-    </script>
+      } else {
+        console.error("Autenticação do Firebase não disponível.");
+        alert("Erro crítico: Autenticação não disponível. Contate o suporte.");
+      }
+    });
+  </script>
 
-    <!-- Configuração e Lógica do EmailJS para o formulário de contato -->
-    <script>
-        try {
-            // Inicializa o EmailJS com sua Public Key
-            emailjs.init("JbA_G0oiFC5nNy-3K");
-            console.log("EmailJS inicializado com sucesso!");
-        } catch (error) {
-            console.error("Erro ao inicializar o EmailJS:", error);
-            alert("Erro ao inicializar o serviço de e-mail. Tente novamente mais tarde.");
-        }
+  <!-- Configuração e Lógica do EmailJS para o formulário de contato -->
+  <script>
+    try {
+      // Inicializa o EmailJS com sua Public Key
+      emailjs.init("JbA_G0oiFC5nNy-3K");
+      console.log("EmailJS inicializado com sucesso!");
+    } catch (error) {
+      console.error("Erro ao inicializar o EmailJS:", error);
+      alert("Erro ao inicializar o serviço de e-mail. Tente novamente mais tarde.");
+    }
 
-        // Manipulação do formulário de contato com tratamento de erros
-        document.getElementById('contact-form').addEventListener('submit', function (event) {
-            event.preventDefault(); // Previne o envio padrão do formulário
+    // Manipulação do formulário de contato com tratamento de erros
+    document.getElementById('contact-form').addEventListener('submit', function (event) {
+      event.preventDefault(); // Previne o envio padrão do formulário
 
-            try {
-                emailjs.sendForm("service_ek92wsg", "template_nlh8hkq", this)
-                    .then(function () {
-                        alert("Mensagem enviada com sucesso!");
-                        document.getElementById('contact-form').reset();
-                    }, function (error) {
-                        console.error("Erro ao enviar mensagem:", error);
-                        alert("Erro ao enviar mensagem. Tente novamente.");
-                    });
-            } catch (error) {
-                console.error("Erro no envio do formulário:", error);
-                alert("Erro inesperado. Tente novamente mais tarde.");
-            }
-        });
-    </script>
+      try {
+        emailjs.sendForm("service_ek92wsg", "template_nlh8hkq", this)
+          .then(function () {
+            alert("Mensagem enviada com sucesso!");
+            document.getElementById('contact-form').reset();
+          }, function (error) {
+            console.error("Erro ao enviar mensagem:", error);
+            alert("Erro ao enviar mensagem. Tente novamente.");
+          });
+      } catch (error) {
+        console.error("Erro no envio do formulário:", error);
+        alert("Erro inesperado. Tente novamente mais tarde.");
+      }
+    });
+  </script>
 </body>
 
 </html>
