@@ -133,7 +133,9 @@ button:hover{
     width: 100%;
 }
 
-.account a{
+.account a,
+.forgot a,
+.footerForm a{
     color: #1d2b3a;
     font-weight: bold;
 }
