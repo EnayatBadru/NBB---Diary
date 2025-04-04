@@ -6,10 +6,25 @@
   gap: 10px;
 }
 
-#menu li::after {
+/* #menu li::after {
   content: "|";
   width: 1px;
   height: 100%;
+} */
+
+#menu li button{
+  background: #A00401;
+  outline: none;
+  border: none;
+  color: #fff;
+  padding: 2px;
+  font-size: 1.2em;
+  text-transform: uppercase;
+  width: 80px;
+  letter-spacing: 1px;
+  transition: all .2s ease;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
 #welcome {
@@ -203,9 +218,9 @@ span.icon img.icon-img{
 }
 
 @media screen and (max-width: 840px) {
-  #menu li::after {
+  /* #menu li::after {
     display: none;
-  }
+  } */
 
   .create,
   .card {

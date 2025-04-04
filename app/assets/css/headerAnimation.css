@@ -174,14 +174,26 @@ body {
     pointer-events: none;
   }
 
-  #menu a {
+  #menu .sign-out {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    width: 90vw;
+    padding: 7px;
+    border-radius: 6px;
+  }
+
+  #menu a,
+  #menu .sign-out {
     color: #fff;
     font-weight: bolder;
     display: none;
     transition: all 0.3s ease;
   }
 
-  #menu.active a {
+  #menu.active a,
+  #menu.active .sign-out {
     display: flex;
     transition: all 0.3s ease;
   }

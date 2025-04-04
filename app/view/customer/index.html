@@ -34,7 +34,10 @@
     <!-- js -->
     <script src="../../assets/js/dashboard.js" defer></script>
 
-    <!-- library -->
+    <!-- Firebase Scripts (Versão 8.x) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <!-- api -->
 
@@ -44,7 +47,7 @@
 
 <body>
     <header id="header">
-        <a href="following.html" class="logoTxt">
+        <a href="../following.html" class="logoTxt">
             <span>nbb</span>
             <span>-</span>
             <span>diary</span>
@@ -60,6 +63,9 @@
                 <li><a href="#">mensagens</a></li>
                 <li><a href="#">exercicios</a></li>
                 <li><a href="#">perfil</a></li>
+                <li>
+                    <button type="button" class="sign-out">sair</button>
+                </li>
             </ul>
         </nav>
     </header>
@@ -72,8 +78,7 @@
                     <span class="second">Lamin Yamal</span>
                 </div>
                 <div class="container_welcome">
-                    <span class="third">Seja bem vindo(a) ao
-                    </span>
+                    <span class="third">Seja bem vindo(a) ao</span>
                     <span class="logo">NBB - Diary</span>
                 </div>
             </div>
@@ -81,20 +86,16 @@
 
         <section id="historyDay">
             <div class="title">Gráfico de Actividades</div>
-
             <div class="container_HistoryDay">
-
+                <!-- Conteúdo do gráfico -->
             </div>
         </section>
 
         <section id="history">
-            <p class="title">
-                Histórico de Consultas
-            </p>
+            <p class="title">Histórico de Consultas</p>
             <div class="history_container">
                 <div class="create">
-                    <a href="#" class="btn_create">
-                    </a>
+                    <a href="#" class="btn_create"></a>
                 </div>
                 <div class="container_history">
                     <div class="card">
@@ -109,7 +110,6 @@
                         <div class="main_card">
                             <div class="type">
                                 <span class="card_text">Consulta: </span>
-                                <!-- <span class="card_result">Finalizada/ Agendada/ Falhada/ Cancelada</span> -->
                                 <span class="card_result">Agendada</span>
                             </div>
                             <div class="type">
@@ -118,12 +118,10 @@
                             </div>
                             <div class="type">
                                 <span class="card_text">Tipo: </span>
-                                <!-- <span class="card_result">Urgente/ Normal/ Básico</span> -->
                                 <span class="card_result">Normal</span>
                             </div>
                             <div class="type">
                                 <span class="card_text">Psicólogo: </span>
-                                <!-- <span class="card_result">Umme Aymanah/ Edivânia Jarmindo</span> -->
                                 <span class="card_result">Edivânia Jarmindo</span>
                             </div>
                         </div>
@@ -144,7 +142,6 @@
                         <div class="main_card">
                             <div class="type">
                                 <span class="card_text">Consulta: </span>
-                                <!-- <span class="card_result">Finalizada/ Agendada/ Falhada/ Cancelada</span> -->
                                 <span class="card_result">Finalizada</span>
                             </div>
                             <div class="type">
@@ -153,12 +150,10 @@
                             </div>
                             <div class="type">
                                 <span class="card_text">Tipo: </span>
-                                <!-- <span class="card_result">Urgente/ Normal/ Básico</span> -->
                                 <span class="card_result">Urgente</span>
                             </div>
                             <div class="type">
                                 <span class="card_text">Psicólogo: </span>
-                                <!-- <span class="card_result">Umme Aymanah/ Edivânia Jarmindo</span> -->
                                 <span class="card_result">Umme Aymanah</span>
                             </div>
                         </div>
@@ -217,6 +212,58 @@
             </span>
         </div>
     </footer>
+
+    <!-- Configuração e Lógica do Firebase -->
+    <script>
+        // Configurações do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAbKVhAbVOuzlPXpfYlCl8lRyXbxOeJqZE",
+            authDomain: "ndd-diary-2f5d6.firebaseapp.com",
+            projectId: "ndd-diary-2f5d6",
+            storageBucket: "ndd-diary-2f5d6.firebasestorage.app",
+            messagingSenderId: "582152839503",
+            appId: "1:582152839503:web:67f06b4aaee3041cdd253a",
+            measurementId: "G-H783JCC73Q"
+        };
+
+        // Inicialização do Firebase com tratamento de erro
+        try {
+            firebase.initializeApp(firebaseConfig);
+            console.log("Firebase inicializado com sucesso!");
+        } catch (error) {
+            console.error("Erro ao inicializar o Firebase:", error);
+            alert("Ocorreu um erro ao carregar a aplicação. Por favor, tente novamente mais tarde.");
+        }
+
+        // Tratamento global de erros
+        window.onerror = function (msg, url, lineNo, columnNo, error) {
+            console.error("Erro global: ", msg, " em ", url, " linha:", lineNo, " coluna:", columnNo, " erro:", error);
+            return false;
+        };
+
+        // Verifica o DOM e configura o evento do botão de sign out
+        document.addEventListener('DOMContentLoaded', function () {
+            const signOutBtn = document.querySelector('.sign-out');
+            if (!signOutBtn) {
+                console.error("Botão 'sign-out' não encontrado.");
+                return;
+            }
+            signOutBtn.addEventListener('click', function () {
+                // Desabilita o botão para evitar cliques duplicados
+                signOutBtn.disabled = true;
+                firebase.auth().signOut()
+                    .then(() => {
+                        // Sign out realizado com sucesso; redireciona para a tela inicial
+                        window.location.href = "../splash.html";
+                    })
+                    .catch(error => {
+                        console.error("Erro ao efetuar sign out:", error);
+                        alert("Erro ao sair da sessão. Tente novamente.");
+                        signOutBtn.disabled = false; // Reabilita o botão em caso de erro
+                    });
+            });
+        });
+    </script>
 </body>
 
 </html>
