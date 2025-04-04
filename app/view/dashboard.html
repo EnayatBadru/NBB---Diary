@@ -17,7 +17,7 @@
         * -- Enayatolah Agibo Badrú -- * (B)
         (NBB) - Diary
         em 27.02.2025
-    -->
+  -->
 
     <!-- Favicon -->
     <link rel="shortcut icon" href="../assets/img/logo.png" type="image/x-icon">
@@ -96,7 +96,7 @@
         </section>
 
         <section id="contact">
-            <form action="#" method="post">
+            <form id="contact-form" action="#" method="post">
                 <span class="title">entre em contacto</span>
 
                 <div class="user">
@@ -107,7 +107,7 @@
                         <span>nome do usuario</span>
                     </label>
                 </div>
-                <div class="">
+                <div>
                     <input type="email" name="email" id="email" minlength="3" maxlength="50" required="required"
                         autocomplete="off">
                     <label for="email">
@@ -194,9 +194,15 @@
             alert("Ocorreu um erro ao carregar a aplicação. Por favor, tente novamente mais tarde.");
         }
 
+        // Tratamento global de erros
+        window.onerror = function (msg, url, lineNo, columnNo, error) {
+            console.error("Erro global: ", msg, " em ", url, " linha:", lineNo, " coluna:", columnNo, " erro:", error);
+            return false;
+        };
+
         // Garantir que o DOM esteja pronto antes de manipular elementos
         document.addEventListener('DOMContentLoaded', function () {
-            // Verificação do estado de autenticação
+            // Verificação do estado de autenticação para o botão "start-button"
             if (firebase.auth) {
                 firebase.auth().onAuthStateChanged(user => {
                     const startButton = document.getElementById('start-button');
@@ -204,12 +210,9 @@
                         console.error("Botão 'start-button' não encontrado no DOM.");
                         return;
                     }
-
-                    // Habilita o botão após a verificação do estado de autenticação
                     startButton.disabled = false;
 
                     if (user) {
-                        // Usuário autenticado: redireciona para o dashboard
                         startButton.addEventListener('click', function () {
                             try {
                                 window.location.href = 'customer/index.html';
@@ -219,7 +222,6 @@
                             }
                         });
                     } else {
-                        // Usuário não autenticado: redireciona para a página de login
                         startButton.addEventListener('click', function () {
                             try {
                                 window.location.href = 'sign/in.html';
@@ -239,21 +241,32 @@
 
     <!-- Configuração e Lógica do EmailJS para o formulário de contato -->
     <script>
-        // Inicializa o EmailJS com seu User ID ("NBB-Diary")
-        emailjs.init("NBB-Diary");
+        try {
+            // Inicializa o EmailJS com sua Public Key
+            emailjs.init("JbA_G0oiFC5nNy-3K");
+            console.log("EmailJS inicializado com sucesso!");
+        } catch (error) {
+            console.error("Erro ao inicializar o EmailJS:", error);
+            alert("Erro ao inicializar o serviço de e-mail. Tente novamente mais tarde.");
+        }
 
-        // Manipulação do formulário de contato
+        // Manipulação do formulário de contato com tratamento de erros
         document.getElementById('contact-form').addEventListener('submit', function (event) {
             event.preventDefault(); // Previne o envio padrão do formulário
 
-            emailjs.sendForm("service_ek92wsg", "template_nlh8hkq", this)
-                .then(function () {
-                    alert("Mensagem enviada com sucesso!");
-                    document.getElementById('contact-form').reset();
-                }, function (error) {
-                    console.error("Erro ao enviar mensagem:", error);
-                    alert("Erro ao enviar mensagem. Tente novamente.");
-                });
+            try {
+                emailjs.sendForm("service_ek92wsg", "template_nlh8hkq", this)
+                    .then(function () {
+                        alert("Mensagem enviada com sucesso!");
+                        document.getElementById('contact-form').reset();
+                    }, function (error) {
+                        console.error("Erro ao enviar mensagem:", error);
+                        alert("Erro ao enviar mensagem. Tente novamente.");
+                    });
+            } catch (error) {
+                console.error("Erro no envio do formulário:", error);
+                alert("Erro inesperado. Tente novamente mais tarde.");
+            }
         });
     </script>
 </body>
