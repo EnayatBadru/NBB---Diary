@@ -39,7 +39,7 @@ const firebaseConfig = {
               if (user) {
                 window.location.href = "customer/index.html";
               } else {
-                window.location.href = "sign/in.html";
+                window.location.href = "dashboard.html";
               }
             } catch (redirectionError) {
               console.error("Erro ao redirecionar:", redirectionError);

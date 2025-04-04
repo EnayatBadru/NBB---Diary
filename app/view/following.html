@@ -29,18 +29,13 @@
     <link rel="stylesheet" href="../assets/css/default.css">
     <link rel="stylesheet" href="../assets/css/following.css">
 
-    <!-- js -->
-    <script src="" defer></script>
-
-    <!-- api -->
-
     <!-- title -->
     <title>seguindo</title>
 </head>
 
 <body>
     <main id="container">
-        <a class="spacing" href="dashboard.html">NBB - Diary</a>
+        <button type="button" class="spacing">NBB - Diary</button>
         <div class="container_user">
             <a href="#" class="member">
                 <abbr title="Umme Aymanah Abacar Nzé">
@@ -59,6 +54,20 @@
             </a>
         </div>
     </main>
+
+    <script>
+        // Adicionar evento de clique ao botão com classe "spacing"
+        document.addEventListener('DOMContentLoaded', function () {
+            const spacingButton = document.querySelector('.spacing');
+            if (spacingButton) {
+                spacingButton.addEventListener('click', function () {
+                    window.location.href = 'splash.html';
+                });
+            } else {
+                console.error('Botão com classe "spacing" não encontrado.');
+            }
+        });
+    </script>
 </body>
 
 </html>

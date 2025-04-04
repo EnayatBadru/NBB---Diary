@@ -47,6 +47,34 @@ a.logoTxt {
   transition: all 0.2s ease;
 }
 
+#menu button.sign {
+  display: none;
+}
+
+#menu button.sign.active {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  outline: none;
+  border: none;
+  color: #1d2b3a;
+  padding: 2px;
+  font-size: 1.2em;
+  text-transform: uppercase;
+  width: 80px;
+  letter-spacing: 1px;
+  transition: all 0.2s ease;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#menu button.sign.active:hover {
+  opacity: 0.8;
+  transition: all 0.2s ease;
+}
+
 #nav,
 #menu {
   display: flex;
@@ -364,7 +392,7 @@ body {
   transition: all 0.1s ease-in-out;
 }
 
-#footer{
+#footer {
   background: #333;
   color: var(--button-color);
   width: 100%;
@@ -376,44 +404,44 @@ body {
   padding: 30px;
 }
 
-#footer .footerCopy{
+#footer .footerCopy {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: .5em;
+  gap: 0.5em;
 }
 
-#footer .footerCopy p{
+#footer .footerCopy p {
   text-transform: uppercase;
   letter-spacing: 1px;
   font-weight: bolder;
   font-size: 1em;
 }
 
-#footer .socialMedia{
+#footer .socialMedia {
   display: flex;
   flex-direction: row;
   gap: 2em;
 }
 
-#footer .socialMedia a{
+#footer .socialMedia a {
   font-size: 2em;
   color: var(--button-color);
 }
 
-span.icon{
+span.icon {
   width: 15px;
   height: 15px;
   color: #1d2b3a;
 }
 
-.socialMedia span.icon{
+.socialMedia span.icon {
   width: 30px;
   height: 30px;
 }
 
 .socialMedia span.icon img.icon-img,
-span.icon img.icon-img{
+span.icon img.icon-img {
   width: 100%;
   height: 100%;
 }
@@ -520,16 +548,18 @@ span.icon img.icon-img{
     pointer-events: none;
   }
 
-  #menu a {
+  #menu a,
+  #menu button.sign.active {
     color: #fff;
     font-weight: bolder;
     display: none;
-    transition: all .3s ease;
+    transition: all 0.3s ease;
   }
 
-  #menu.active a{
+  #menu.active a,
+  #menu.active button.sign.active {
     display: flex;
-    transition: all .3s ease;
+    transition: all 0.3s ease;
   }
 
   .text {
@@ -572,7 +602,7 @@ span.icon img.icon-img{
     width: 100%;
   }
 
-  #footer{
+  #footer {
     justify-content: center;
     gap: 1.5em;
   }

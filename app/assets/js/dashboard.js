@@ -1,17 +1,33 @@
-const header = document.querySelector('#header');
-const btn = document.querySelector('.btn-mobile');
-const  menu = document.querySelector('#menu');
-const  body = document.querySelector('#body');
+document.addEventListener('DOMContentLoaded', function () {
+    // Seleção dos elementos
+    const header = document.querySelector('#header');
+    const btn = document.querySelector('.btn-mobile');
+    const menu = document.querySelector('#menu');
+    const body = document.querySelector('#body');
 
-btn.addEventListener('click', active)
-menu.addEventListener('click', active)
+    // Verificar se os elementos existem antes de adicionar eventos
+    if (btn && menu) {
+        btn.addEventListener('click', active);
+        menu.addEventListener('click', active);
+    } else {
+        console.error('Erro: .btn-mobile ou #menu não encontrados no HTML.');
+    }
 
-function active(){
-    btn.classList.toggle('active');
-    menu.classList.toggle('active');
-}
+    // Função para alternar classes
+    function active() {
+        if (btn && menu) {
+            btn.classList.toggle('active');
+            menu.classList.toggle('active');
+        }
+    }
 
-window.addEventListener('scroll', ()=>{
-    header.classList.toggle('sticky', window.scrollY > 0);
-    body.classList.toggle('sticky', window.scrollY > 0);
-})
+    // Evento de scroll com verificação
+    if (header && body) {
+        window.addEventListener('scroll', () => {
+            header.classList.toggle('sticky', window.scrollY > 0);
+            body.classList.toggle('sticky', window.scrollY > 0);
+        });
+    } else {
+        console.error('Erro: #header ou #body não encontrados no HTML.');
+    }
+});

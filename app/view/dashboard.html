@@ -26,8 +26,6 @@
   <link rel="stylesheet" href="../assets/css/default.css">
   <link rel="stylesheet" href="../assets/css/dashboard.css">
 
-  <!-- Biblioteca -->
-
   <!-- Firebase Scripts (Versão 8.x) -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -57,7 +55,9 @@
         <li><a href="#home">início</a></li>
         <li><a href="#about">sobre</a></li>
         <li><a href="#contact">contacto</a></li>
-        <li><a href="sign/in.html">logar</a></li>
+        <li>
+          <button type="button" class="sign active" id="sign">entrar</button>
+        </li>
       </ul>
     </nav>
   </header>
@@ -136,7 +136,7 @@
       <div class="footerCopy">
         <p>todos os direitos reservados:</p>
         <p class="nameFooter">nbb - diary</p>
-        <p class="copyRight">©2025 - nbb diary</p>
+        <p class="copyRight">&copy;2025 - nbb diary</p>
       </div>
 
       <div class="socialMedia">
@@ -181,7 +181,7 @@
   </main>
 
   <!-- JavaScript Externo -->
-  <script src="../assets/js/dashboard.js" defer></script>
+  <script src="../assets/js/dashboard.js"></script>
 
   <!-- Configuração e Lógica do Firebase -->
   <script>
@@ -212,49 +212,79 @@
     };
 
     // Garantir que o DOM esteja pronto antes de manipular elementos
-    document.addEventListener('DOMContentLoaded', function () {
-      // Verificação do estado de autenticação para o botão "start-button"
-      if (firebase.auth) {
-        firebase.auth().onAuthStateChanged(user => {
-          const startButton = document.getElementById('start-button');
-          if (!startButton) {
-            console.error("Botão 'start-button' não encontrado no DOM.");
-            return;
-          }
-          // Habilita o botão somente se não houver processo em andamento (inicialmente, ele já vem desabilitado)
-          startButton.disabled = false;
+document.addEventListener('DOMContentLoaded', function () {
+  // Verificação do estado de autenticação
+  if (firebase.auth) {
+    firebase.auth().onAuthStateChanged(user => {
+      const signButton = document.getElementById('sign');
+      const startButton = document.getElementById('start-button');
 
-          if (user) {
-            startButton.addEventListener('click', function () {
-              // Ao clicar, desabilita o botão para evitar cliques duplicados
-              startButton.disabled = true;
-              try {
-                window.location.href = 'splash.html';
-              } catch (error) {
-                console.error("Erro ao redirecionar para o dashboard:", error);
-                alert("Erro ao acessar o dashboard. Tente novamente.");
-                startButton.disabled = false; // Reabilita o botão em caso de erro
-              }
-            });
-          } else {
-            startButton.addEventListener('click', function () {
-              // Ao clicar, desabilita o botão para evitar cliques duplicados
-              startButton.disabled = true;
-              try {
-                window.location.href = 'sign/in.html';
-              } catch (error) {
-                console.error("Erro ao redirecionar para a página de login:", error);
-                alert("Erro ao acessar a página de login. Tente novamente.");
-                startButton.disabled = false; // Reabilita o botão em caso de erro
-              }
-            });
+      // Verificar se os botões existem no DOM
+      if (!signButton) {
+        console.error("Botão 'sign' não encontrado no DOM.");
+        return;
+      }
+      if (!startButton) {
+        console.error("Botão 'start-button' não encontrado no DOM.");
+        return;
+      }
+
+      if (user) {
+        // Usuário logado: texto "entrar" e redirecionar para splash.html
+        signButton.textContent = 'entrar';
+        signButton.addEventListener('click', function () {
+          try {
+            // window.location.href = 'splash.html';
+            window.location.href = 'splash.html';
+          } catch (error) {
+            console.error("Erro ao redirecionar para splash.html:", error);
+            alert("Erro ao acessar a página. Tente novamente.");
+          }
+        });
+
+        // Configuração do start-button para usuário logado
+        startButton.disabled = false;
+        startButton.addEventListener('click', function () {
+          startButton.disabled = true;
+          try {
+            window.location.href = 'splash.html';
+          } catch (error) {
+            console.error("Erro ao redirecionar para splash.html:", error);
+            alert("Erro ao acessar a página. Tente novamente.");
+            startButton.disabled = false;
           }
         });
       } else {
-        console.error("Autenticação do Firebase não disponível.");
-        alert("Erro crítico: Autenticação não disponível. Contate o suporte.");
+        // Usuário não logado: texto "logar" e redirecionar para sign/in.html
+        signButton.textContent = 'logar';
+        signButton.addEventListener('click', function () {
+          try {
+            window.location.href = 'sign/in.html';
+          } catch (error) {
+            console.error("Erro ao redirecionar para sign/in.html:", error);
+            alert("Erro ao acessar a página de login. Tente novamente.");
+          }
+        });
+
+        // Configuração do start-button para usuário não logado
+        startButton.disabled = false;
+        startButton.addEventListener('click', function () {
+          startButton.disabled = true;
+          try {
+            window.location.href = 'sign/in.html';
+          } catch (error) {
+            console.error("Erro ao redirecionar para sign/in.html:", error);
+            alert("Erro ao acessar a página de login. Tente novamente.");
+            startButton.disabled = false;
+          }
+        });
       }
     });
+  } else {
+    console.error("Autenticação do Firebase não disponível.");
+    alert("Erro crítico: Autenticação não disponível. Contate o suporte.");
+  }
+});
   </script>
 
   <!-- Configuração e Lógica do EmailJS para o formulário de contato -->
@@ -269,34 +299,39 @@
     }
 
     // Manipulação do formulário de contato com tratamento de erros
-    document.getElementById('contact-form').addEventListener('submit', function (event) {
-      event.preventDefault(); // Previne o envio padrão do formulário
+    document.addEventListener('DOMContentLoaded', function () {
+      const contactForm = document.getElementById('contact-form');
+      if (contactForm) {
+        contactForm.addEventListener('submit', function (event) {
+          event.preventDefault(); // Previne o envio padrão do formulário
 
-      // Obter o botão de submit do formulário
-      const submitButton = this.querySelector('button[type="submit"]');
-      if (!submitButton) {
-        console.error("Botão de submit não encontrado no formulário de contato.");
-        return;
-      }
+          const submitButton = this.querySelector('button[type="submit"]');
+          if (!submitButton) {
+            console.error("Botão de submit não encontrado no formulário de contato.");
+            return;
+          }
 
-      // Desabilita o botão enquanto envia o e-mail
-      submitButton.disabled = true;
+          submitButton.disabled = true;
 
-      try {
-        emailjs.sendForm("service_ek92wsg", "template_nlh8hkq", this)
-          .then(function () {
-            alert("Mensagem enviada com sucesso!");
-            document.getElementById('contact-form').reset();
-            submitButton.disabled = false; // Reabilita após o sucesso
-          }, function (error) {
-            console.error("Erro ao enviar mensagem:", error);
-            alert("Erro ao enviar mensagem. Tente novamente.");
-            submitButton.disabled = false; // Reabilita em caso de erro
-          });
-      } catch (error) {
-        console.error("Erro no envio do formulário:", error);
-        alert("Erro inesperado. Tente novamente mais tarde.");
-        submitButton.disabled = false; // Reabilita em caso de erro
+          try {
+            emailjs.sendForm("service_ek92wsg", "template_nlh8hkq", this)
+              .then(function () {
+                alert("Mensagem enviada com sucesso!");
+                contactForm.reset();
+                submitButton.disabled = false;
+              }, function (error) {
+                console.error("Erro ao enviar mensagem:", error);
+                alert("Erro ao enviar mensagem. Tente novamente.");
+                submitButton.disabled = false;
+              });
+          } catch (error) {
+            console.error("Erro no envio do formulário:", error);
+            alert("Erro inesperado. Tente novamente mais tarde.");
+            submitButton.disabled = false;
+          }
+        });
+      } else {
+        console.error("Formulário de contato não encontrado.");
       }
     });
   </script>
