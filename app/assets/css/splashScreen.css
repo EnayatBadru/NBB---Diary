@@ -1,0 +1,124 @@
+:root {
+    --background-color: #B3E5FC; /* serenidade, calma, confiança e tranquilidade */
+    --button-color: #A8D5BA;     /* paz, harmonia, natureza, renovação */
+    --destaque-color: #D6CDEA;   /* sutileza, versatilidade, tranquilidade, neutralidade */
+    --primary-color: #ffffff;    /* limpeza, ordem, simplicidade */
+    --secondary-color: #f2f2f2;   /* sutileza, versatilidade, tranquilidade, neutralidade */
+  }
+  
+  /* Reset básico */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  html, body {
+    width: 100%;
+    height: 100%;
+  }
+  body {
+    font-family: 'Arial', sans-serif;
+    background: var(--background-color);
+    overflow: hidden;
+  }
+  
+  /* Container da splash com animação de fundo */
+  .container-splash {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100%;
+    background: var(--background-color);
+    animation: bgAnimation 8s infinite alternate;
+  }
+  
+  /* Animação de fundo alternando entre as cores */
+  @keyframes bgAnimation {
+    0% {
+      background: var(--background-color);
+    }
+    100% {
+      background: var(--secondary-color);
+    }
+  }
+  
+  /* Conteúdo centralizado e com fade-in */
+  .content {
+    text-align: center;
+    opacity: 0;
+    animation: fadeIn 2s forwards;
+    animation-delay: 0.5s;
+  }
+  
+  /* Estilo e animação para a logo */
+  .logo {
+    width: 250px; /* tamanho padrão para mobile */
+    max-width: 100%;
+    opacity: 0;
+    transform: scale(0.5);
+    animation: logoAnimation 2s forwards;
+  }
+  
+  @keyframes logoAnimation {
+    0% {
+      opacity: 0;
+      transform: scale(0.5);
+    }
+    60% {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
+  /* Estilo e animação para a tagline */
+  .tagline {
+    margin-top: 20px;
+    font-size: 1.2em;
+    color: #1d2b3a;
+    opacity: 0;
+    animation: taglineAnimation 2s forwards;
+    animation-delay: 1.5s;
+  }
+  
+  @keyframes taglineAnimation {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Animação de fade-in para o conteúdo */
+  @keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  
+  /* Classe para fade-out do container */
+  .fade-out {
+    animation: fadeOutAnimation 1s forwards;
+  }
+  
+  @keyframes fadeOutAnimation {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  
+  /* Responsividade: logo maior em telas maiores */
+  @media (min-width: 768px) {
+    .logo {
+      width: 250px;
+    }
+    .tagline {
+      font-size: 1.5em;
+    }
+  }
+  
