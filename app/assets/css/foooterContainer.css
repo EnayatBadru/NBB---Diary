@@ -36,6 +36,17 @@
   color: var(--button-color);
 }
 
+.socialMedia span.icon{
+  width: 30px;
+  height: 30px;
+}
+
+.socialMedia span.icon img.icon-img,
+span.icon img.icon-img{
+  width: 100%;
+  height: 100%;
+}
+
 @media screen and (max-width: 840px) {
   #footer {
     justify-content: center;

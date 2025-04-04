@@ -86,6 +86,17 @@ span{
     justify-content: center;
 }
 
+span.icon{
+    width: 15px;
+    height: 15px;
+    color: #1d2b3a;
+}
+
+span.icon img.icon-img{
+    width: 100%;
+    height: 100%;
+}
+
 input:valid ~ label,
 input:focus ~ label{
     font-size: 0.7em;

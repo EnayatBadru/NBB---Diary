@@ -25,8 +25,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-auth-compat.js"></script>
 
     <!-- Bibliotecas -->
-    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js" defer></script>
-    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js" defer></script>
 
     <!-- Título -->
     <title>Cadastrar</title>
@@ -39,7 +37,9 @@
         <div class="user">
             <input type="text" name="user" id="user" minlength="3" maxlength="50" required autocomplete="email">
             <label for="user">
-                <span><ion-icon name="person-sharp"></ion-icon></span>
+                <span class="icon">
+                    <img src="../../assets/img/icons/envelope.png" alt="email-icon" class="icon-img">
+                  </span>
                 <span>email do usuário</span>
             </label>
         </div>
@@ -47,7 +47,9 @@
             <input type="password" name="password" id="password" minlength="8" maxlength="20" required
                 autocomplete="new-password">
             <label for="password">
-                <span><ion-icon name="key-sharp"></ion-icon></span>
+                <span class="icon">
+                    <img src="../../assets/img/icons/key.png" alt="key-icon" class="icon-img">
+                  </span>
                 <span>Senha</span>
             </label>
         </div>
@@ -55,7 +57,9 @@
             <input type="password" name="confirm-password" id="confirm-password" minlength="8" maxlength="20" required
                 autocomplete="new-password">
             <label for="confirm-password">
-                <span><ion-icon name="key-sharp"></ion-icon></span>
+                <span class="icon">
+                    <img src="../../assets/img/icons/key.png" alt="key-icon" class="icon-img">
+                  </span>
                 <span>Confirmar senha</span>
             </label>
         </div>
