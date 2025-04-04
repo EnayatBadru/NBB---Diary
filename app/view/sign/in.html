@@ -33,19 +33,19 @@
 </head>
 
 <body>
-  <form action="#" method="post" autocomplete="off">
+  <form action="#" method="post">
     <span class="title">login</span>
 
     <div class="user">
       <!-- Utilize o campo "user" para armazenar o email -->
-      <input type="text" name="user" id="user" minlength="3" maxlength="50" required="required" autocomplete="off">
+      <input type="text" name="user" id="user" minlength="3" maxlength="50" required="required" autocomplete="email">
       <label for="user">
         <span><ion-icon name="person-sharp"></ion-icon></span>
         <span>email do usuario</span>
       </label>
     </div>
     <div class="password">
-      <input type="password" name="password" id="password" minlength="8" maxlength="20" required="required" autocomplete="off">
+      <input type="password" name="password" id="password" minlength="8" maxlength="20" required="required" autocomplete="password">
       <label for="password">
         <span><ion-icon name="key-sharp"></ion-icon></span>
         <span>senha</span>
@@ -65,76 +65,66 @@
   </form>
 
   <script>
-    // Configuração do Firebase: substitua pelos dados do seu projeto
-    const firebaseConfig = {
-      apiKey: "AIzaSyAbKVhAbVOuzlPXpfYlCl8lRyXbxOeJqZE",
-      authDomain: "ndd-diary-2f5d6.firebaseapp.com",
-      projectId: "ndd-diary-2f5d6",
-      storageBucket: "ndd-diary-2f5d6.firebasestorage.app",
-      messagingSenderId: "582152839503",
-      appId: "1:582152839503:web:67f06b4aaee3041cdd253a",
-      measurementId: "G-H783JCC73Q"
-    };
+   // Configuração do Firebase
+   const firebaseConfig = {
+    apiKey: "AIzaSyAbKVhAbVOuzlPXpfYlCl8lRyXbxOeJqZE",
+    authDomain: "ndd-diary-2f5d6.firebaseapp.com",
+    projectId: "ndd-diary-2f5d6",
+    storageBucket: "ndd-diary-2f5d6.firebasestorage.app",
+    messagingSenderId: "582152839503",
+    appId: "1:582152839503:web:67f06b4aaee3041cdd253a",
+    measurementId: "G-H783JCC73Q"
+  };
 
-    console.log("Inicializando Firebase...");
-    // Inicializa o Firebase
-    firebase.initializeApp(firebaseConfig);
-    console.log("Firebase inicializado com sucesso.");
+  // Inicializa o Firebase
+  firebase.initializeApp(firebaseConfig);
 
-    // Referências aos elementos do formulário
-    const loginForm = document.querySelector('form');
-    const emailInput = document.getElementById('user');
-    const passwordInput = document.getElementById('password');
-    const googleLoginButton = document.getElementById('google-login');
+  // Referências
+  const loginForm = document.querySelector('form');
+  const emailInput = document.getElementById('user');
+  const passwordInput = document.getElementById('password');
+  const googleLoginButton = document.getElementById('google-login');
 
-    // Evento para login com email e senha
-    loginForm.addEventListener('submit', function (event) {
-      event.preventDefault(); // previne o envio padrão do formulário
-      const email = emailInput.value.trim();
-      const password = passwordInput.value.trim();
+  // Login com e-mail/senha
+  loginForm.addEventListener('submit', function (event) {
+    event.preventDefault();
 
-      console.log("Tentando login com email/senha...");
-      console.log("Email:", email);
-      console.log("Senha: ******");
+    const email = emailInput.value.trim();
+    const password = passwordInput.value.trim();
 
-      // Verifica se os campos não estão vazios
-      if (!email || !password) {
-        console.error("Email ou senha não foram preenchidos.");
-        alert("Por favor, preencha todos os campos.");
-        return;
-      }
+    if (!email || !password) {
+      alert("Por favor, preencha todos os campos.");
+      return;
+    }
 
-      firebase.auth().signInWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-          console.log("Autenticação com email/senha bem-sucedida.");
-          const user = userCredential.user;
-          console.log("Usuário autenticado:", user);
-          alert("Login efetuado com sucesso! Bem-vindo, " + user.email);
-          // Aqui você pode redirecionar o usuário ou atualizar a interface
-        })
-        .catch((error) => {
-          console.error("Erro durante o login com email/senha:", error);
-          alert("Erro ao fazer login: " + error.message);
-        });
-    });
+    firebase.auth().signInWithEmailAndPassword(email, password)
+      .then((userCredential) => {
+        const user = userCredential.user;
+        alert("Login efetuado com sucesso! Bem-vindo, " + user.email);
 
-    // Evento para login com Google
-    googleLoginButton.addEventListener('click', function () {
-      console.log("Tentando login com Google...");
-      const provider = new firebase.auth.GoogleAuthProvider();
-      firebase.auth().signInWithPopup(provider)
-        .then((result) => {
-          console.log("Autenticação com Google bem-sucedida.");
-          const user = result.user;
-          console.log("Usuário autenticado com Google:", user);
-          alert("Login com Google efetuado com sucesso! Bem-vindo, " + user.email);
-          // Aqui você pode redirecionar o usuário ou atualizar a interface
-        })
-        .catch((error) => {
-          console.error("Erro durante o login com Google:", error);
-          alert("Erro ao fazer login com Google: " + error.message);
-        });
-    });
+        // Redireciona após login com e-mail/senha
+        window.location.href = "../customer/index.html";
+      })
+      .catch((error) => {
+        alert("Erro ao fazer login: " + error.message);
+      });
+  });
+
+  // Login com Google
+  googleLoginButton.addEventListener('click', function () {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    firebase.auth().signInWithPopup(provider)
+      .then((result) => {
+        const user = result.user;
+        alert("Login com Google efetuado com sucesso! Bem-vindo, " + user.email);
+
+        // Redireciona após login com Google
+        window.location.href = "../customer/index.html";
+      })
+      .catch((error) => {
+        alert("Erro ao fazer login com Google: " + error.message);
+      });
+  });
   </script>
 </body>
 

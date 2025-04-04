@@ -33,11 +33,11 @@
 </head>
 
 <body>
-    <form id="signup-form" autocomplete="off">
+    <form id="signup-form" autocomplete="on">
         <span class="title">Cadastrar</span>
 
         <div class="user">
-            <input type="text" name="user" id="user" minlength="3" maxlength="50" required autocomplete="off">
+            <input type="text" name="user" id="user" minlength="3" maxlength="50" required autocomplete="email">
             <label for="user">
                 <span><ion-icon name="person-sharp"></ion-icon></span>
                 <span>email do usuário</span>
@@ -45,7 +45,7 @@
         </div>
         <div class="password">
             <input type="password" name="password" id="password" minlength="8" maxlength="20" required
-                autocomplete="off">
+                autocomplete="new-password">
             <label for="password">
                 <span><ion-icon name="key-sharp"></ion-icon></span>
                 <span>Senha</span>
@@ -53,7 +53,7 @@
         </div>
         <div class="password">
             <input type="password" name="confirm-password" id="confirm-password" minlength="8" maxlength="20" required
-                autocomplete="off">
+                autocomplete="new-password">
             <label for="confirm-password">
                 <span><ion-icon name="key-sharp"></ion-icon></span>
                 <span>Confirmar senha</span>
@@ -97,14 +97,8 @@
             const password = passwordInput.value;
             const confirmPassword = confirmPasswordInput.value;
 
-            console.log("Tentando cadastrar novo usuário...");
-            console.log("Email:", email);
-            console.log("Senha:", password);
-            console.log("Confirmação de senha:", confirmPassword);
-
             // Verifica se as senhas coincidem
             if (password !== confirmPassword) {
-                console.error("Erro: As senhas não coincidem.");
                 alert("Erro: As senhas não coincidem.");
                 return;
             }
@@ -112,14 +106,13 @@
             // Cria o usuário com email e senha
             firebase.auth().createUserWithEmailAndPassword(email, password)
                 .then((userCredential) => {
-                    // Cadastro bem-sucedido
                     const user = userCredential.user;
-                    console.log("Usuário cadastrado com sucesso:", user);
                     alert("Cadastro efetuado com sucesso! Bem-vindo, " + user.email);
-                    // Aqui você pode redirecionar o usuário ou atualizar a interface
+
+                    // Redirecionar após o cadastro
+                    window.location.href = "../customer/index.html";
                 })
                 .catch((error) => {
-                    console.error("Erro durante o cadastro:", error.code, error.message);
                     alert("Erro ao cadastrar: " + error.message);
                 });
         });

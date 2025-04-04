@@ -35,6 +35,9 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
+    <!-- EmailJS Script -->
+    <script type="text/javascript" src="https://cdn.emailjs.com/dist/email.min.js"></script>
+
     <!-- Título -->
     <title>Dashboard</title>
 </head>
@@ -192,7 +195,7 @@
         }
 
         // Garantir que o DOM esteja pronto antes de manipular elementos
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Verificação do estado de autenticação
             if (firebase.auth) {
                 firebase.auth().onAuthStateChanged(user => {
@@ -207,7 +210,7 @@
 
                     if (user) {
                         // Usuário autenticado: redireciona para o dashboard
-                        startButton.addEventListener('click', function() {
+                        startButton.addEventListener('click', function () {
                             try {
                                 window.location.href = 'customer/index.html';
                             } catch (error) {
@@ -217,7 +220,7 @@
                         });
                     } else {
                         // Usuário não autenticado: redireciona para a página de login
-                        startButton.addEventListener('click', function() {
+                        startButton.addEventListener('click', function () {
                             try {
                                 window.location.href = 'sign/in.html';
                             } catch (error) {
@@ -231,6 +234,26 @@
                 console.error("Autenticação do Firebase não disponível.");
                 alert("Erro crítico: Autenticação não disponível. Contate o suporte.");
             }
+        });
+    </script>
+
+    <!-- Configuração e Lógica do EmailJS para o formulário de contato -->
+    <script>
+        // Inicializa o EmailJS com seu User ID ("NBB-Diary")
+        emailjs.init("NBB-Diary");
+
+        // Manipulação do formulário de contato
+        document.getElementById('contact-form').addEventListener('submit', function (event) {
+            event.preventDefault(); // Previne o envio padrão do formulário
+
+            emailjs.sendForm("service_ek92wsg", "template_nlh8hkq", this)
+                .then(function () {
+                    alert("Mensagem enviada com sucesso!");
+                    document.getElementById('contact-form').reset();
+                }, function (error) {
+                    console.error("Erro ao enviar mensagem:", error);
+                    alert("Erro ao enviar mensagem. Tente novamente.");
+                });
         });
     </script>
 </body>
