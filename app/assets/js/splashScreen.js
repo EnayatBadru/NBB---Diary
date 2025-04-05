@@ -17,7 +17,7 @@ const taglines = [
   "Cuide de si mesmo: bem-estar emocional facilitado pela tecnologia.",
   "Acesse recursos para sua saúde mental quando precisar.",
   "Sinta-se melhor agora, com o suporte emocional ao seu alcance.",
-  "Desperte sua paz interior com um simples clique."
+  "Desperte sua paz interior com um simples clique.",
 ];
 
 window.addEventListener("load", () => {
@@ -34,7 +34,9 @@ window.addEventListener("load", () => {
       if (container) {
         container.classList.add("fade-out");
         setTimeout(() => {
-          window.location.href = user ? "customer/index.html" : "dashboard.html";
+          window.location.href = user
+            ? "customer/index.html"
+            : "dashboard.html";
         }, 1000);
       }
     }, splashDuration);

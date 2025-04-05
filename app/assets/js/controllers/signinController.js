@@ -1,4 +1,7 @@
-import { loginWithEmailAndPassword, loginWithGoogle } from "../models/userModel.js";
+import {
+  loginWithEmailAndPassword,
+  loginWithGoogle,
+} from "../models/userModel.js";
 
 export function initSignIn() {
   const loginForm = document.querySelector("form");

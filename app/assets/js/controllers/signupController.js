@@ -7,7 +7,13 @@ export function initSignUp() {
   const confirmPasswordInput = document.getElementById("confirm-password");
   const userTypeSelect = document.getElementById("user-type");
 
-  if (!signupForm || !emailInput || !passwordInput || !confirmPasswordInput || !userTypeSelect) {
+  if (
+    !signupForm ||
+    !emailInput ||
+    !passwordInput ||
+    !confirmPasswordInput ||
+    !userTypeSelect
+  ) {
     console.error("Elementos do formulário de cadastro não encontrados.");
     return;
   }

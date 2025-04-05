@@ -12,14 +12,14 @@ export function initDashboard() {
 
     if (user) {
       signButton.textContent = "entrar";
-      signButton.onclick = () => window.location.href = "splash.html";
+      signButton.onclick = () => (window.location.href = "splash.html");
       startButton.disabled = false;
-      startButton.onclick = () => window.location.href = "splash.html";
+      startButton.onclick = () => (window.location.href = "splash.html");
     } else {
       signButton.textContent = "logar";
-      signButton.onclick = () => window.location.href = "sign/in.html";
+      signButton.onclick = () => (window.location.href = "sign/in.html");
       startButton.disabled = false;
-      startButton.onclick = () => window.location.href = "sign/in.html";
+      startButton.onclick = () => (window.location.href = "sign/in.html");
     }
   });
 }

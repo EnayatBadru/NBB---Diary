@@ -13,7 +13,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const submitButton = contactForm.querySelector("#submit-button");
       submitButton.disabled = true;
 
-      emailjs.sendForm("service_ek92wsg", "template_nlh8hkq", contactForm)
+      emailjs
+        .sendForm("service_ek92wsg", "template_nlh8hkq", contactForm)
         .then(() => {
           alert("Mensagem enviada com sucesso!");
           contactForm.reset();
