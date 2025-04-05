@@ -10,7 +10,9 @@
   <link rel="shortcut icon" href="../../assets/img/logo.png" type="image/x-icon" />
   <link rel="stylesheet" href="../../assets/css/default.css" />
   <link rel="stylesheet" href="../../assets/css/sign.css" />
-  <title>Cadastrar Usuario</title>
+  <link rel="stylesheet" href="../../assets/css/signup.css" />
+
+  <title>Cadastrar</title>
 </head>
 
 <body>
@@ -40,12 +42,13 @@
       </label>
     </div>
     <div class="select-role">
-      <label for="user-type">Tipo de usuário:</label>
       <select id="user-type" required>
         <option value="" disabled selected>Selecione</option>
         <option value="paciente">Paciente</option>
         <option value="psicologo">Psicólogo</option>
       </select>
+
+      <!-- <label for="user-type" class="container__label">Tipo de usuário:</label> -->
     </div>
     <div class="footerForm">
       <button type="submit">Cadastrar</button>
