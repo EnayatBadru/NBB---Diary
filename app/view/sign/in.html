@@ -1,138 +1,50 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- metaTags -->
-  <meta name="description" content="sign in - faca o login no sistem NDD-Diary,
-    é um sistema de diario virtual para pessoas que precisam de ajuda de um profissional de saude mental">
-  <meta name="keywords" content="psychologist, psicologia, saúde mental, cerebro, NDD, Diary, NDD-Diary">
-
-  <!-- author -->
+  <meta name="description" content="sign in - faça o login no sistema NDD-Diary, um diário virtual para pessoas que precisam de ajuda de um profissional de saúde mental">
+  <meta name="keywords" content="psychologist, psicologia, saúde mental, cérebro, NDD, Diary, NDD-Diary">
   <meta name="author" content="NBB">
-
-  <!-- favicons -->
   <link rel="shortcut icon" href="../../assets/img/logo.png" type="image/x-icon">
-
-  <!-- css -->
   <link rel="stylesheet" href="../../assets/css/default.css">
   <link rel="stylesheet" href="../../assets/css/sign.css">
-
-  <!-- Firebase Scripts (Versão 8.x) -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
-  <!-- frameworks -->
-
-  <!-- title -->
   <title>sign in</title>
 </head>
-
 <body>
   <form action="#" method="post">
     <span class="title">login</span>
-
     <div class="user">
-      <input type="text" name="user" id="user" minlength="3" maxlength="50" required="required" autocomplete="email">
+      <input type="text" name="user" id="user" minlength="3" maxlength="50" required autocomplete="email">
       <label for="user">
-        <span class="icon">
-          <img src="../../assets/img/icons/envelope.png" alt="email-icon" class="icon-img">
-        </span>
-        <span>email do usuario</span>
+        <span class="icon"><img src="../../assets/img/icons/envelope.png" alt="email-icon" class="icon-img"></span>
+        <span>email do usuário</span>
       </label>
     </div>
     <div class="password">
-      <input type="password" name="password" id="password" minlength="8" maxlength="20" required="required" autocomplete="password">
+      <input type="password" name="password" id="password" minlength="8" maxlength="20" required autocomplete="current-password">
       <label for="password">
-        <span class="icon">
-          <img src="../../assets/img/icons/key.png" alt="key-icon" class="icon-img">
-        </span>
+        <span class="icon"><img src="../../assets/img/icons/key.png" alt="key-icon" class="icon-img"></span>
         <span>senha</span>
       </label>
     </div>
     <div class="footerForm">
       <button type="submit">entrar</button>
       <button type="button" id="google-login">
-        <span class="icon">
-          <img src="../../assets/img/icons/google.png" alt="google-icon" class="icon-img">
-        </span>
+        <span class="icon"><img src="../../assets/img/icons/google.png" alt="google-icon" class="icon-img"></span>
         <span>entrar com google</span>
-    </button>
+      </button>
       <div class="account">
-        <span>Cria uma conta,</span>
+        <span>Criar uma conta,</span>
         <span><a href="up.html">cadastrar!</a></span>
       </div>
-      <span class="forgot">
-        <a href="forgotPassword.html">Esqueceu a senha?</a>
-      </span>
+      <span class="forgot"><a href="forgotPassword.html">Esqueceu a senha?</a></span>
     </div>
   </form>
-
-  <script>
-   // Configuração do Firebase
-   const firebaseConfig = {
-    apiKey: "AIzaSyAbKVhAbVOuzlPXpfYlCl8lRyXbxOeJqZE",
-    authDomain: "ndd-diary-2f5d6.firebaseapp.com",
-    projectId: "ndd-diary-2f5d6",
-    storageBucket: "ndd-diary-2f5d6.firebasestorage.app",
-    messagingSenderId: "582152839503",
-    appId: "1:582152839503:web:67f06b4aaee3041cdd253a",
-    measurementId: "G-H783JCC73Q"
-  };
-
-  // Inicializa o Firebase
-  firebase.initializeApp(firebaseConfig);
-
-  // Referências
-  const loginForm = document.querySelector('form');
-  const emailInput = document.getElementById('user');
-  const passwordInput = document.getElementById('password');
-  const googleLoginButton = document.getElementById('google-login');
-
-  // Login com e-mail/senha
-  loginForm.addEventListener('submit', function (event) {
-    event.preventDefault();
-
-    const email = emailInput.value.trim();
-    const password = passwordInput.value.trim();
-
-    if (!email || !password) {
-      alert("Por favor, preencha todos os campos.");
-      return;
-    }
-
-    firebase.auth().signInWithEmailAndPassword(email, password)
-      .then((userCredential) => {
-        const user = userCredential.user;
-        alert("Login efetuado com sucesso! Bem-vindo, " + user.email);
-
-        // Redireciona após login com e-mail/senha
-        window.location.href = "../splash.html";
-      })
-      .catch((error) => {
-        alert("Erro ao fazer login: " + error.message);
-      });
-  });
-
-  // Login com Google
-  googleLoginButton.addEventListener('click', function () {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    firebase.auth().signInWithPopup(provider)
-      .then((result) => {
-        const user = result.user;
-        alert("Login com Google efetuado com sucesso! Bem-vindo, " + user.email);
-
-        // Redireciona após login com Google
-        window.location.href = "../splash.html";
-      })
-      .catch((error) => {
-        alert("Erro ao fazer login com Google: " + error.message);
-      });
-  });
+  <script type="module" src="../../assets/js/firebaseConfig.js"></script>
+  <script type="module">
+    import { initSignIn } from "../../assets/js/controllers/signinController.js";
+    initSignIn();
   </script>
 </body>
-
 </html>

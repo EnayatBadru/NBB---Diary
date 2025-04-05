@@ -1,127 +1,60 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- Meta Tags -->
-    <meta name="description"
-        content="Cadastro - NDD-Diary, um sistema de diário virtual para pessoas que precisam de ajuda de um profissional de saúde mental.">
-    <meta name="keywords" content="psicologia, saúde mental, NDD, Diário, NDD-Diary">
-
-    <!-- Autor -->
-    <meta name="author" content="NBB">
-
-    <!-- Favicon -->
-    <link rel="shortcut icon" href="../../assets/img/logo.png" type="image/x-icon">
-
-    <!-- CSS -->
-    <link rel="stylesheet" href="../../assets/css/default.css">
-    <link rel="stylesheet" href="../../assets/css/sign.css">
-
-  <!-- Firebase Scripts (Versão 8.x) -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
-    <!-- Bibliotecas -->
-
-    <!-- Título -->
-    <title>Cadastrar</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Cadastro - NDD-Diary, diário virtual para saúde mental.">
+  <meta name="keywords" content="psicologia, saúde mental, NDD, Diário, NDD-Diary">
+  <meta name="author" content="NBB">
+  <link rel="shortcut icon" href="../../assets/img/logo.png" type="image/x-icon" />
+  <link rel="stylesheet" href="../../assets/css/default.css" />
+  <link rel="stylesheet" href="../../assets/css/sign.css" />
+  <title>Cadastrar</title>
 </head>
-
 <body>
-    <form id="signup-form" autocomplete="on">
-        <span class="title">Cadastrar</span>
-
-        <div class="user">
-            <input type="text" name="user" id="user" minlength="3" maxlength="50" required autocomplete="email">
-            <label for="user">
-                <span class="icon">
-                    <img src="../../assets/img/icons/envelope.png" alt="email-icon" class="icon-img">
-                  </span>
-                <span>email do usuário</span>
-            </label>
-        </div>
-        <div class="password">
-            <input type="password" name="password" id="password" minlength="8" maxlength="20" required
-                autocomplete="new-password">
-            <label for="password">
-                <span class="icon">
-                    <img src="../../assets/img/icons/key.png" alt="key-icon" class="icon-img">
-                  </span>
-                <span>Senha</span>
-            </label>
-        </div>
-        <div class="password">
-            <input type="password" name="confirm-password" id="confirm-password" minlength="8" maxlength="20" required
-                autocomplete="new-password">
-            <label for="confirm-password">
-                <span class="icon">
-                    <img src="../../assets/img/icons/key.png" alt="key-icon" class="icon-img">
-                  </span>
-                <span>Confirmar senha</span>
-            </label>
-        </div>
-        <div class="footerForm">
-            <button type="submit">Cadastrar</button>
-            <div class="account">
-                <span>Já possui uma conta?</span>
-                <span><a href="in.html">Entrar!</a></span>
-            </div>
-        </div>
-    </form>
-
-    <script>
-        // Configuração do Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyAbKVhAbVOuzlPXpfYlCl8lRyXbxOeJqZE",
-            authDomain: "ndd-diary-2f5d6.firebaseapp.com",
-            projectId: "ndd-diary-2f5d6",
-            storageBucket: "ndd-diary-2f5d6.firebasestorage.app",
-            messagingSenderId: "582152839503",
-            appId: "1:582152839503:web:67f06b4aaee3041cdd253a",
-            measurementId: "G-H783JCC73Q"
-        };
-
-        // Inicializa o Firebase
-        firebase.initializeApp(firebaseConfig);
-
-        // Referências aos elementos do formulário
-        const signupForm = document.getElementById('signup-form');
-        const emailInput = document.getElementById('user');
-        const passwordInput = document.getElementById('password');
-        const confirmPasswordInput = document.getElementById('confirm-password');
-
-        // Evento para cadastro de usuário
-        signupForm.addEventListener('submit', function (event) {
-            event.preventDefault(); // Previne o envio padrão do formulário
-
-            const email = emailInput.value;
-            const password = passwordInput.value;
-            const confirmPassword = confirmPasswordInput.value;
-
-            // Verifica se as senhas coincidem
-            if (password !== confirmPassword) {
-                alert("Erro: As senhas não coincidem.");
-                return;
-            }
-
-            // Cria o usuário com email e senha
-            firebase.auth().createUserWithEmailAndPassword(email, password)
-                .then((userCredential) => {
-                    const user = userCredential.user;
-                    alert("Cadastro efetuado com sucesso! Bem-vindo, " + user.email);
-
-                    // Redirecionar após o cadastro
-                    window.location.href = "../splash.html";
-                })
-                .catch((error) => {
-                    alert("Erro ao cadastrar: " + error.message);
-                });
-        });
-    </script>
+  <form id="signup-form" autocomplete="on">
+    <span class="title">Cadastrar</span>
+    <div class="user">
+      <input type="text" name="user" id="user" required minlength="3" maxlength="50" autocomplete="email">
+      <label for="user">
+        <span class="icon"><img src="../../assets/img/icons/envelope.png" alt="email" class="icon-img"></span>
+        <span>Email do usuário</span>
+      </label>
+    </div>
+    <div class="password">
+      <input type="password" name="password" id="password" required minlength="8" maxlength="20" autocomplete="new-password">
+      <label for="password">
+        <span class="icon"><img src="../../assets/img/icons/key.png" alt="senha" class="icon-img"></span>
+        <span>Senha</span>
+      </label>
+    </div>
+    <div class="password">
+      <input type="password" name="confirm-password" id="confirm-password" required minlength="8" maxlength="20" autocomplete="new-password">
+      <label for="confirm-password">
+        <span class="icon"><img src="../../assets/img/icons/key.png" alt="senha" class="icon-img"></span>
+        <span>Confirmar senha</span>
+      </label>
+    </div>
+    <div class="select-role">
+      <label for="user-type">Tipo de usuário:</label>
+      <select id="user-type" required>
+        <option value="" disabled selected>Selecione</option>
+        <option value="paciente">Paciente</option>
+        <option value="psicologo">Psicólogo</option>
+      </select>
+    </div>
+    <div class="footerForm">
+      <button type="submit">Cadastrar</button>
+      <div class="account">
+        <span>Já possui uma conta?</span>
+        <span><a href="in.html">Entrar!</a></span>
+      </div>
+    </div>
+  </form>
+  <script type="module" src="../../assets/js/firebaseConfig.js"></script>
+  <script type="module">
+    import { initSignUp } from "../../assets/js/controllers/signupController.js";
+    initSignUp();
+  </script>
 </body>
-
 </html>

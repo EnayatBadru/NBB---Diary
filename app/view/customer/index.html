@@ -1,75 +1,34 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- metaTags -->
     <meta name="description" content="Dashboard">
     <meta name="keywords" content="Dashboard, PHP, MVC, CRUD">
-
-    <!-- author -->
     <meta name="author" content="NBB">
-    <!-- 
-    create by : 
-        * -- Umme Aymanah Abacar Nzé -- * (N)
-        * -- Edivânia Jarmindo Bila -- * (B)
-        * -- Enayatolah Agibo Badrú -- * (B)
-
-        (NBB) - Diary
-    
-        at 27.02.2025
-    -->
-
-    <!-- favicons -->
     <link rel="shortcut icon" href="../../assets/img/logo.png" type="image/x-icon">
-
-    <!-- css -->
     <link rel="stylesheet" href="../../assets/css/default.css">
     <link rel="stylesheet" href="../../assets/css/headerAnimation.css">
     <link rel="stylesheet" href="../../assets/css/customerIndex.css">
     <link rel="stylesheet" href="../../assets/css/foooterContainer.css">
-
-    <!-- js -->
-    <script src="../../assets/js/dashboard.js" defer></script>
-
-    <!-- Firebase Scripts (Versão 8.x) -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
-    <!-- api -->
-
-    <!-- title -->
     <title>Pagina Inicial</title>
 </head>
-
 <body id="body">
     <header id="header">
         <a href="../following.html" class="logoTxt">
-            <span>nbb</span>
-            <span>-</span>
-            <span>diary</span>
+            <span>nbb</span><span>-</span><span>diary</span>
         </a>
-
         <nav id="nav">
-            <button class="btn-mobile" type="menu">
-                <span class="toggle-menu"></span>
-            </button>
-
+            <button class="btn-mobile" type="menu"><span class="toggle-menu"></span></button>
             <ul id="menu">
                 <li><a href="#">agendar consultas</a></li>
                 <li><a href="#">mensagens</a></li>
                 <li><a href="#">exercicios</a></li>
                 <li><a href="#">perfil</a></li>
-                <li>
-                    <button type="button" class="sign-out">sair</button>
-                </li>
+                <li><button type="button" class="sign-out">sair</button></li>
             </ul>
         </nav>
     </header>
-
     <main id="main">
         <section id="welcome">
             <div class="welcome">
@@ -83,86 +42,44 @@
                 </div>
             </div>
         </section>
-
         <section id="historyDay">
             <div class="title">Gráfico de Actividades</div>
-            <div class="container_HistoryDay">
-                <!-- Conteúdo do gráfico -->
-            </div>
+            <div class="container_HistoryDay"></div>
         </section>
-
         <section id="history">
             <p class="title">Histórico de Consultas</p>
             <div class="history_container">
-                <div class="create">
-                    <a href="#" class="btn_create"></a>
-                </div>
+                <div class="create"><a href="#" class="btn_create"></a></div>
                 <div class="container_history">
                     <div class="card">
                         <div class="header_card">
-                            <span class="icon">
-                                <img src="../../assets/img/icons/calendar.png" alt="calendario-icon" class="icon-img">
-                            </span>
-                            <div class="title_card">
-                                <p>Marcação</p>
-                            </div>
+                            <span class="icon"><img src="../../assets/img/icons/calendar.png" alt="calendario-icon" class="icon-img"></span>
+                            <div class="title_card"><p>Marcação</p></div>
                         </div>
                         <div class="main_card">
-                            <div class="type">
-                                <span class="card_text">Consulta: </span>
-                                <span class="card_result">Agendada</span>
-                            </div>
-                            <div class="type">
-                                <span class="card_text">Data: </span>
-                                <span class="card_result">02.04.2025 </span>
-                            </div>
-                            <div class="type">
-                                <span class="card_text">Tipo: </span>
-                                <span class="card_result">Normal</span>
-                            </div>
-                            <div class="type">
-                                <span class="card_text">Psicólogo: </span>
-                                <span class="card_result">Edivânia Jarmindo</span>
-                            </div>
+                            <div class="type"><span class="card_text">Consulta: </span><span class="card_result">Agendada</span></div>
+                            <div class="type"><span class="card_text">Data: </span><span class="card_result">02.04.2025</span></div>
+                            <div class="type"><span class="card_text">Tipo: </span><span class="card_result">Normal</span></div>
+                            <div class="type"><span class="card_text">Psicólogo: </span><span class="card_result">Edivânia Jarmindo</span></div>
                         </div>
-                        <div class="footer_card">
-                            <button type="button" class="btn_card">Cancelar Consulta</button>
-                        </div>
+                        <div class="footer_card"><button type="button" class="btn_card">Cancelar Consulta</button></div>
                     </div>
-
                     <div class="card">
                         <div class="header_card">
-                            <span class="icon">
-                                <img src="../../assets/img/icons/calendar.png" alt="calendario-icon" class="icon-img">
-                            </span>
-                            <div class="title_card">
-                                <p>Marcação</p>
-                            </div>
+                            <span class="icon"><img src="../../assets/img/icons/calendar.png" alt="calendario-icon" class="icon-img"></span>
+                            <div class="title_card"><p>Marcação</p></div>
                         </div>
                         <div class="main_card">
-                            <div class="type">
-                                <span class="card_text">Consulta: </span>
-                                <span class="card_result">Finalizada</span>
-                            </div>
-                            <div class="type">
-                                <span class="card_text">Data: </span>
-                                <span class="card_result">20.03.2025 </span>
-                            </div>
-                            <div class="type">
-                                <span class="card_text">Tipo: </span>
-                                <span class="card_result">Urgente</span>
-                            </div>
-                            <div class="type">
-                                <span class="card_text">Psicólogo: </span>
-                                <span class="card_result">Umme Aymanah</span>
-                            </div>
+                            <div class="type"><span class="card_text">Consulta: </span><span class="card_result">Finalizada</span></div>
+                            <div class="type"><span class="card_text">Data: </span><span class="card_result">20.03.2025</span></div>
+                            <div class="type"><span class="card_text">Tipo: </span><span class="card_result">Urgente</span></div>
+                            <div class="type"><span class="card_text">Psicólogo: </span><span class="card_result">Umme Aymanah</span></div>
                         </div>
-                        <div class="footer_card">
-                            <button type="button" class="btn_card">Cancelar Consulta</button>
-                        </div>
+                        <div class="footer_card"><button type="button" class="btn_card">Cancelar Consulta</button></div>
                     </div>
-
                 </div>
+Bundling failed: Cannot find module '../../assets/js/controllers/customerIndexController.js' from '../../assets/js/controllers/signinController.js'
+
             </div>
         </section>
     </main>
@@ -170,100 +87,17 @@
         <div class="footerCopy">
             <p>todos os direitos reservados:</p>
             <p class="nameFooter">nbb - diary</p>
-            <p class="copyRight">&copy;2025 - nbb diary</p>
+            <p class="copyRight">©2025 - nbb diary</p>
         </div>
-
         <div class="socialMedia">
-            <span class="icon">
-                <abbr title="whatsapp">
-                    <a href="">
-                        <span>
-                            <img src="../../assets/img/icons/whatsapp.png" alt="whatsapp-icon" class="icon-img">
-                        </span>
-                    </a>
-                </abbr>
-            </span>
-            <span class="icon">
-                <abbr title="facebook">
-                    <a href="">
-                        <span>
-                            <img src="../../assets/img/icons/facebook (1).png" alt="facebook-icon" class="icon-img">
-                        </span>
-                    </a>
-                </abbr>
-            </span>
-            <span class="icon">
-                <abbr title="instagram">
-                    <a href="">
-                        <span>
-                            <img src="../../assets/img/icons/instagram (1).png" alt="instagram-icon" class="icon-img">
-                        </span>
-                    </a>
-                </abbr>
-            </span>
-            <span class="icon">
-                <abbr title="youtube">
-                    <a href="">
-                        <span>
-                            <img src="../../assets/img/icons/youtube (2).png" alt="youtube-icon" class="icon-img">
-                        </span>
-                    </a>
-                </abbr>
-            </span>
+            <span class="icon"><abbr title="whatsapp"><a href=""><span><img src="../../assets/img/icons/whatsapp.png" alt="whatsapp-icon" class="icon-img"></span></a></abbr></span>
+            <span class="icon"><abbr title="facebook"><a href=""><span><img src="../../assets/img/icons/facebook (1).png" alt="facebook-icon" class="icon-img"></span></a></abbr></span>
+            <span class="icon"><abbr title="instagram"><a href=""><span><img src="../../assets/img/icons/instagram (1).png" alt="instagram-icon" class="icon-img"></span></a></abbr></span>
+            <span class="icon"><abbr title="youtube"><a href=""><span><img src="../../assets/img/icons/youtube (2).png" alt="youtube-icon" class="icon-img"></span></a></abbr></span>
         </div>
     </footer>
-
-    <!-- Configuração e Lógica do Firebase -->
-    <script>
-        // Configurações do Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyAbKVhAbVOuzlPXpfYlCl8lRyXbxOeJqZE",
-            authDomain: "ndd-diary-2f5d6.firebaseapp.com",
-            projectId: "ndd-diary-2f5d6",
-            storageBucket: "ndd-diary-2f5d6.firebasestorage.app",
-            messagingSenderId: "582152839503",
-            appId: "1:582152839503:web:67f06b4aaee3041cdd253a",
-            measurementId: "G-H783JCC73Q"
-        };
-
-        // Inicialização do Firebase com tratamento de erro
-        try {
-            firebase.initializeApp(firebaseConfig);
-            console.log("Firebase inicializado com sucesso!");
-        } catch (error) {
-            console.error("Erro ao inicializar o Firebase:", error);
-            alert("Ocorreu um erro ao carregar a aplicação. Por favor, tente novamente mais tarde.");
-        }
-
-        // Tratamento global de erros
-        window.onerror = function (msg, url, lineNo, columnNo, error) {
-            console.error("Erro global: ", msg, " em ", url, " linha:", lineNo, " coluna:", columnNo, " erro:", error);
-            return false;
-        };
-
-        // Verifica o DOM e configura o evento do botão de sign out
-        document.addEventListener('DOMContentLoaded', function () {
-            const signOutBtn = document.querySelector('.sign-out');
-            if (!signOutBtn) {
-                console.error("Botão 'sign-out' não encontrado.");
-                return;
-            }
-            signOutBtn.addEventListener('click', function () {
-                // Desabilita o botão para evitar cliques duplicados
-                signOutBtn.disabled = true;
-                firebase.auth().signOut()
-                    .then(() => {
-                        // Sign out realizado com sucesso; redireciona para a tela inicial
-                        window.location.href = "../splash.html";
-                    })
-                    .catch(error => {
-                        console.error("Erro ao efetuar sign out:", error);
-                        alert("Erro ao sair da sessão. Tente novamente.");
-                        signOutBtn.disabled = false; // Reabilita o botão em caso de erro
-                    });
-            });
-        });
-    </script>
+    <script src="../../assets/js/dashboard.js" defer></script>
+    <script type="module" src="../../assets/js/firebaseConfig.js"></script>
+    <script type="module" src="../../assets/js/controllers/customerIndexController.js"></script>
 </body>
-
 </html>
