@@ -5,7 +5,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   createUserWithEmailAndPassword,
-  signOut
+  signOut,
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
 import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
@@ -35,16 +35,18 @@ export async function loginWithGoogle() {
   return { ...user, ...userData };
 }
 
-export async function signupWithEmailAndPassword(email, password, userType) {
+export async function signupWithEmailAndPassword(email, password, userType, userGender, userName) {
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);
   const user = userCredential.user;
   await setDoc(doc(db, "users", user.uid), {
     uid: user.uid,
     email: user.email,
     userType: userType,
+    gender: userGender,
+    name: userName,
     createdAt: new Date(),
   });
-  return { ...user, userType };
+  return { ...user, userType, gender: userGender, name: userName };
 }
 
 export async function signOutUser() {

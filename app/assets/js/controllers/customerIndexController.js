@@ -1,4 +1,4 @@
-import { signOutUser } from "../models/userModel.js";
+import { subscribeToAuthChanges, signOutUser } from "../models/userModel.js";
 
 export function initCustomerIndex() {
   const signOutBtn = document.querySelector(".sign-out");
@@ -15,6 +15,42 @@ export function initCustomerIndex() {
       alert("Erro ao fazer logout: " + error.message);
     }
   });
+
+  // Obter dados do usuário e atualizar a mensagem de boas-vindas
+  subscribeToAuthChanges((user) => {
+    if (user) {
+      const greeting = getGreeting();
+      const welcomePronoun = user.gender === "masculino" ? "bem-vindo" : "bem-vinda";
+      const welcomeMessage = `${greeting}, ${user.name}! Seja ${welcomePronoun} ao NBB - Diary`;
+
+      const welcomeElement = document.querySelector("#welcome .container_welcome");
+      if (welcomeElement) {
+        welcomeElement.innerHTML = `
+          <span class="first">${greeting}</span>
+          <span class="second">${user.name}</span>
+          <span class="third">Seja ${welcomePronoun} ao</span>
+          <span class="logo">NBB - Diary</span>
+        `;
+      } else {
+        console.error("Elemento '.container_welcome' não encontrado.");
+      }
+    } else {
+      // Redirecionar para a página de login se não houver usuário autenticado
+      window.location.href = "../splash.html";
+    }
+  });
+}
+
+// Função para determinar a saudação com base no horário
+function getGreeting() {
+  const hour = new Date().getHours(); // Usa o fuso horário local do usuário
+  if (hour >= 5 && hour < 12) {
+    return "Bom dia";
+  } else if (hour >= 12 && hour < 18) {
+    return "Boa tarde";
+  } else {
+    return "Boa noite";
+  }
 }
 
 document.addEventListener("DOMContentLoaded", initCustomerIndex);

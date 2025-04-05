@@ -4,14 +4,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Cadastro - NDD-Diary, diário virtual para saúde mental.">
-  <meta name="keywords" content="psicologia, saúde mental, NDD, Diário, NDD-Diary">
-  <meta name="author" content="NBB">
+  <meta name="description" content="Cadastro - NDD-Diary, diário virtual para saúde mental." />
+  <meta name="keywords" content="psicologia, saúde mental, NDD, Diário, NDD-Diary" />
+  <meta name="author" content="NBB" />
   <link rel="shortcut icon" href="../../assets/img/logo.png" type="image/x-icon" />
   <link rel="stylesheet" href="../../assets/css/default.css" />
   <link rel="stylesheet" href="../../assets/css/sign.css" />
   <link rel="stylesheet" href="../../assets/css/signup.css" />
-
   <title>Cadastrar</title>
 </head>
 
@@ -19,36 +18,46 @@
   <form id="signup-form" autocomplete="on">
     <span class="title">Cadastrar</span>
     <div class="user">
-      <input type="text" name="user" id="user" required minlength="3" maxlength="50" autocomplete="email">
+      <input type="text" name="userName" id="userName" required minlength="3" maxlength="50" autocomplete="username" />
+      <label for="userName">
+        <span class="icon"><img src="../../assets/img/icons/user.png" alt="nome" class="icon-img"></span>
+        <span>Nome do usuário</span>
+      </label>
+    </div>
+    <div class="email">
+      <input type="email" name="user" id="user" required minlength="3" maxlength="50" autocomplete="email" />
       <label for="user">
         <span class="icon"><img src="../../assets/img/icons/envelope.png" alt="email" class="icon-img"></span>
         <span>Email do usuário</span>
       </label>
     </div>
     <div class="password">
-      <input type="password" name="password" id="password" required minlength="8" maxlength="20"
-        autocomplete="new-password">
+      <input type="password" name="password" id="password" required minlength="8" maxlength="20" autocomplete="new-password" />
       <label for="password">
         <span class="icon"><img src="../../assets/img/icons/key.png" alt="senha" class="icon-img"></span>
         <span>Senha</span>
       </label>
     </div>
     <div class="password">
-      <input type="password" name="confirm-password" id="confirm-password" required minlength="8" maxlength="20"
-        autocomplete="new-password">
+      <input type="password" name="confirm-password" id="confirm-password" required minlength="8" maxlength="20" autocomplete="new-password" />
       <label for="confirm-password">
         <span class="icon"><img src="../../assets/img/icons/key.png" alt="senha" class="icon-img"></span>
         <span>Confirmar senha</span>
       </label>
     </div>
     <div class="select-role">
+      <select id="user-gender" required>
+        <option value="" disabled selected>Gênero</option>
+        <option value="masculino">Masculino</option>
+        <option value="feminino">Feminino</option>
+      </select>
+    </div>
+    <div class="select-role">
       <select id="user-type" required>
-        <option value="" disabled selected>Selecione</option>
+        <option value="" disabled selected>Tipo de usuário</option>
         <option value="paciente">Paciente</option>
         <option value="psicologo">Psicólogo</option>
       </select>
-
-      <!-- <label for="user-type" class="container__label">Tipo de usuário:</label> -->
     </div>
     <div class="footerForm">
       <button type="submit">Cadastrar</button>
