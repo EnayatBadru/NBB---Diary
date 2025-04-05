@@ -1,27 +1,3 @@
-:root {
-    --background-color: #B3E5FC; /* serenidade, calma, confiança e tranquilidade */
-    --button-color: #A8D5BA;     /* paz, harmonia, natureza, renovação */
-    --destaque-color: #D6CDEA;   /* sutileza, versatilidade, tranquilidade, neutralidade */
-    --primary-color: #ffffff;    /* limpeza, ordem, simplicidade */
-    --secondary-color: #f2f2f2;   /* sutileza, versatilidade, tranquilidade, neutralidade */
-  }
-  
-  /* Reset básico */
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-  html, body {
-    width: 100%;
-    height: 100%;
-  }
-  body {
-    font-family: 'Arial', sans-serif;
-    background: var(--background-color);
-    overflow: hidden;
-  }
-  
   /* Container da splash com animação de fundo */
   .container-splash {
     display: flex;
