@@ -20,7 +20,7 @@ async function handleFirstLogin(user) {
       email: user.email,
       name: user.displayName || "Usuário",
       gender: "não especificado", // Gênero padrão
-      userType: "user", // Tipo de usuário padrão
+      userType: "paciente", // Tipo de usuário padrão = paciente
       createdAt: new Date(),
     };
 
