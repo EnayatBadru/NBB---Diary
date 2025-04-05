@@ -20,14 +20,21 @@ export function initCustomerIndex() {
   subscribeToAuthChanges((user) => {
     if (user) {
       const greeting = getGreeting();
-      const welcomePronoun = user.gender === "masculino" ? "bem-vindo" : "bem-vinda";
-      const welcomeMessage = `${greeting}, ${user.name}! Seja ${welcomePronoun} ao NBB - Diary`;
+      let welcomePronoun;
+      if (user.gender === "masculino") {
+        welcomePronoun = "bem-vindo";
+      } else if (user.gender === "feminino") {
+        welcomePronoun = "bem-vinda";
+      } else {
+        welcomePronoun = "bem-vindo(a)"; // Neutro para "não especificado" (ex.: login com Google)
+      }
+      const welcomeMessage = `${greeting}, ${user.name || "Usuário"}! Seja ${welcomePronoun} ao NBB - Diary`;
 
       const welcomeElement = document.querySelector("#welcome .container_welcome");
       if (welcomeElement) {
         welcomeElement.innerHTML = `
           <span class="first">${greeting}</span>
-          <span class="second">${user.name}</span>
+          <span class="second">${user.name || "Usuário"}</span>
           <span class="third">Seja ${welcomePronoun} ao</span>
           <span class="logo">NBB - Diary</span>
         `;
