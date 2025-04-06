@@ -28,7 +28,7 @@ export function initSignIn() {
 
     try {
       await loginWithEmailAndPassword(email, password);
-      showPopup("success", "Login efetuado com sucesso!");
+      // showPopup("success", "Login efetuado com sucesso!");
       setTimeout(() => {
         window.location.href = "../splash.html";
       }, 2000);
