@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configurações - Sistema Moderno</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header class="header">
+    <div class="header__profile">
+      <img src="https://via.placeholder.com/80" alt="Foto do usuário" class="header__profile-img">
+      <div class="header__user-info">
+        <h1 class="header__user-name">Nome do Usuário</h1>
+        <p class="header__user-email">usuario@email.com</p>
+      </div>
+    </div>
+    <button class="btn btn--theme-toggle" id="themeToggle" aria-label="Alternar tema">🌙</button>
+  </header>
+
+  <div class="settings-container">
+    <nav class="settings-nav" role="navigation" aria-label="Menu de configurações">
+      <h2 class="settings-nav__title">Configurações</h2>
+      <ul class="settings-nav__list">
+        <li class="nav-item nav-item--active" data-section="perfil" tabindex="0" role="button">Perfil</li>
+        <li class="nav-item" data-section="conta" tabindex="0" role="button">Conta</li>
+        <li class="nav-item" data-section="notificacoes" tabindex="0" role="button">Notificações</li>
+        <li class="nav-item" data-section="privacidade" tabindex="0" role="button">Privacidade</li>
+        <li class="nav-item" data-section="aparencia" tabindex="0" role="button">Aparência</li>
+        <li class="nav-item" data-section="seguranca" tabindex="0" role="button">Segurança</li>
+        <li class="nav-item" data-section="idioma" tabindex="0" role="button">Idioma</li>
+        <li class="nav-item" data-section="backup" tabindex="0" role="button">Backup</li>
+        <li class="nav-item" data-section="integracoes" tabindex="0" role="button">Integrações</li>
+        <li class="nav-item" data-section="suporte" tabindex="0" role="button">Suporte</li>
+      </ul>
+    </nav>
+
+    <main class="settings-content" id="settingsContent" role="main">
+      <section id="perfil" class="settings-section settings-section--active" aria-labelledby="perfil-title">
+        <h3 id="perfil-title" class="settings-section__title">Perfil</h3>
+        <form class="settings-form" id="formPerfil" novalidate>
+          <fieldset class="form-group">
+            <legend class="form-group__legend">Informações Básicas</legend>
+            <div class="form-item">
+              <label for="nome" class="form-label">Nome Completo</label>
+              <input type="text" id="nome" class="form-input" placeholder="Digite seu nome" aria-required="true">
+            </div>
+            <div class="form-item">
+              <label for="bio" class="form-label">Biografia</label>
+              <textarea id="bio" class="form-textarea" placeholder="Escreva algo sobre você" rows="5" aria-describedby="bio-help"></textarea>
+              <span id="bio-help" class="form-help">Máximo de 250 caracteres.</span>
+            </div>
+            <div class="form-item">
+              <label for="foto" class="form-label">Foto de Perfil</label>
+              <input type="file" id="foto" class="form-file" accept="image/*">
+            </div>
+          </fieldset>
+          <button type="submit" class="btn btn--save">Salvar Alterações</button>
+        </form>
+      </section>
+
+      <section id="conta" class="settings-section" aria-labelledby="conta-title">
+        <h3 id="conta-title" class="settings-section__title">Conta</h3>
+        <form class="settings-form" id="formConta" novalidate>
+          <fieldset class="form-group">
+            <legend class="form-group__legend">Detalhes da Conta</legend>
+            <div class="form-item">
+              <label for="email" class="form-label">Email</label>
+              <input type="email" id="email" class="form-input" placeholder="seuemail@exemplo.com" aria-required="true">
+            </div>
+            <div class="form-item">
+              <label for="senha-atual" class="form-label">Senha Atual</label>
+              <input type="password" id="senha-atual" class="form-input" placeholder="Digite sua senha atual">
+            </div>
+            <div class="form-item">
+              <label for="senha-nova" class="form-label">Nova Senha</label>
+              <input type="password" id="senha-nova" class="form-input" placeholder="Digite sua nova senha">
+            </div>
+          </fieldset>
+          <button type="submit" class="btn btn--save">Salvar Alterações</button>
+        </form>
+      </section>
+
+      <section id="notificacoes" class="settings-section" aria-labelledby="notificacoes-title">
+        <h3 id="notificacoes-title" class="settings-section__title">Notificações</h3>
+        <form class="settings-form" id="formNotificacoes" novalidate>
+          <fieldset class="form-group">
+            <legend class="form-group__legend">Preferências de Notificação</legend>
+            <div class="form-item form-item--checkbox">
+              <input type="checkbox" id="email-notif" class="form-checkbox">
+              <label for="email-notif" class="form-label">Receber por Email</label>
+            </div>
+            <div class="form-item form-item--checkbox">
+              <input type="checkbox" id="push-notif" class="form-checkbox">
+              <label for="push-notif" class="form-label">Notificações Push</label>
+            </div>
+            <div class="form-item form-item--checkbox">
+              <input type="checkbox" id="sms-notif" class="form-checkbox">
+              <label for="sms-notif" class="form-label">Receber por SMS</label>
+            </div>
+          </fieldset>
+          <button type="submit" class="btn btn--save">Salvar Alterações</button>
+        </form>
+      </section>
+
+      <section id="privacidade" class="settings-section" aria-labelledby="privacidade-title">
+        <h3 id="privacidade-title" class="settings-section__title">Privacidade</h3>
+        <form class="settings-form" id="formPrivacidade" novalidate>
+          <fieldset class="form-group">
+            <legend class="form-group__legend">Configurações de Privacidade</legend>
+            <div class="form-item form-item--checkbox">
+              <input type="checkbox" id="perfil-publico" class="form-checkbox">
+              <label for="perfil-publico" class="form-label">Perfil Público</label>
+            </div>
+            <div class="form-item form-item--checkbox">
+              <input type="checkbox" id="dados-compartilhados" class="form-checkbox">
+              <label for="dados-compartilhados" class="form-label">Compartilhar Dados com Parceiros</label>
+            </div>
+            <div class="form-item">
+              <label for="visibilidade" class="form-label">Visibilidade do Perfil</label>
+              <select id="visibilidade" class="form-select">
+                <option value="publico">Público</option>
+                <option value="amigos">Apenas Amigos</option>
+                <option value="privado">Privado</option>
+              </select>
+            </div>
+          </fieldset>
+          <button type="submit" class="btn btn--save">Salvar Alterações</button>
+        </form>
+      </section>
+
+      <section id="aparencia" class="settings-section" aria-labelledby="aparencia-title">
+        <h3 id="aparencia-title" class="settings-section__title">Aparência</h3>
+        <form class="settings-form" id="formAparencia" novalidate>
+          <fieldset class="form-group">
+            <legend class="form-group__legend">Personalização</legend>
+            <div class="form-item">
+              <label for="tema" class="form-label">Tema</label>
+              <select id="tema" class="form-select">
+                <option value="claro">Claro</option>
+                <option value="escuro">Escuro</option>
+                <option value="sistema">Sistema</option>
+              </select>
+            </div>
+            <div class="form-item">
+              <label for="cor-primaria" class="form-label">Cor Primária</label>
+              <input type="color" id="cor-primaria" class="form-color" value="#1e90ff">
+            </div>
+            <div class="form-item">
+              <label for="tamanho-fonte" class="form-label">Tamanho da Fonte</label>
+              <input type="range" id="tamanho-fonte" class="form-range" min="12" max="20" value="16">
+            </div>
+          </fieldset>
+          <button type="submit" class="btn btn--save">Salvar Alterações</button>
+        </form>
+      </section>
+
+      <section id="seguranca" class="settings-section" aria-labelledby="seguranca-title">
+        <h3 id="seguranca-title" class="settings-section__title">Segurança</h3>
+        <form class="settings-form" id="formSeguranca" novalidate>
+          <fieldset class="form-group">
+            <legend class="form-group__legend">Opções de Segurança</legend>
+            <div class="form-item form-item--checkbox">
+              <input type="checkbox" id="autenticacao-2f" class="form-checkbox">
+              <label for="autenticacao-2f" class="form-label">Autenticação de Dois Fatores</label>
+            </div>
+            <div class="form-item">
+              <label for="timeout-sessao" class="form-label">Tempo Limite da Sessão (min)</label>
+              <input type="number" id="timeout-sessao" class="form-input" min="5" max="120" value="30">
+            </div>
+            <div class="form-item">
+              <label for="senha-seguranca" class="form-label">Nova Senha de Segurança</label>
+              <input type="password" id="senha-seguranca" class="form-input" placeholder="Digite uma senha forte">
+            </div>
+          </fieldset>
+          <button type="submit" class="btn btn--save">Salvar Alterações</button>
+        </form>
+      </section>
+
+      <section id="idioma" class="settings-section" aria-labelledby="idioma-title">
+        <h3 id="idioma-title" class="settings-section__title">Idioma</h3>
+        <form class="settings-form" id="formIdioma" novalidate>
+          <fieldset class="form-group">
+            <legend class="form-group__legend">Preferências de Idioma</legend>
+            <div class="form-item">
+              <label for="idioma" class="form-label">Idioma Principal</label>
+              <select id="idioma" class="form-select">
+                <option value="pt-BR">Português (Brasil)</option>
+                <option value="en-US">English (US)</option>
+                <option value="es-ES">Español (España)</option>
+                <option value="fr-FR">Français (France)</option>
+              </select>
+            </div>
+            <div class="form-item">
+              <label for="idioma-secundario" class="form-label">Idioma Secundário</label>
+              <select id="idioma-secundario" class="form-select">
+                <option value="nenhum">Nenhum</option>
+                <option value="pt-BR">Português (Brasil)</option>
+                <option value="en-US">English (US)</option>
+              </select>
+            </div>
+          </fieldset>
+          <button type="submit" class="btn btn--save">Salvar Alterações</button>
+        </form>
+      </section>
+
+      <section id="backup" class="settings-section" aria-labelledby="backup-title">
+        <h3 id="backup-title" class="settings-section__title">Backup</h3>
+        <form class="settings-form" id="formBackup" novalidate>
+          <fieldset class="form-group">
+            <legend class="form-group__legend">Configurações de Backup</legend>
+            <div class="form-item form-item--checkbox">
+              <input type="checkbox" id="backup-auto" class="form-checkbox">
+              <label for="backup-auto" class="form-label">Backup Automático</label>
+            </div>
+            <div class="form-item">
+              <label for="frequencia-backup" class="form-label">Frequência do Backup</label>
+              <select id="frequencia-backup" class="form-select">
+                <option value="diario">Diário</option>
+                <option value="semanal">Semanal</option>
+                <option value="mensal">Mensal</option>
+              </select>
+            </div>
+            <div class="form-item">
+              <label for="local-backup" class="form-label">Local de Armazenamento</label>
+              <input type="text" id="local-backup" class="form-input" placeholder="Ex.: Google Drive">
+            </div>
+          </fieldset>
+          <button type="submit" class="btn btn--save">Salvar Alterações</button>
+        </form>
+      </section>
+
+      <section id="integracoes" class="settings-section" aria-labelledby="integracoes-title">
+        <h3 id="integracoes-title" class="settings-section__title">Integrações</h3>
+        <form class="settings-form" id="formIntegracoes" novalidate>
+          <fieldset class="form-group">
+            <legend class="form-group__legend">Serviços Conectados</legend>
+            <div class="form-item form-item--checkbox">
+              <input type="checkbox" id="google-drive" class="form-checkbox">
+              <label for="google-drive" class="form-label">Google Drive</label>
+            </div>
+            <div class="form-item form-item--checkbox">
+              <input type="checkbox" id="dropbox" class="form-checkbox">
+              <label for="dropbox" class="form-label">Dropbox</label>
+            </div>
+            <div class="form-item">
+              <label for="api-key" class="form-label">Chave de API</label>
+              <input type="text" id="api-key" class="form-input" placeholder="Insira sua chave de API">
+            </div>
+          </fieldset>
+          <button type="submit" class="btn btn--save">Salvar Alterações</button>
+        </form>
+      </section>
+
+      <section id="suporte" class="settings-section" aria-labelledby="suporte-title">
+        <h3 id="suporte-title" class="settings-section__title">Suporte</h3>
+        <div class="settings-section__content">
+          <p>Precisa de ajuda? Entre em contato conosco ou acesse nossa base de conhecimento.</p>
+          <a href="#" class="btn btn--primary">Contato</a>
+          <a href="#" class="btn btn--secondary">Base de Conhecimento</a>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog class="modal" id="modalSuccess" aria-labelledby="modal-title">
+    <div class="modal__content">
+      <span class="modal__icon">✅</span>
+      <h4 id="modal-title" class="modal__title">Sucesso</h4>
+      <p class="modal__text">Suas alterações foram salvas com sucesso!</p>
+      <button class="btn btn--close" id="closeModal" aria-label="Fechar modal">OK</button>
+    </div>
+  </dialog>
+
+  <script src="scripts.js"></script>
+</body>
+</html>
