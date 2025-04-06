@@ -99,7 +99,7 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 3em;
-  position: absolute;
+  /* position: absolute; */
   width: 100vw;
   /* top: 135px; */
 }

@@ -1,4 +1,5 @@
 import { subscribeToAuthChanges } from "../models/userModel.js";
+import { showPopup } from "../popup.js";
 
 export function initDashboard() {
   subscribeToAuthChanges((user) => {
@@ -7,6 +8,7 @@ export function initDashboard() {
 
     if (!signButton || !startButton) {
       console.error("Botões 'sign' ou 'start-button' não encontrados.");
+      showPopup("error", "Erro ao carregar botões da interface.");
       return;
     }
 

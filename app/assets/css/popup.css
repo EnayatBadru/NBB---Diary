@@ -2,60 +2,69 @@
 @charset "UTF-8";
 
 /* google-font: poppins */
-@import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Poppins&display=swap");
 
 .popup__container {
-  position: absolute;
-  bottom: 0;
+  position: fixed;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, 50%) scale(0.1);
   width: 300px;
-  height: auto;
   padding: 0;
-  border-radius: 50%;
+  border-radius: 10px;
   overflow: hidden;
   opacity: 0;
   pointer-events: none;
+  font-family: 'Poppins', sans-serif;
+  background: #fff;
+  border: 1px solid #ccc;
 }
 
+/* animação de entrada */
 @keyframes popup-show {
   0% {
-    bottom: 0;
-    width: 25px;
-    height: 25px;
-    border-radius: 50%;
+    transform: translate(-100%, 50%) scale(0.1);
     opacity: 0;
   }
   50% {
-    bottom: 50%;
-    width: 25px;
-    height: 25px;
-    border-radius: 50%;
+    transform: translate(-70%, -25%) scale(0.1);
     opacity: 1;
   }
   100% {
-    bottom: 50%;
-    width: 300px;
-    height: auto;
-    border-radius: 10px;
+    transform: translate(-50%, -50%) scale(1);
     opacity: 1;
+  }
+}
+
+/* animação de saída */
+@keyframes popup-hide {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-100%, -40%) scale(0.9);
+    opacity: 0;
   }
 }
 
 .popup__container.active {
   animation: popup-show 0.6s ease-out forwards;
   pointer-events: auto;
-  background: #fff;
-  border: 1px solid #ccc;
+}
+
+.popup__container.closing {
+  animation: popup-hide 0.3s ease-in forwards;
 }
 
 .popup__content {
   display: flex;
   flex-direction: column;
-  gap: .1em;
+  gap: .5em;
   opacity: 0;
   transform: translateY(10px);
-  transition: opacity 0.3s ease-in-out 0.5s, transform 0.3s ease-in-out 0.5s;
+  transition: opacity 0.3s ease-in-out 0.4s,
+              transform 0.3s ease-in-out 0.4s;
 }
 
 .popup__container.active .popup__content {
@@ -63,82 +72,81 @@
   transform: translateY(0);
 }
 
+/* Header */
 .header__popup {
   display: flex;
   flex-direction: row;
-  align-items: center !important;
-  width: 100%;
-  height: auto;
+  align-items: center;
   gap: 10px;
   padding: 10px;
-  position: relative;
 }
+
 .header__popup img {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
   width: 25px;
   height: 25px;
   object-fit: cover;
 }
+
+/* Título posicionado ao lado do ícone */
 .header__popup .title {
   text-transform: uppercase;
   font-weight: bold;
-  height: auto;
-  width: auto;
-  position: absolute;
-  bottom: 0;
-  margin-top: 35px;
+  font-size: 1em;
+  color: inherit;
 }
 
+/* Main */
 .main__popup .mensagens {
   font-size: 0.9em;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
 }
+
+/* Footer */
 .footer__popup {
   text-align: center;
   padding: 10px;
 }
+
 .footer__popup button {
   padding: 5px 15px;
+  width: 50%;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-weight: bold;
 }
 
+/* Sucesso */
 #success {
   border-color: #c3e6cb;
   background-color: #e6ffed;
-}
-
-#success .title {
-  background-color: #e6ffed;
-  border: none;
 }
 
 #success .title,
 #success .mensagens {
   color: #155724;
 }
+
 #success button {
   background-color: #28a745;
   color: #fff;
 }
 
+/* Erro */
 #error {
   border-color: #f5c6cb;
   background-color: #fdecea;
-}
-
-#error .title {
-  background-color: #fdecea;
-  border: none;
 }
 
 #error .title,
 #error .mensagens {
   color: #721c24;
 }
+
 #error button {
   background-color: #c82333;
   color: #fff;

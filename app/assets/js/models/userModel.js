@@ -8,6 +8,16 @@ import {
   signOut,
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
 import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+import { showPopup } from "../popup.js";
+
+function isValidEmail(email) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
+function isValidPassword(password) {
+  return password.length >= 8;
+}
 
 async function handleFirstLogin(user) {
   const docRef = doc(db, "users", user.uid);
@@ -32,7 +42,8 @@ async function syncWithFirestore(userData) {
   try {
     await setDoc(doc(db, "users", userData.uid), userData);
   } catch (error) {
-    console.error("Erro ao sincronizar com o Firestore:", error);
+    console.error("Erro ao sincronizar com o Firestore:", error.message);
+    showPopup("error", "Erro ao salvar dados no servidor.");
   }
 }
 
@@ -50,14 +61,31 @@ export function subscribeToAuthChanges(callback) {
 
 export async function loginWithEmailAndPassword(email, password) {
   try {
+    if (!isValidEmail(email)) {
+      showPopup("error", "Email inválido.");
+      return;
+    }
+    if (!isValidPassword(password)) {
+      showPopup("error", "A senha deve ter pelo menos 8 caracteres.");
+      return;
+    }
+
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
     const userData = await fetchUserData(user.uid);
-
     localStorage.setItem("userData", JSON.stringify(userData));
+
     return { ...user, ...userData };
   } catch (error) {
-    throw new Error("Erro ao fazer login: " + error.message);
+    console.error("Erro no login:", error.message);
+    if (error.code === "auth/user-not-found") {
+      showPopup("error", "Usuário não encontrado.");
+    } else if (error.code === "auth/wrong-password") {
+      showPopup("error", "Senha incorreta.");
+    } else {
+      showPopup("error", "Erro ao fazer login. Tente novamente.");
+    }
+    throw error;
   }
 }
 
@@ -67,23 +95,33 @@ export async function loginWithGoogle() {
     const userCredential = await signInWithPopup(auth, provider);
     const user = userCredential.user;
     const userData = await fetchUserData(user.uid);
-
     localStorage.setItem("userData", JSON.stringify(userData));
     return { ...user, ...userData };
   } catch (error) {
-    throw new Error("Erro ao fazer login com Google: " + error.message);
+    console.error("Erro no login com Google:", error.message);
+    showPopup("error", "Erro ao fazer login com Google.");
+    throw error;
   }
 }
 
 export async function signupWithEmailAndPassword(email, password, userType, userGender, userName) {
   try {
+    if (!isValidEmail(email)) {
+      showPopup("error", "Email inválido.");
+      return;
+    }
+    if (!isValidPassword(password)) {
+      showPopup("error", "A senha deve ter pelo menos 8 caracteres.");
+      return;
+    }
+
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
     const userData = {
       uid: user.uid,
       email: user.email,
-      userType: userType,
+      userType,
       gender: userGender,
       name: userName,
       createdAt: new Date(),
@@ -94,7 +132,15 @@ export async function signupWithEmailAndPassword(email, password, userType, user
 
     return userData;
   } catch (error) {
-    throw new Error("Erro ao cadastrar: " + error.message);
+    console.error("Erro no cadastro:", error.message);
+    if (error.code === "auth/email-already-in-use") {
+      showPopup("error", "Este email já está em uso.");
+    } else if (error.code === "auth/weak-password") {
+      showPopup("error", "A senha é muito fraca.");
+    } else {
+      showPopup("error", "Erro ao cadastrar. Tente novamente.");
+    }
+    throw error;
   }
 }
 
@@ -103,7 +149,9 @@ export async function signOutUser() {
     await signOut(auth);
     localStorage.removeItem("userData");
   } catch (error) {
-    throw new Error("Erro ao fazer logout: " + error.message);
+    console.error("Erro ao fazer logout:", error.message);
+    showPopup("error", "Erro ao fazer logout. Tente novamente.");
+    throw error;
   }
 }
 
@@ -113,7 +161,8 @@ async function fetchUserData(uid) {
     const docSnap = await getDoc(docRef);
     return docSnap.exists() ? docSnap.data() : {};
   } catch (error) {
-    console.error("Erro ao buscar dados do usuário:", error);
+    console.error("Erro ao buscar dados do usuário:", error.message);
+    showPopup("error", "Erro ao carregar dados do usuário.");
     return {};
   }
 }

@@ -70,42 +70,40 @@
       </div>
     </div>
   </form>
+
+  <!-- POPUPS (mesmo em todos os arquivos) -->
   <div class="popup">
     <div class="popup__container" id="success">
       <div class="popup__content">
-
         <div class="header__popup">
           <img src="../../assets/img/icons/tick-mark.png" alt="tick">
           <span class="title">Sucesso</span>
         </div>
-
         <div class="main__popup">
           <span class="mensagens"></span>
         </div>
-
-        <div class="footer__popup">
-          <button onclick="closePopup('success')">Ok</button>
-        </div>
-
+        <!-- <div class="footer__popup">
+          <button type="button">Ok</button>
+        </div> -->
       </div>
     </div>
-
     <div class="popup__container" id="error">
       <div class="popup__content">
         <div class="header__popup">
-          <img src="../../assets/img/icons/error.png" alt="cross">
+          <img src="../../assets/img/icons/cross.png" alt="cross">
           <span class="title">Erro</span>
         </div>
         <div class="main__popup">
           <span class="mensagens"></span>
         </div>
-        <div class="footer__popup">
-          <button onclick="closePopup('error')">Ok</button>
-        </div>
+        <!-- <div class="footer__popup">
+          <button type="button">Ok</button>
+        </div> -->
       </div>
     </div>
   </div>
-  <script src="../../assets/js/popup.js"></script>
+
+  <script type="module" src="../../assets/js/popup.js"></script>
   <script type="module" src="../../assets/js/firebaseConfig.js"></script>
   <script type="module">
     import { initSignUp } from "../../assets/js/controllers/signupController.js";

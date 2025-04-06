@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,6 +14,7 @@
   <link rel="stylesheet" href="../../assets/css/popup.css">
   <title>sign in</title>
 </head>
+
 <body>
   <form action="#" method="post">
     <span class="title">login</span>
@@ -44,6 +46,8 @@
       <span class="forgot"><a href="forgotPassword.html">Esqueceu a senha?</a></span>
     </div>
   </form>
+
+  <!-- POPUPS (mesmo em todos os arquivos) -->
   <div class="popup">
     <div class="popup__container" id="success">
       <div class="popup__content">
@@ -54,31 +58,33 @@
         <div class="main__popup">
           <span class="mensagens"></span>
         </div>
-        <div class="footer__popup">
-          <button onclick="closePopup('success')">Ok</button>
-        </div>
+        <!-- <div class="footer__popup">
+          <button type="button">Ok</button>
+        </div> -->
       </div>
     </div>
     <div class="popup__container" id="error">
       <div class="popup__content">
         <div class="header__popup">
-          <img src="../../assets/img/icons/error.png" alt="cross">
+          <img src="../../assets/img/icons/cross.png" alt="cross">
           <span class="title">Erro</span>
         </div>
         <div class="main__popup">
           <span class="mensagens"></span>
         </div>
-        <div class="footer__popup">
-          <button onclick="closePopup('error')">Ok</button>
-        </div>
+        <!-- <div class="footer__popup">
+          <button type="button">Ok</button>
+        </div> -->
       </div>
     </div>
   </div>
-  <script src="../../assets/js/popup.js"></script>
+
+  <script type="module" src="../../assets/js/popup.js"></script>
   <script type="module" src="../../assets/js/firebaseConfig.js"></script>
   <script type="module">
     import { initSignIn } from "../../assets/js/controllers/signinController.js";
     initSignIn();
   </script>
 </body>
+
 </html>

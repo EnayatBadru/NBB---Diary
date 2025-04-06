@@ -1,5 +1,10 @@
 import { initDashboard } from "./controllers/dashboardController.js";
 
 document.addEventListener("DOMContentLoaded", () => {
-  initDashboard();
+  // console.log("Iniciando dashboard...");
+  try {
+    initDashboard();
+  } catch (error) {
+    console.error("Erro ao iniciar dashboard:", error);
+  }
 });

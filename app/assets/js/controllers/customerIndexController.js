@@ -1,4 +1,5 @@
 import { subscribeToAuthChanges, signOutUser } from "../models/userModel.js";
+import { showPopup } from "../popup.js";
 
 export function initCustomerIndex() {
   const signOutBtn = document.querySelector(".sign-out");
@@ -11,6 +12,7 @@ export function initCustomerIndex() {
         window.location.href = "../splash.html";
       }, 2000);
     } catch (error) {
+      console.error("Erro ao fazer logout:", error);
       showPopup("error", "Erro ao fazer logout. Tente novamente.");
     }
   });
@@ -46,6 +48,8 @@ function updateWelcomeMessage(user) {
       <span class="third">Seja ${welcomePronoun} ao</span>
       <span class="logo">NBB - Diary</span>
     `;
+  } else {
+    showPopup("error", "Elemento de boas-vindas não encontrado.");
   }
 }
 

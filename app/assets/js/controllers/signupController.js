@@ -1,3 +1,4 @@
+import { showPopup } from "../popup.js"; 
 import { signupWithEmailAndPassword } from "../models/userModel.js";
 
 export function initSignUp() {
@@ -24,6 +25,7 @@ export function initSignUp() {
 
   signupForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+
     const userName = userNameInput.value.trim();
     const email = emailInput.value.trim();
     const password = passwordInput.value;
@@ -31,6 +33,7 @@ export function initSignUp() {
     const userType = userTypeSelect.value;
     const userGender = userGenderSelect.value;
 
+    // Validações
     if (password !== confirmPassword) {
       showPopup("error", "As senhas não coincidem. Verifique e tente novamente.");
       return;

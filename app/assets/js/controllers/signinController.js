@@ -1,3 +1,4 @@
+import { showPopup } from "../popup.js";
 import {
   loginWithEmailAndPassword,
   loginWithGoogle,
@@ -16,6 +17,7 @@ export function initSignIn() {
 
   loginForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+
     const email = emailInput.value.trim();
     const password = passwordInput.value.trim();
 
@@ -31,6 +33,7 @@ export function initSignIn() {
         window.location.href = "../splash.html";
       }, 2000);
     } catch (error) {
+      console.error("Erro ao fazer login:", error);
       showPopup("error", "Erro ao fazer login. Verifique seu email e senha.");
     }
   });
@@ -43,6 +46,7 @@ export function initSignIn() {
         window.location.href = "../splash.html";
       }, 2000);
     } catch (error) {
+      console.error("Erro ao fazer login com Google:", error);
       showPopup("error", "Erro ao fazer login com Google. Tente novamente.");
     }
   });

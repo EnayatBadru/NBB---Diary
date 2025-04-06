@@ -22,9 +22,14 @@
   text-transform: uppercase;
   width: 80px;
   letter-spacing: 1px;
-  transition: all .2s ease;
   border-radius: 4px;
   cursor: pointer;
+  transition: all .2s ease;
+}
+
+#menu li button:hover{
+  opacity: .8;
+  transition: all .2s ease;
 }
 
 #welcome {
