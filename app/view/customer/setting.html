@@ -1,45 +1,162 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-
-    <title>Configurações do sistema</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Configurações do Sistema</title>
+    <link rel="stylesheet" href="../../assets/css/popup.css" />
+    <link rel="stylesheet" href="../../assets/css/settingStyle.css" />
 </head>
 
 <body>
-    <header id="header">
-        <a href="index.html" type="button">
-            <img src="../../assets/img/icons/angle-left.png" alt="arrowLeft-icon" class="icon-img">
-        </a>
-        <div class="container__header">
-            <button type="button" class="pic">
-                <img src="../../assets/img/icons/user.png" alt="user-icon" class="icon-img">
-            </button>
-            <div class="containerUserName">
-                <p class="userName">Nome do Usuário</p>
-                <p class="userEmail">usuario@email.com</p>
+    <header class="header">
+        <button class="btn-back">
+            <img src="../../assets/img/icons/angle-left.png" alt="Voltar" class="icon-img">
+        </button>
+        <div class="user-info">
+            <img src="assets/img/icons/user.png" alt="Foto do Perfil" class="profile-img">
+            <div class="user-details">
+                <p class="user-name">Nome do Usuário</p>
+                <p class="user-email">usuario@email.com</p>
             </div>
         </div>
     </header>
 
-    <div class="setting--container">
-        <nav class="setting-nav">
-            <h2 class="setting-nav__title">Configurações</h2>
-            <ul class="settings-nav__list">
-                <li class="nav-item nav-item--active" data-section="perfil" tabindex="0" role="button">Perfil</li>
-                <li class="nav-item" data-section="conta" tabindex="0" role="button">Conta</li>
-                <li class="nav-item" data-section="privacidade" tabindex="0" role="button">Privacidade</li>
-                <li class="nav-item" data-section="suporte" tabindex="0" role="button">Suporte</li>
+    <div class="container">
+        <nav class="sidebar">
+            <h2 class="sidebar-title">Configurações</h2>
+            <ul class="sidebar-list">
+                <li class="nav-item active" data-section="perfil">Perfil</li>
+                <li class="nav-item" data-section="conta">Conta</li>
+                <li class="nav-item" data-section="privacidade">Privacidade</li>
             </ul>
         </nav>
+
+        <main class="main-content">
+            <section id="perfil" class="section active">
+                <h2>Perfil</h2>
+                <form id="form-perfil">
+                    <div class="form-group">
+                        <label for="userName">Nome do Usuário:</label>
+                        <input type="text" id="userName" name="userName">
+                    </div>
+                    <div class="form-group">
+                        <label for="bio">Biografia:</label>
+                        <textarea id="bio" name="bio" rows="4"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="gender">Gênero:</label>
+                        <select id="gender" name="gender">
+                            <option value="" disabled selected>Selecione</option>
+                            <option value="masculino">Masculino</option>
+                            <option value="feminino">Feminino</option>
+                            <option value="outro">Outro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="userType">Tipo de Usuário:</label>
+                        <select id="userType" name="userType">
+                            <option value="" disabled selected>Selecione</option>
+                            <option value="paciente">Paciente</option>
+                            <option value="psicologo">Psicólogo</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="profilePic">Foto de Perfil:</label>
+                        <input type="file" id="profilePic" name="profilePic" accept="image/*">
+                    </div>
+                    <div class="form-group">
+                        <button type="submit">Salvar Perfil</button>
+                        <button type="button" class="close-popup-btn">
+                            <img src="../../assets/img/icons/cross.png" alt="cross" class="icon-img">
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <section id="conta" class="section">
+                <h2>Conta</h2>
+                <form id="form-conta">
+                    <div class="form-group">
+                        <label for="email">Email:</label>
+                        <input type="email" id="email" name="email">
+                    </div>
+                    <div class="form-group">
+                        <label for="currentPassword">Senha Atual:</label>
+                        <input type="password" id="currentPassword" name="currentPassword">
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassword">Nova Senha:</label>
+                        <input type="password" id="newPassword" name="newPassword">
+                    </div>
+                    <div class="form-group">
+                        <button type="submit">Salvar Conta</button>
+                        <button type="button" class="close-popup-btn">
+                            <img src="../../assets/img/icons/cross.png" alt="cross" class="icon-img">
+                        </button>
+                    </div>
+                    <div class="form-group">
+                        <button type="button" class="delete-account">Excluir Conta</button>
+                    </div>
+                </form>
+            </section>
+
+            <section id="privacidade" class="section">
+                <h2>Privacidade</h2>
+                <form id="form-privacidade">
+                    <div class="form-group">
+                        <label for="visibility">Visibilidade do Perfil:</label>
+                        <select id="visibility" name="visibility">
+                            <option value="publico">Público</option>
+                            <option value="privado">Privado</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <button type="submit">Salvar Privacidade</button>
+                        <button type="button" class="close-popup-btn">
+                            <img src="../../assets/img/icons/cross.png" alt="cross" class="icon-img">
+                        </button>
+                    </div>
+                </form>
+            </section>
+        </main>
     </div>
 
-    <main id="main">
-        
-    </main>
+    <div class="popup">
+        <div class="popup__container" id="success">
+            <div class="popup__content">
+                <div class="header__popup">
+                    <img src="../../assets/img/icons/tick-mark.png" alt="Ícone de sucesso">
+                    <span class="title">Sucesso</span>
+                </div>
+                <div class="main__popup">
+                    <span class="mensagens"></span>
+                </div>
+                <div class="footer__popup">
+                    <button type="button">Ok</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="popup__container" id="error">
+            <div class="popup__content">
+                <div class="header__popup">
+                    <img src="../../assets/img/icons/cross.png" alt="Ícone de erro">
+                    <span class="title">Erro</span>
+                </div>
+                <div class="main__popup">
+                    <span class="mensagens"></span>
+                </div>
+                <div class="footer__popup">
+                    <button type="button">Ok</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="../../assets/js/popup.js"></script>
+    <script src="../../assets/js/settingScripts.js"></script>
 </body>
 
 </html>
