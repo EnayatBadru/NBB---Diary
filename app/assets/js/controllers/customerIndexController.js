@@ -7,7 +7,7 @@ export function initCustomerIndex() {
   signOutBtn?.addEventListener("click", async () => {
     try {
       await signOutUser();
-      showPopup("success", "Logout realizado com sucesso!");
+      // showPopup("success", "Logout realizado com sucesso!");
       setTimeout(() => {
         window.location.href = "../splash.html";
       }, 2000);
