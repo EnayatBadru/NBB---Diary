@@ -14,10 +14,12 @@ export function initForgotPassword() {
 
     try {
       await sendPasswordResetEmail(auth, email);
-      alert("Um email de recuperação foi enviado para " + email);
-      window.location.href = "in.html";
+      showPopup("success", "Um email de recuperação foi enviado para " + email);
+      setTimeout(() => {
+        window.location.href = "in.html";
+      }, 2000);
     } catch (error) {
-      alert("Erro ao enviar email de recuperação: " + error.message);
+      showPopup("error", "Erro ao enviar email de recuperação. Verifique o email e tente novamente.");
     }
   });
 }

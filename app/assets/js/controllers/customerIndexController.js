@@ -3,42 +3,40 @@ import { subscribeToAuthChanges, signOutUser } from "../models/userModel.js";
 export function initCustomerIndex() {
   const signOutBtn = document.querySelector(".sign-out");
 
-  // Adiciona evento de logout
   signOutBtn?.addEventListener("click", async () => {
     try {
       await signOutUser();
-      window.location.href = "../splash.html";
+      showPopup("success", "Logout realizado com sucesso!");
+      setTimeout(() => {
+        window.location.href = "../splash.html";
+      }, 2000);
     } catch (error) {
-      alert("Erro ao fazer logout: " + error.message);
+      showPopup("error", "Erro ao fazer logout. Tente novamente.");
     }
   });
 
-  // Carrega os dados do usuário ao inicializar a página
   loadUserData();
 
-  // Monitora mudanças na autenticação
   subscribeToAuthChanges((user) => {
     if (user) {
-      updateWelcomeMessage(user); // Atualiza a mensagem de boas-vindas
+      updateWelcomeMessage(user);
     } else {
-      window.location.href = "../splash.html"; // Redireciona se não houver usuário
+      window.location.href = "../splash.html";
     }
   });
 }
 
-// Função para carregar os dados do usuário
 function loadUserData() {
   const userData = JSON.parse(localStorage.getItem("userData"));
   if (userData) {
-    updateWelcomeMessage(userData); // Atualiza a interface com os dados
+    updateWelcomeMessage(userData);
   }
 }
 
-// Atualiza a mensagem de boas-vindas com os dados do usuário
 function updateWelcomeMessage(user) {
   const greeting = getGreeting();
   const welcomePronoun = getWelcomePronoun(user.gender);
-  const userName = user.name || user.displayName || "Usuário"; // Usa o nome do Firestore ou do Google
+  const userName = user.name || user.displayName || "Usuário";
 
   const welcomeElement = document.querySelector("#welcome .container_welcome");
   if (welcomeElement) {
@@ -51,15 +49,13 @@ function updateWelcomeMessage(user) {
   }
 }
 
-// Determina o pronome de boas-vindas com base no gênero
 function getWelcomePronoun(gender) {
   return {
     masculino: "bem-vindo",
     feminino: "bem-vinda",
-  }[gender] || "bem-vindo(a)"; // Padrão neutro
+  }[gender] || "bem-vindo(a)";
 }
 
-// Determina a saudação com base no horário
 function getGreeting() {
   const hour = new Date().getHours();
   if (hour >= 5 && hour < 12) return "Bom dia";
@@ -67,5 +63,4 @@ function getGreeting() {
   return "Boa noite";
 }
 
-// Inicializa o controlador quando o DOM estiver pronto
 document.addEventListener("DOMContentLoaded", initCustomerIndex);

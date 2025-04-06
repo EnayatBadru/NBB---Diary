@@ -1,6 +1,6 @@
 try {
   emailjs.init("JbA_G0oiFC5nNy-3K");
-  console.log("EmailJS inicializado com sucesso!");
+  console.log("iniciado o EmailJS com sucesso:");
 } catch (error) {
   console.error("Erro ao inicializar o EmailJS:", error);
 }
@@ -16,13 +16,13 @@ document.addEventListener("DOMContentLoaded", () => {
       emailjs
         .sendForm("service_ek92wsg", "template_nlh8hkq", contactForm)
         .then(() => {
-          alert("Mensagem enviada com sucesso!");
+          showPopup("success", "Mensagem enviada com sucesso!");
           contactForm.reset();
           submitButton.disabled = false;
         })
         .catch((error) => {
           console.error("Erro ao enviar mensagem:", error);
-          alert("Erro ao enviar mensagem. Tente novamente.");
+          showPopup("error", "Erro ao enviar mensagem. Tente novamente mais tarde.");
           submitButton.disabled = false;
         });
     });

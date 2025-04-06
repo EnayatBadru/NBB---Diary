@@ -9,41 +9,41 @@ export function initSignIn() {
   const passwordInput = document.getElementById("password");
   const googleLoginButton = document.getElementById("google-login");
 
-  // Verifica se os elementos do formulário existem
   if (!loginForm || !emailInput || !passwordInput || !googleLoginButton) {
     console.error("Elementos do formulário de login não encontrados.");
     return;
   }
 
-  // Evento de envio do formulário para login com e-mail e senha
   loginForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const email = emailInput.value.trim();
     const password = passwordInput.value.trim();
 
-    // Validação dos campos
     if (!email || !password) {
-      alert("Por favor, preencha todos os campos.");
+      showPopup("error", "Por favor, preencha todos os campos.");
       return;
     }
 
     try {
       await loginWithEmailAndPassword(email, password);
-      alert("Login efetuado com sucesso!");
-      window.location.href = "../splash.html";
+      showPopup("success", "Login efetuado com sucesso!");
+      setTimeout(() => {
+        window.location.href = "../splash.html";
+      }, 2000);
     } catch (error) {
-      alert("Erro ao fazer login: " + error.message);
+      showPopup("error", "Erro ao fazer login. Verifique seu email e senha.");
     }
   });
 
-  // Evento de clique para login com Google
   googleLoginButton.addEventListener("click", async () => {
     try {
       await loginWithGoogle();
-      alert("Login com Google efetuado com sucesso!");
-      window.location.href = "../splash.html";
+      showPopup("success", "Login com Google efetuado com sucesso!");
+      setTimeout(() => {
+        window.location.href = "../splash.html";
+      }, 2000);
     } catch (error) {
-      alert("Erro ao fazer login com Google: " + error.message);
+      showPopup("error", "Erro ao fazer login com Google. Tente novamente.");
     }
   });
 }

@@ -32,27 +32,29 @@ export function initSignUp() {
     const userGender = userGenderSelect.value;
 
     if (password !== confirmPassword) {
-      alert("As senhas não coincidem.");
+      showPopup("error", "As senhas não coincidem. Verifique e tente novamente.");
       return;
     }
 
     if (!userType) {
-      alert("Por favor, selecione o tipo de usuário.");
+      showPopup("error", "Por favor, selecione o tipo de usuário.");
       return;
     }
 
     if (!userGender) {
-      alert("Por favor, selecione o gênero.");
+      showPopup("error", "Por favor, selecione o gênero.");
       return;
     }
 
     try {
       await signupWithEmailAndPassword(email, password, userType, userGender, userName);
-      alert(`Cadastro realizado como ${userType}!`);
-      window.location.href = "../splash.html";
+      showPopup("success", `Cadastro realizado com sucesso como ${userType}!`);
+      setTimeout(() => {
+        window.location.href = "../splash.html";
+      }, 2000);
     } catch (error) {
       console.error("Erro no cadastro:", error);
-      alert("Erro ao cadastrar: " + error.message);
+      showPopup("error", "Erro ao cadastrar. Verifique os dados e tente novamente.");
     }
   });
 }
