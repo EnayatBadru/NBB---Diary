@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../../assets/css/default.css">
+    <link rel="stylesheet" href="../../assets/css/popup.css">
     <link rel="stylesheet" href="../../assets/css/settingStyle.css">
 
     <title>Definições do Sistema</title>
@@ -130,6 +131,39 @@
         </section>
     </div>
 
+    <!-- POPUPS (mesmo em todos os arquivos) -->
+    <div class="popup">
+        <div class="popup__container" id="success">
+            <div class="popup__content">
+                <div class="header__popup">
+                    <img src="../assets/img/icons/tick-mark.png" alt="tick">
+                    <span class="title">Sucesso</span>
+                </div>
+                <div class="main__popup">
+                    <span class="mensagens"></span>
+                </div>
+                <div class="footer__popup">
+                    <button type="button">Ok</button>
+                </div>
+            </div>
+        </div>
+        <div class="popup__container" id="error">
+            <div class="popup__content">
+                <div class="header__popup">
+                    <img src="../assets/img/icons/cross.png" alt="cross">
+                    <span class="title">Erro</span>
+                </div>
+                <div class="main__popup">
+                    <span class="mensagens"></span>
+                </div>
+                <div class="footer__popup">
+                    <button type="button">Ok</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="../../assets/js/popup.js"></script>
     <script src="../../assets/js/settingScripts.js"></script>
 </body>
 
