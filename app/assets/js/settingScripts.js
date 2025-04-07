@@ -2,6 +2,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const setting = document.querySelector(".containerSettingMenu");
     const main = document.querySelector("#containerMain");
     const cross = document.querySelector("#closeMenu");
+    const backButton = document.getElementById("backIndex");
     const menuButtons = document.querySelectorAll("#menu li button.list");
   
     const sections = {
@@ -53,7 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.addEventListener("resize", handleResize);
     handleResize();
   
-    // Adiciona os listeners para os botões do menu
+    // Adiciona listeners para os botões do menu
     menuButtons.forEach(button => {
       button.addEventListener("click", () => {
         const text = button.textContent.trim().toLowerCase();
@@ -71,6 +72,11 @@ document.addEventListener("DOMContentLoaded", () => {
     cross.addEventListener("click", () => {
       clearActive();
       clearMobileActive();
+    });
+  
+    // Ao clicar no botão de voltar, redireciona para a página index.html
+    backButton.addEventListener("click", () => {
+      window.location.href = "./index.html";
     });
   });
   
