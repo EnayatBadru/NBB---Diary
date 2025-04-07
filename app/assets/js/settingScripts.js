@@ -1,97 +1,76 @@
-// Alternar entre seções
-document.querySelectorAll(".nav-item").forEach((item) => {
-  item.addEventListener("click", () => {
-    // Remover classe active de todos os itens e seções
-    document
-      .querySelectorAll(".nav-item")
-      .forEach((nav) => nav.classList.remove("active"));
-    document
-      .querySelectorAll(".section")
-      .forEach((section) => section.classList.remove("active"));
-
-    // Adicionar classe active ao item clicado e à seção correspondente
-    item.classList.add("active");
-    const sectionId = item.getAttribute("data-section");
-    document.getElementById(sectionId).classList.add("active");
-  });
-});
-
-// Processar formulário de perfil
-document.getElementById("form-perfil").addEventListener("submit", function (e) {
-  e.preventDefault();
-  const nome = document.getElementById("nome").value;
-  const bio = document.getElementById("bio").value;
-  localStorage.setItem("nome", nome);
-  localStorage.setItem("bio", bio);
-  showPopup("success", "Perfil salvo com sucesso!");
-});
-
-// Processar formulário de conta
-document.getElementById("form-conta").addEventListener("submit", function (e) {
-  e.preventDefault();
-  const email = document.getElementById("email").value;
-  const senhaAtual = document.getElementById("senha-atual").value;
-  const novaSenha = document.getElementById("nova-senha").value;
-
-  if (!novaSenha) {
-    showPopup("success", "Email atualizado com sucesso!");
-  } else if (senhaAtual === novaSenha) {
-    showPopup("error", "A nova senha deve ser diferente da atual.");
-  } else {
-    showPopup("success", "Conta atualizada com sucesso!");
-  }
-});
-
-// Processar formulário de privacidade
-document
-  .getElementById("form-privacidade")
-  .addEventListener("submit", function (e) {
-    e.preventDefault();
-    const visibilidade = document.getElementById("visibilidade").value;
-    localStorage.setItem("visibilidade", visibilidade);
-    showPopup("success", "Configurações de privacidade salvas com sucesso!");
-  });
-
-document.addEventListener("DOMContentLoaded", function () {
-  const forms = document.querySelectorAll("form");
-  forms.forEach((form) => {
-    form.addEventListener("submit", function (e) {
-      e.preventDefault();
-      showPopup("success", "Configurações salvas com sucesso!");
-    });
-  });
-
-  const deleteBtn = document.querySelector(".delete-account");
-  deleteBtn.addEventListener("click", function () {
-    showPopup("success", "Conta excluída com sucesso!");
-  });
-
-  const navItems = document.querySelectorAll(".nav-item");
-  const mainContent = document.querySelector(".main-content");
-
-  navItems.forEach((item) => {
-    item.addEventListener("click", function () {
-      const sectionId = item.getAttribute("data-section");
-      document.querySelectorAll(".section").forEach((sec) => {
-        sec.classList.remove("active");
+document.addEventListener("DOMContentLoaded", () => {
+    const setting = document.querySelector(".containerSettingMenu");
+    const main = document.querySelector("#containerMain");
+    const cross = document.querySelector("#closeMenu");
+    const menuButtons = document.querySelectorAll("#menu li button.list");
+  
+    const sections = {
+      perfil: document.getElementById("mainPerfil"),
+      conta: document.getElementById("mainConta")
+    };
+  
+    // Remove a classe "active" de todos os botões e seções
+    const clearActive = () => {
+      Object.values(sections).forEach(s => s.classList.remove("active"));
+      menuButtons.forEach(btn => btn.classList.remove("active"));
+    };
+  
+    // Remove a classe "active" dos containers (mobile)
+    const clearMobileActive = () => {
+      setting.classList.remove("active");
+      main.classList.remove("active");
+    };
+  
+    // Ativa a seção conforme o texto do botão
+    const activateSection = (text) => {
+      if (text === "perfil" && sections.perfil) {
+        sections.perfil.classList.add("active");
+      } else if (text === "conta" && sections.conta) {
+        sections.conta.classList.add("active");
+      }
+    };
+  
+    // Ativa o primeiro botão e sua seção (desktop)
+    const setDefaultActive = () => {
+      clearActive();
+      const firstButton = menuButtons[0];
+      if (firstButton) {
+        firstButton.classList.add("active");
+        activateSection(firstButton.textContent.trim().toLowerCase());
+      }
+    };
+  
+    // Verifica o tamanho da tela e aplica a lógica adequada
+    const handleResize = () => {
+      if (window.innerWidth <= 600) {
+        clearActive();
+        clearMobileActive();
+      } else {
+        setDefaultActive();
+      }
+    };
+  
+    window.addEventListener("resize", handleResize);
+    handleResize();
+  
+    // Adiciona os listeners para os botões do menu
+    menuButtons.forEach(button => {
+      button.addEventListener("click", () => {
+        const text = button.textContent.trim().toLowerCase();
+        clearActive();
+        button.classList.add("active");
+        activateSection(text);
+        if (window.innerWidth <= 600) {
+          setting.classList.add("active");
+          main.classList.add("active");
+        }
       });
-      document.getElementById(sectionId).classList.add("active");
-
-      navItems.forEach((nav) => nav.classList.remove("active"));
-      item.classList.add("active");
-
-      if (window.innerWidth <= 480) {
-        mainContent.classList.add("active");
-      }
+    });
+  
+    // Ao clicar no cross, remove "active" de todos os elementos
+    cross.addEventListener("click", () => {
+      clearActive();
+      clearMobileActive();
     });
   });
-
-  const closeBtns = document.querySelectorAll(".close-popup-btn");
-  closeBtns.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      if (window.innerWidth <= 480) {
-        document.querySelector(".main-content").classList.remove("active");
-      }
-    });
-  });
-});
+  

@@ -1,386 +1,361 @@
-/* caracteres especiais */
-@charset "UTF-8";
-
-/* google-font: poppins */
-@import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
-
-/* Variáveis de cores conforme o dashboard */
-:root {
-  --background-color: #b3e5fc; /* serenidade, calma, confiança e tranquilidade */
-  --button-color: #a8d5ba; /* paz, harmonia, natureza, renovação */
-  --destaque-color: #d6cdea; /* sutileza, versatilidade, tranquilidade, neutralidade */
-  --primary-color: #ffffff; /* limpeza, ordem, simplicidade */
-  --secondary-color: #f2f2f2; /* sutileza, versatilidade, tranquilidade, neutralidade */
-}
-
-/* Reset básico */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: "Poppins", serif;
-}
-
-/* Estilos globais */
-body {
-  background-color: var(--background-color);
-  color: #333;
-  /* overflow: hidden; desabilita scroll */
-}
-
-/* Cabeçalho */
-.header {
+#header {
   display: flex;
+  flex-direction: row;
+  align-items: center;
   justify-content: space-between;
-  align-items: center;
-  padding: 10px 20px;
-  background-color: var(--primary-color);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+  background: #00dfc4;
+  color: #1d2b3a;
+  max-width: 100vw;
+  width: 100vw;
 }
 
-.user-info {
+.buttonHeader {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.buttonHeader > button {
+  padding: 7px;
+  border-radius: 4px;
+  border: none;
+  outline: none;
   display: flex;
   align-items: center;
-}
-
-.profile-img {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  margin-right: 10px;
-}
-
-.icon-img {
-  width: 24px;
-  height: 24px;
-}
-
-.btn-back,
-.btn-menu-toggle {
-  background: none;
-  border: none;
+  justify-content: center;
+  background-color: #00dfc4;
   cursor: pointer;
 }
 
-/* Container Principal */
-.container {
+.icon {
+  width: 25px;
+  height: 25px;
+  object-fit: cover;
+}
+
+.userProfile {
   display: flex;
-  min-height: calc(100vh - 60px);
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 1em;
 }
 
-/* Menu Lateral */
-.sidebar {
+.imgProfile {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  outline: none;
+  border: none;
+  border-radius: 10px;
+  border: 1px solid #1d2b3a;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+
+.imgProfile img {
+  width: 100%;
+  height: 100%;
+  padding: 2px;
+  object-fit: cover;
+}
+
+.textProfile {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: all 0.3s ease-in-out;
+}
+
+.textProfile .userName {
+  font-size: 1.2em;
+  font-weight: bolder;
+  text-transform: capitalize;
+  color: #1d2b3a;
+}
+
+.textProfile .userEmail {
+  font-size: 0.8em;
+  font-weight: small;
+  color: #1d2b3a;
+  text-transform: lowercase;
+}
+
+.containerActivity {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.containerSettingMenu {
+  display: flex;
+  flex-direction: column;
   width: 250px;
-  background-color: var(--primary-color);
-  padding: 20px;
-  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+  height: calc(100vh - 69.6px);
+  background-color: #1d2b3a;
+  transition: all 0.3s ease-in-out;
 }
 
-.sidebar-title {
-  margin-bottom: 20px;
-  font-weight: bold;
-  color: var(--destaque-color);
+.containerSettingMenu .title {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 0px;
+  font-size: 1.5em;
+  text-transform: uppercase;
+  font-weight: bolder;
+  color: #00dfc4;
 }
 
-.sidebar-list {
-  list-style: none;
+.containerSettingMenu #menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  padding: 10px 0px;
 }
 
-.nav-item {
+.containerSettingMenu #menu li {
+  width: 100%;
+  padding: 0 7px;
+}
+
+.containerSettingMenu #menu li button {
+  width: 100%;
+  background: #00dfc4;
+  color: #1d2b3a;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
   padding: 10px;
   cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.nav-item.active {
-  background-color: var(--secondary-color);
-  font-weight: bold;
-}
-
-/* Área Principal */
-.main-content {
-  flex: 1;
-  padding: 20px;
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-.section {
-  display: none;
-  background-color: var(--primary-color);
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
-}
-
-.section.active {
-  display: block;
-}
-
-.form-group {
-  margin-bottom: 15px;
-}
-
-label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
-}
-
-input,
-textarea,
-select {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ccc;
   border-radius: 4px;
-}
-
-button {
-  padding: 10px 20px;
-  background-color: var(--button-color);
-  color: #fff;
+  text-transform: uppercase;
+  font-weight: bolder;
+  outline: none;
   border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s;
+  transition: all 0.3s ease-in-out;
 }
 
-button:hover {
-  background-color: #0056b3;
+.containerSettingMenu #menu li button.active {
+    background: rgba(0, 223, 197, 0.3);
+    color: #fff;
+    transition: all 0.3s ease-in-out;
 }
 
-/* Botão Excluir Conta */
-.delete-account {
-  background-color: var(--destaque-color);
+.containerSettingMenu #menu li button.logOut {
+  background: #ff4d4d;
   color: #1d2b3a;
-  border: 1px solid var(--button-color);
-  margin-top: 10px;
 }
 
-.delete-account:hover {
-  background-color: var(--button-color);
+.containerSettingMenu #menu li button:hover {
+  opacity: 0.8;
+  transition: all 0.3s ease-in-out;
 }
 
-/* Mobile: Ajustes para tela cheia e efeito popup */
-@media screen and (max-width: 480px) {
-  /* O menu (sidebar) ocupa 100vw x 100vh */
-  .sidebar {
-    width: 100vw;
-    height: 100vh;
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 998;
-  }
-  /* A main-content (popup) também ocupa 100vw x 100vh */
-  .main-content {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-color: var(--primary-color);
-    z-index: 999;
-    padding: 20px;
-    overflow-y: auto;
-    transform: translateY(100%);
-    opacity: 0;
-    display: none;
-    transition: transform 0.4s ease, opacity 0.4s ease;
-  }
-  .main-content.active {
-    display: block;
-    transform: translateY(0);
-    opacity: 1;
-  }
-  /* Botão para fechar o popup: usa ícone de X */
-  .close-popup-btn {
-    background: none;
-    border: none;
-    font-size: 2em;
-    color: var(--button-color);
-    position: absolute;
-    top: 10px;
-    right: 20px;
-    cursor: pointer;
-    z-index: 1000;
-  }
+/* main */
+
+#containerMain {
+  width: calc(100vw - 250px);
+  height: calc(100vh - 69.6px);
+  position: relative;
+  transition: all 0.3s ease-in-out;
 }
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 20px;
-  background-color: var(--primary-color);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  position: sticky;
+main {
+  position: absolute;
+  width: 90%;
+  height: 90%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0 auto;
+  background: #f9f9f9;
+  box-shadow: 2px 2px 2px 2px rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  padding: 20px;
+}
+
+.mobile {
+  position: absolute;
   top: 0;
-  z-index: 1000;
-}
-
-.user-info {
+  right: 0;
   display: flex;
+  flex-direction: row;
   align-items: center;
-}
-
-.profile-img {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  margin-right: 10px;
-}
-
-.icon-img {
-  width: 24px;
-  height: 24px;
-}
-
-.btn-back {
+  justify-content: center;
+  border: none;
+  outline: none;
   background: none;
-  border: none;
-  cursor: pointer;
-}
-
-.container {
-  display: flex;
-  min-height: calc(100vh - 60px);
-}
-
-.sidebar {
-  width: 250px;
-  background-color: var(--primary-color);
-  padding: 20px;
-  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
-}
-
-.sidebar-title {
-  margin-bottom: 20px;
-  font-weight: bold;
-  color: var(--destaque-color);
-}
-
-.sidebar-list {
-  list-style: none;
-}
-
-.nav-item {
-  padding: 10px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.nav-item.active {
-  background-color: var(--secondary-color);
-  font-weight: bold;
-}
-
-.main-content {
-  flex: 1;
-  padding: 20px;
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-.section {
+  transform: translate(-25px, 20px);
+  width: 35px;
+  height: 35px;
+  transition: all 0.3s ease-in-out;
   display: none;
-  background-color: var(--primary-color);
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
 }
 
-.section.active {
-  display: block;
-}
-
-.form-group {
-  margin-bottom: 15px;
-}
-
-label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
-}
-
-input,
-textarea,
-select {
+.mobile img {
   width: 100%;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-button {
-  padding: 10px 20px;
-  background-color: var(--button-color);
-  color: #fff;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  background: none;
+  outline: none;
   border: none;
-  border-radius: 4px;
   cursor: pointer;
-  transition: background-color 0.3s;
-  margin-right: 10px;
+  transition: all 0.3s ease-in-out;
 }
 
-button:hover {
-  background-color: #0056b3;
-}
-
-.delete-account {
-  background-color: var(--destaque-color);
-  color: #1d2b3a;
-  border: 1px solid var(--button-color);
-  margin-top: 10px;
-}
-
-.delete-account:hover {
-  background-color: var(--button-color);
-}
-
-@media screen and (max-width: 480px) {
-  .sidebar {
-    width: 100vw;
-    height: 100vh;
-    position: fixed;
-    top: 60px;
-    left: 0;
-    z-index: 998;
-  }
-
-  .main-content {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100vw;
-    height: calc(100vh - 60px);
-    background-color: var(--primary-color);
-    z-index: 999;
-    padding: 20px;
-    overflow-y: auto;
-    transform: translateY(100%);
-    opacity: 0;
-    display: none;
-    transition: transform 0.4s ease, opacity 0.4s ease;
-  }
-
-  .main-content.active {
-    display: block;
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-/* Por padrão, o botão de fechar não aparece em telas grandes */
-.close-popup-btn {
+#containerMain section {
   display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1em;
+  width: 100%;
 }
 
-/* Em telas pequenas (mobile), o botão aparece como um X */
-@media screen and (max-width: 480px) {
-  .close-popup-btn {
-    display: block;
+#containerMain section.active {
+  display: flex;
+}
+
+#containerMain section h2 {
+  font-size: 1.5em;
+  font-weight: bolder;
+  text-transform: capitalize;
+  color: #1d2b3a;
+}
+
+#containerMain form {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.5em;
+  width: 100%;
+}
+
+#containerMain form div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.5em;
+  width: 100%;
+}
+
+#containerMain form div label {
+  font-size: 1.2em;
+  font-weight: bolder;
+  color: #1d2b3a;
+}
+
+#containerMain form div input {
+  width: 100%;
+  padding: 7px;
+  border-radius: 4px;
+  border: none;
+  outline: none;
+  background-color: #f9f9f9;
+  border: 1px solid #1d2b3a;
+  color: #1d2b3a;
+  font-size: 1em;
+}
+
+#containerMain form div textarea {
+  border: 1px solid #1d2b3a;
+  border-radius: 4px;
+  padding: 7px;
+  outline: none;
+}
+
+#containerMain form div select {
+  width: 100%;
+  padding: 7px;
+  border-radius: 4px;
+  border: none;
+  outline: none;
+  background-color: #f9f9f9;
+  border: 1px solid #1d2b3a;
+  color: #1d2b3a;
+  font-size: 1em;
+  cursor: pointer;
+}
+
+#containerMain form div select option {
+  font-size: 1em;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+
+.btn {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+#containerMain form div button {
+  width: 100%;
+  padding: 7px;
+  border-radius: 4px;
+  border: none;
+  outline: none;
+  background-color: #00dfc4;
+  color: #1d2b3a;
+  font-size: 1.2em;
+  font-weight: bolder;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+#containerMain form div button:hover {
+  opacity: 0.8;
+  transition: all 0.3s ease-in-out;
+}
+
+.deliteAccount {
+  background: #ff4d4d !important;
+}
+
+@media screen and (max-width: 600px) {
+  /* header */
+  .textProfile {
+    display: none;
+    transition: all 0.3s ease-in-out;
+}
+
+  /* menuNav */
+  .containerSettingMenu {
+    width: 100vw;
+    display: flex;
+    transition: all 0.3s ease-in-out;
+}
+
+.containerSettingMenu.active {
+    display: none;
+    transition: all 0.3s ease-in-out;
+}
+
+/* main */
+
+#containerMain {
+    display: none;
+    transition: all 0.3s ease-in-out;
+}
+
+#containerMain.active {
+    display: flex;
+    width: 100vw;
+    transition: all 0.3s ease-in-out;
+}
+
+.mobile {
+    display: flex;
+    transition: all 0.3s ease-in-out;
   }
 }
