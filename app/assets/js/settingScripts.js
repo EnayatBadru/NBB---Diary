@@ -14,6 +14,7 @@ import {
   reauthenticateWithCredential,
   EmailAuthProvider
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
+// Importa as funções de popup
 import { showPopup, closePopup } from "../../assets/js/popup.js";
 
 /**
@@ -25,6 +26,7 @@ import { showPopup, closePopup } from "../../assets/js/popup.js";
 function confirmPopup(message) {
   return new Promise((resolve) => {
     try {
+      // Exibe o popup de alerta com a mensagem
       showPopup('alert', message);
       const alertContainer = document.getElementById("alert");
       if (!alertContainer) {
@@ -38,6 +40,7 @@ function confirmPopup(message) {
         resolve(null);
         return;
       }
+      // Seleciona os botões pelo seu posicionamento (primeiro para confirmar, segundo para cancelar)
       const buttons = alertContainer.querySelectorAll("button");
       if (buttons.length < 2) {
         console.error('Botões de confirmação ou cancelamento não encontrados no popup de alerta.');
@@ -47,11 +50,13 @@ function confirmPopup(message) {
       const confirmBtn = buttons[0]; // "sim"
       const cancelBtn = buttons[1];  // "cancelar"
 
+      // Função para limpar os listeners e fechar o popup
       const cleanup = () => {
         confirmBtn.removeEventListener("click", onConfirm);
         cancelBtn.removeEventListener("click", onCancel);
+        // Limpa a mensagem e fecha o popup
         closePopup('alert');
-        inputEl.value = "";
+        inputEl.value = ""; // Limpa o input após fechar
       };
       const onConfirm = () => {
         const password = inputEl.value.trim();
@@ -113,6 +118,11 @@ document.addEventListener("DOMContentLoaded", () => {
     menuButtons.forEach(btn => btn.classList.remove("active"));
   };
 
+  const clearMobileActive = () => {
+    setting.classList.remove("active");
+    main.classList.remove("active");
+  };
+
   const activateSection = (text) => {
     if (text === "perfil" && sections.perfil) {
       sections.perfil.classList.add("active");
@@ -130,9 +140,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  setDefaultActive();
+  const handleResize = () => {
+    if (window.innerWidth <= 600) {
+      clearActive();
+      clearMobileActive();
+    } else {
+      setDefaultActive();
+    }
+  };
 
-  /* Eventos de Navegação */
+  window.addEventListener("resize", handleResize);
+  handleResize();
+
   menuButtons.forEach(button => {
     button.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -140,12 +159,17 @@ document.addEventListener("DOMContentLoaded", () => {
       clearActive();
       button.classList.add("active");
       activateSection(text);
+      if (window.innerWidth <= 600) {
+        setting.classList.add("active");
+        main.classList.add("active");
+      }
     });
   });
 
   cross.addEventListener("click", (e) => {
     e.stopPropagation();
     clearActive();
+    clearMobileActive();
   });
 
   backButton.addEventListener("click", (e) => {
@@ -153,49 +177,16 @@ document.addEventListener("DOMContentLoaded", () => {
     window.location.href = "./index.html";
   });
 
-  /* FUNÇÃO QUE ATUALIZA O HEADER E PREENCHE OS INPUTS DO FORMULÁRIO
-     Se os campos já estiverem definidos no banco, os inputs são preenchidos e desabilitados;
-     caso contrário, permanecem vazios e habilitados para edição. */
+  /* ATUALIZAÇÃO DINÂMICA DO HEADER E PREENCHE CAMPOS DE CONTA */
   const updateHeaderProfile = (user) => {
     if (user) {
+      // Salva os dados do usuário no localStorage para otimização
       localStorage.setItem("userData", JSON.stringify(user));
       profileImgEl.src = user.photoURL || "../../assets/img/icons/user.png";
       userNameEl.textContent = user.name || user.displayName || "Usuário";
       userEmailEl.textContent = user.email;
-      
-      // Preenche os inputs do formulário de perfil
-      const nameInput = document.getElementById("userName");
-      const bioInput = document.getElementById("userBio");
-      const genderInput = document.getElementById("userGenero");
-      const userTypeInput = document.getElementById("userType");
+      // Preenche o input de email e o desabilita
       const emailInput = document.getElementById("emailUser");
-
-      if (nameInput) nameInput.value = user.name || "";
-      if (bioInput) bioInput.value = user.bio || "";
-      
-      // Gênero: se existir no DB, preenche e desabilita; se não, deixa habilitado para edição.
-      if (genderInput) {
-        if (user.gender && user.gender.trim() !== "") {
-          genderInput.value = user.gender;
-          genderInput.disabled = true;
-        } else {
-          genderInput.value = "";
-          genderInput.disabled = false;
-        }
-      }
-      
-      // Tipo de usuário: mesma lógica para exibir ou habilitar a edição.
-      if (userTypeInput) {
-        if (user.userType && user.userType.trim() !== "") {
-          userTypeInput.value = user.userType;
-          userTypeInput.disabled = true;
-        } else {
-          userTypeInput.value = "";
-          userTypeInput.disabled = false;
-        }
-      }
-
-      // Preenche o input de email (sempre desabilitado)
       if (emailInput) {
         emailInput.value = user.email || "";
         emailInput.disabled = true;
@@ -211,7 +202,9 @@ document.addEventListener("DOMContentLoaded", () => {
       userNameEl.textContent = "";
       userEmailEl.textContent = "";
       const emailInput = document.getElementById("emailUser");
-      if (emailInput) emailInput.value = "";
+      if (emailInput) {
+        emailInput.value = "";
+      }
     }
   });
 
@@ -228,10 +221,12 @@ document.addEventListener("DOMContentLoaded", () => {
         reader.onload = async (e) => {
           const photoURL = e.target.result; // imagem em base64
           try {
+            // Atualiza o perfil do usuário
             await updateProfile(auth.currentUser, { photoURL });
             const userDoc = doc(firestore, "users", auth.currentUser.uid);
             await updateDoc(userDoc, { photoURL, updatedAt: new Date() });
             profileImgEl.src = photoURL;
+            // Atualiza localStorage
             const updatedUser = { ...JSON.parse(localStorage.getItem("userData")), photoURL };
             localStorage.setItem("userData", JSON.stringify(updatedUser));
             showPopup('success', "Foto de perfil atualizada com sucesso!");
@@ -248,12 +243,10 @@ document.addEventListener("DOMContentLoaded", () => {
   /* ATUALIZAÇÃO DO PERFIL - Formulário de Perfil */
   perfilForm?.querySelector("button[type='button']").addEventListener("click", async (e) => {
     e.preventDefault();
-    const nameInput = perfilForm.querySelector("#userName");
-    const bioInput = perfilForm.querySelector("#userBio");
-    const genderInput = perfilForm.querySelector("#userGenero");
-    const userTypeInput = perfilForm.querySelector("#userType");
-    const userName = nameInput.value.trim();
-    const userBio = bioInput.value.trim();
+    const userName = perfilForm.querySelector("#userName").value.trim();
+    const userBio = perfilForm.querySelector("#userBio").value.trim();
+    const userGenero = perfilForm.querySelector("#userGenero").value;
+    const userType = perfilForm.querySelector("#userType").value;
 
     if (!userName) {
       showPopup('error', "O nome é obrigatório.");
@@ -267,21 +260,17 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const currentUser = auth.currentUser;
       if (currentUser) {
+        // Atualiza displayName no Auth
         await updateProfile(currentUser, { displayName: userName });
         const userDoc = doc(firestore, "users", currentUser.uid);
-        const updateData = {
+        await updateDoc(userDoc, {
           name: userName,
           bio: userBio,
+          gender: userGenero,
+          userType: userType,
           updatedAt: new Date()
-        };
-        // Se os inputs de gênero e tipo de usuário estiverem habilitados, inclui-os na atualização.
-        if (genderInput && !genderInput.disabled) {
-          updateData.gender = genderInput.value;
-        }
-        if (userTypeInput && !userTypeInput.disabled) {
-          updateData.userType = userTypeInput.value;
-        }
-        await updateDoc(userDoc, updateData);
+        });
+        // Atualiza localStorage
         const updatedUser = { ...JSON.parse(localStorage.getItem("userData")), name: userName };
         localStorage.setItem("userData", JSON.stringify(updatedUser));
         showPopup('success', "Perfil atualizado com sucesso!");
@@ -298,7 +287,11 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const currentUser = auth.currentUser;
       if (!currentUser) throw new Error("Usuário não autenticado.");
+
+      // O input de email é desabilitado e não pode ser alterado
       const email = currentUser.email;
+
+      // Para atualização da senha: o usuário deve informar a senha antiga e a nova senha
       const oldPassword = contaForm.querySelector("#passwordUser").value;
       const newPassword = contaForm.querySelector("#newPassword").value;
 
@@ -309,12 +302,16 @@ document.addEventListener("DOMContentLoaded", () => {
         if (newPassword.length < 6) {
           throw new Error("A nova senha deve ter pelo menos 6 caracteres.");
         }
+        // Reautentica o usuário utilizando a senha antiga
         const credential = EmailAuthProvider.credential(email, oldPassword);
         await reauthenticateWithCredential(currentUser, credential);
         await updatePassword(currentUser, newPassword);
       }
+
+      // Atualiza apenas o campo updatedAt no Firestore
       const userDoc = doc(firestore, "users", currentUser.uid);
       await updateDoc(userDoc, { updatedAt: new Date() });
+
       showPopup('success', "Dados da conta atualizados com sucesso!");
     } catch (error) {
       console.error("Erro ao atualizar dados da conta:", error.message);
@@ -330,11 +327,20 @@ document.addEventListener("DOMContentLoaded", () => {
       if (password) {
         const currentUser = auth.currentUser;
         if (currentUser) {
+          if (!password) {
+            showPopup('error', "A senha é necessária para excluir a conta.");
+            return;
+          }
+
+          // Cria a credencial e reautentica o usuário
           const credential = EmailAuthProvider.credential(currentUser.email, password);
           await reauthenticateWithCredential(currentUser, credential);
+
+          // Após reautenticação, exclui os dados do Firestore e a conta
           const userDoc = doc(firestore, "users", currentUser.uid);
           await deleteDoc(userDoc);
           await deleteUser(currentUser);
+
           showPopup('success', "Conta excluída com sucesso!");
           window.location.href = "../splash.html";
         }
