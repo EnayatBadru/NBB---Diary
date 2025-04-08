@@ -1,6 +1,6 @@
 // settingScripts.js
 import { subscribeToAuthChanges } from "../../assets/js/models/userModel.js";
-import { auth, firestore, storage } from "../../assets/js/firebaseConfig.js"; // 'storage' já estava incluído
+import { auth, firestore, storage } from "../../assets/js/firebaseConfig.js";
 import {
   updateDoc,
   doc,
@@ -18,73 +18,43 @@ import {
 import { 
   ref, 
   uploadBytes, 
-  getDownloadURL, 
-  connectStorageEmulator 
-} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-storage.js"; // Adicionado 'connectStorageEmulator'
-// Importa as funções de popup
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-storage.js";
 import { showPopup, closePopup } from "../../assets/js/popup.js";
 
-// Conectar ao emulador do Storage se estiver rodando localmente
-if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
-  connectStorageEmulator(storage, "127.0.0.1", 9199); // Porta padrão do emulador de Storage
-}
+// Usamos o Storage real com CORS configurado, sem emulador
 
-/**
- * Exibe um popup de confirmação (do tipo "alert") com dois botões: "sim" e "cancelar".
- * Retorna uma Promise que resolve com a senha inserida no input #alertPop se confirmado, ou null se cancelado.
- * @param {string} message 
- * @returns {Promise<string|null>}
- */
+// Função para exibir popup de confirmação com senha
 function confirmPopup(message) {
   return new Promise((resolve) => {
-    try {
-      showPopup('alert', message);
-      const alertContainer = document.getElementById("alert");
-      if (!alertContainer) {
-        console.error('Popup de alerta (id "alert") não encontrado.');
-        resolve(null);
-        return;
-      }
-      const inputEl = alertContainer.querySelector("#alertPop");
-      if (!inputEl) {
-        console.error('Input de confirmação não encontrado no popup de alerta.');
-        resolve(null);
-        return;
-      }
-      const buttons = alertContainer.querySelectorAll("button");
-      if (buttons.length < 2) {
-        console.error('Botões de confirmação ou cancelamento não encontrados no popup de alerta.');
-        resolve(null);
-        return;
-      }
-      const confirmBtn = buttons[0]; // "sim"
-      const cancelBtn = buttons[1];  // "cancelar"
+    showPopup('alert', message);
+    const alertContainer = document.getElementById("alert");
+    const inputEl = alertContainer.querySelector("#alertPop");
+    const buttons = alertContainer.querySelectorAll("button");
+    const confirmBtn = buttons[0]; // "sim"
+    const cancelBtn = buttons[1];  // "cancelar"
 
-      const cleanup = () => {
-        confirmBtn.removeEventListener("click", onConfirm);
-        cancelBtn.removeEventListener("click", onCancel);
-        closePopup('alert');
-        inputEl.value = "";
-      };
-      const onConfirm = () => {
-        const password = inputEl.value.trim();
-        if (!password) {
-          showPopup('error', "A senha é necessária para confirmar.");
-          return;
-        }
-        cleanup();
-        resolve(password);
-      };
-      const onCancel = () => {
-        cleanup();
-        resolve(null);
-      };
-      confirmBtn.addEventListener("click", onConfirm);
-      cancelBtn.addEventListener("click", onCancel);
-    } catch (err) {
-      console.error("Erro no confirmPopup:", err);
+    const cleanup = () => {
+      confirmBtn.removeEventListener("click", onConfirm);
+      cancelBtn.removeEventListener("click", onCancel);
+      closePopup('alert');
+      inputEl.value = "";
+    };
+    const onConfirm = () => {
+      const password = inputEl.value.trim();
+      if (!password) {
+        showPopup('error', "A senha é necessária para confirmar.");
+        return;
+      }
+      cleanup();
+      resolve(password);
+    };
+    const onCancel = () => {
+      cleanup();
       resolve(null);
-    }
+    };
+    confirmBtn.addEventListener("click", onConfirm);
+    cancelBtn.addEventListener("click", onCancel);
   });
 }
 
@@ -101,16 +71,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const userNameEl = document.querySelector(".textProfile .userName");
   const userEmailEl = document.querySelector(".textProfile .userEmail");
 
-  /* Elemento para alteração da foto de perfil (input file) */
+  /* Input para alterar foto de perfil */
   const profilePhotoInput = document.getElementById("profilePhoto");
 
-  /* Dispara o seletor de arquivo ao clicar na foto de perfil */
+  /* Dispara o seletor de arquivo ao clicar na foto */
   const imgProfileBtn = document.querySelector(".imgProfile");
-  if (imgProfileBtn && profilePhotoInput) {
-    imgProfileBtn.addEventListener("click", () => {
-      profilePhotoInput.click();
-    });
-  }
+  imgProfileBtn.addEventListener("click", () => profilePhotoInput.click());
 
   /* Seções do conteúdo */
   const sections = {
@@ -118,13 +84,13 @@ document.addEventListener("DOMContentLoaded", () => {
     conta: document.getElementById("mainConta")
   };
 
-  /* Formulários e Botões de Ação */
+  /* Formulários e Botões */
   const perfilForm = document.querySelector("#mainPerfil form");
   const contaForm = document.querySelector("#mainConta form");
   const contaSaveBtn = contaForm?.querySelector("button:not(.deliteAccount)");
   const deleteAccountBtn = contaForm?.querySelector("button.deliteAccount");
 
-  /* FUNÇÕES AUXILIARES DE LAYOUT */
+  /* Funções de layout */
   const clearActive = () => {
     Object.values(sections).forEach(s => s.classList.remove("active"));
     menuButtons.forEach(btn => btn.classList.remove("active"));
@@ -136,30 +102,25 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const activateSection = (text) => {
-    if (text === "perfil" && sections.perfil) {
-      sections.perfil.classList.add("active");
-    } else if (text === "conta" && sections.conta) {
-      sections.conta.classList.add("active");
-    }
+    if (text === "perfil") sections.perfil.classList.add("active");
+    else if (text === "conta") sections.conta.classList.add("active");
   };
 
   const setDefaultActive = () => {
     clearActive();
     const firstButton = menuButtons[0];
-    if (firstButton) {
-      firstButton.classList.add("active");
-      activateSection(firstButton.textContent.trim().toLowerCase());
-    }
+    firstButton.classList.add("active");
+    activateSection(firstButton.textContent.trim().toLowerCase());
   };
 
-  const handleResize = () => {
-    if (window.innerWidth <= 600) {
-      clearActive();
-      clearMobileActive();
-    } else {
-      setDefaultActive();
-    }
-  };
+//   const handleResize = () => {
+//     if (window.innerWidth <= 600) {
+//       clearActive();
+//       clearMobileActive();
+//     } else {
+//       setDefaultActive();
+//     }
+//   };
 
   window.addEventListener("resize", handleResize);
   handleResize();
@@ -178,18 +139,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  cross.addEventListener("click", (e) => {
-    e.stopPropagation();
+  cross.addEventListener("click", () => {
     clearActive();
     clearMobileActive();
   });
 
-  backButton.addEventListener("click", (e) => {
-    e.stopPropagation();
+  backButton.addEventListener("click", () => {
     window.location.href = "./index.html";
   });
 
-  /* FUNÇÃO PARA BUSCAR E PREENCHER DADOS DO USUÁRIO */
+  /* Preenche os dados do usuário */
   const fillUserData = async (user) => {
     if (user) {
       const userDoc = await getDoc(doc(firestore, "users", user.uid));
@@ -198,26 +157,16 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("userName").value = userData.name || "";
         document.getElementById("userBio").value = userData.bio || "";
         const generoSelect = document.getElementById("userGenero");
-        if (userData.gender && ["masculino", "feminino"].includes(userData.gender)) {
-          generoSelect.value = userData.gender;
-          generoSelect.disabled = true;
-        } else {
-          generoSelect.value = "";
-          generoSelect.disabled = false;
-        }
+        generoSelect.value = userData.gender || "";
+        generoSelect.disabled = false; // Sempre editável
         const userTypeSelect = document.getElementById("userType");
-        if (userData.userType && ["paciente", "psicologo"].includes(userData.userType)) {
-          userTypeSelect.value = userData.userType;
-          userTypeSelect.disabled = true;
-        } else {
-          userTypeSelect.value = "";
-          userTypeSelect.disabled = false;
-        }
+        userTypeSelect.value = userData.userType || "";
+        userTypeSelect.disabled = !!userData.userType; // Desabilitado se já definido
       }
     }
   };
 
-  /* ATUALIZAÇÃO DINÂMICA DO HEADER E PREENCHE CAMPOS DE CONTA */
+  /* Atualiza o header dinamicamente */
   const updateHeaderProfile = (user) => {
     if (user) {
       localStorage.setItem("userData", JSON.stringify(user));
@@ -225,82 +174,50 @@ document.addEventListener("DOMContentLoaded", () => {
       userNameEl.textContent = user.name || user.displayName || "Usuário";
       userEmailEl.textContent = user.email;
       const emailInput = document.getElementById("emailUser");
-      if (emailInput) {
-        emailInput.value = user.email || "";
-        emailInput.disabled = true;
-      }
+      if (emailInput) emailInput.value = user.email;
       fillUserData(user);
     } else {
       profileImgEl.src = "../../assets/img/icons/user.png";
       userNameEl.textContent = "";
       userEmailEl.textContent = "";
-      const emailInput = document.getElementById("emailUser");
-      if (emailInput) {
-        emailInput.value = "";
-      }
     }
   };
 
   subscribeToAuthChanges((user) => {
-    if (user) {
-      updateHeaderProfile(user);
-    } else {
-      profileImgEl.src = "../../assets/img/icons/user.png";
-      userNameEl.textContent = "";
-      userEmailEl.textContent = "";
-      const emailInput = document.getElementById("emailUser");
-      if (emailInput) {
-        emailInput.value = "";
-      }
+    if (user) updateHeaderProfile(user);
+  });
+
+  /* Upload da foto de perfil */
+  profilePhotoInput.addEventListener("change", async () => {
+    const file = profilePhotoInput.files[0];
+    if (!file || !file.type.startsWith("image/")) {
+      showPopup('error', "Selecione uma imagem válida.");
+      return;
+    }
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("Usuário não autenticado.");
+      const storageRef = ref(storage, `profilePhotos/${currentUser.uid}/${file.name}`);
+      await uploadBytes(storageRef, file);
+      const photoURL = await getDownloadURL(storageRef);
+
+      await updateProfile(currentUser, { photoURL });
+      const userDoc = doc(firestore, "users", currentUser.uid);
+      await updateDoc(userDoc, { photoURL, updatedAt: new Date() });
+
+      // Atualiza a interface dinamicamente
+      profileImgEl.src = photoURL;
+      const updatedUser = { ...JSON.parse(localStorage.getItem("userData")), photoURL };
+      localStorage.setItem("userData", JSON.stringify(updatedUser));
+
+      showPopup('success', "Foto de perfil atualizada!");
+    } catch (error) {
+      console.error("Erro ao atualizar foto:", error.message);
+      showPopup('error', "Erro ao atualizar foto de perfil.");
     }
   });
 
-  /* ALTERAÇÃO DA IMAGEM DE PERFIL */
-  if (profilePhotoInput) {
-    profilePhotoInput.addEventListener("change", async () => {
-      const file = profilePhotoInput.files[0];
-      if (file) {
-        if (!file.type.startsWith("image/")) {
-          showPopup('error', "Por favor, selecione uma imagem válida.");
-          return;
-        }
-        try {
-          const currentUser = auth.currentUser;
-          if (!currentUser) throw new Error("Usuário não autenticado.");
-
-          // Cria uma referência para o local onde a imagem será armazenada no Storage
-          const storageRef = ref(storage, `profilePhotos/${currentUser.uid}/${file.name}`);
-
-          // Faz upload da imagem
-          await uploadBytes(storageRef, file);
-
-          // Obtém a URL de download da imagem
-          const photoURL = await getDownloadURL(storageRef);
-
-          // Atualiza o perfil do usuário no Firebase Auth
-          await updateProfile(currentUser, { photoURL });
-
-          // Atualiza o Firestore com a URL da imagem
-          const userDoc = doc(firestore, "users", currentUser.uid);
-          await updateDoc(userDoc, { photoURL, updatedAt: new Date() });
-
-          // Atualiza a imagem no header
-          profileImgEl.src = photoURL;
-
-          // Atualiza localStorage
-          const updatedUser = { ...JSON.parse(localStorage.getItem("userData")), photoURL };
-          localStorage.setItem("userData", JSON.stringify(updatedUser));
-
-          showPopup('success', "Foto de perfil atualizada com sucesso!");
-        } catch (error) {
-          console.error("Erro ao atualizar foto de perfil:", error.message);
-          showPopup('error', "Erro ao atualizar foto de perfil. Tente novamente.");
-        }
-      }
-    });
-  }
-
-  /* ATUALIZAÇÃO DO PERFIL - Formulário de Perfil */
+  /* Atualização do perfil */
   perfilForm?.querySelector("button[type='button']").addEventListener("click", async (e) => {
     e.preventDefault();
     const userName = perfilForm.querySelector("#userName").value.trim();
@@ -319,35 +236,33 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const currentUser = auth.currentUser;
-      if (currentUser) {
-        await updateProfile(currentUser, { displayName: userName });
-        const userDoc = doc(firestore, "users", currentUser.uid);
-        const userDocData = await getDoc(userDoc);
-        const existingData = userDocData.data() || {};
-        const updateData = {
-          name: userName,
-          bio: userBio,
-          updatedAt: new Date()
-        };
-        if (!existingData.gender && userGenero && ["masculino", "feminino"].includes(userGenero)) {
-          updateData.gender = userGenero;
-        }
-        if (!existingData.userType && userType && ["paciente", "psicologo"].includes(userType)) {
-          updateData.userType = userType;
-        }
-        await updateDoc(userDoc, updateData);
-        const updatedUser = { ...JSON.parse(localStorage.getItem("userData")), name: userName };
-        localStorage.setItem("userData", JSON.stringify(updatedUser));
-        showPopup('success', "Perfil atualizado com sucesso!");
-        fillUserData(currentUser);
+      if (!currentUser) throw new Error("Usuário não autenticado.");
+      await updateProfile(currentUser, { displayName: userName });
+      const userDoc = doc(firestore, "users", currentUser.uid);
+      const updateData = {
+        name: userName,
+        bio: userBio,
+        gender: userGenero, // Sempre atualiza o gênero
+        updatedAt: new Date()
+      };
+      if (userType && ["paciente", "psicologo"].includes(userType)) {
+        updateData.userType = userType;
       }
+      await updateDoc(userDoc, updateData);
+
+      // Atualiza a interface dinamicamente
+      userNameEl.textContent = userName;
+      const updatedUser = { ...JSON.parse(localStorage.getItem("userData")), name: userName };
+      localStorage.setItem("userData", JSON.stringify(updatedUser));
+
+      showPopup('success', "Perfil atualizado!");
     } catch (error) {
       console.error("Erro ao atualizar perfil:", error.message);
-      showPopup('error', "Erro ao atualizar perfil. Tente novamente.");
+      showPopup('error', "Erro ao atualizar perfil.");
     }
   });
 
-  /* ATUALIZAÇÃO DA CONTA - Formulário de Conta */
+  /* Atualização da conta */
   contaSaveBtn?.addEventListener("click", async (e) => {
     e.preventDefault();
     try {
@@ -358,65 +273,53 @@ document.addEventListener("DOMContentLoaded", () => {
       const newPassword = contaForm.querySelector("#newPassword").value;
 
       if (newPassword) {
-        if (!oldPassword) {
-          throw new Error("Informe sua senha atual para atualizar a senha.");
-        }
-        if (newPassword.length < 6) {
-          throw new Error("A nova senha deve ter pelo menos 6 caracteres.");
-        }
+        if (!oldPassword) throw new Error("Informe a senha atual.");
+        if (newPassword.length < 6) throw new Error("A nova senha deve ter pelo menos 6 caracteres.");
         const credential = EmailAuthProvider.credential(email, oldPassword);
         await reauthenticateWithCredential(currentUser, credential);
         await updatePassword(currentUser, newPassword);
       }
       const userDoc = doc(firestore, "users", currentUser.uid);
       await updateDoc(userDoc, { updatedAt: new Date() });
-      showPopup('success', "Dados da conta atualizados com sucesso!");
+      showPopup('success', "Conta atualizada!");
     } catch (error) {
-      console.error("Erro ao atualizar dados da conta:", error.message);
+      console.error("Erro ao atualizar conta:", error.message);
       showPopup('error', error.code === 'auth/wrong-password' ? "Senha incorreta." : error.message);
     }
   });
 
-  /* EXCLUSÃO DE CONTA */
+  /* Exclusão de conta */
   deleteAccountBtn?.addEventListener("click", async (e) => {
     e.preventDefault();
-    try {
-      const password = await confirmPopup("Tem certeza que deseja excluir sua conta? Essa ação não pode ser desfeita.");
-      if (password) {
+    const password = await confirmPopup("Tem certeza que deseja excluir sua conta?");
+    if (password) {
+      try {
         const currentUser = auth.currentUser;
-        if (currentUser) {
-          const credential = EmailAuthProvider.credential(currentUser.email, password);
-          await reauthenticateWithCredential(currentUser, credential);
-          const userDoc = doc(firestore, "users", currentUser.uid);
-          await deleteDoc(userDoc);
-          await deleteUser(currentUser);
-          showPopup('success', "Conta excluída com sucesso!");
-          window.location.href = "../splash.html";
-        }
-      }
-    } catch (error) {
-      console.error("Erro ao excluir conta:", error.message);
-      if (error.code === 'auth/requires-recent-login') {
-        showPopup('error', "Por favor, faça login novamente para excluir a conta.");
-      } else if (error.code === 'auth/wrong-password') {
-        showPopup('error', "Senha incorreta. Tente novamente.");
-      } else {
-        showPopup('error', "Erro ao excluir a conta: " + error.message);
+        const credential = EmailAuthProvider.credential(currentUser.email, password);
+        await reauthenticateWithCredential(currentUser, credential);
+        const userDoc = doc(firestore, "users", currentUser.uid);
+        await deleteDoc(userDoc);
+        await deleteUser(currentUser);
+        showPopup('success', "Conta excluída!");
+        window.location.href = "../splash.html";
+      } catch (error) {
+        console.error("Erro ao excluir conta:", error.message);
+        showPopup('error', error.code === 'auth/wrong-password' ? "Senha incorreta." : "Erro ao excluir conta.");
       }
     }
   });
 
-  /* BOTÃO SAIR (LOGOUT) */
+  /* Logout */
   const logoutBtn = document.querySelector("#menu button.logOut");
   logoutBtn?.addEventListener("click", async (e) => {
     e.preventDefault();
     try {
       await auth.signOut();
-      showPopup('success', "Logout realizado com sucesso!");
+      showPopup('success', "Logout realizado!");
       window.location.href = "../splash.html";
     } catch (error) {
       console.error("Erro ao fazer logout:", error.message);
-      showPopup('error', "Erro ao fazer logout: " + error.message);
+      showPopup('error', "Erro ao fazer logout.");
     }
   });
 });
