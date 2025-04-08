@@ -1,171 +1,169 @@
 <!DOCTYPE html>
 <html lang="pt">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../../assets/css/default.css">
-    <link rel="stylesheet" href="../../assets/css/popup.css">
-    <link rel="stylesheet" href="../../assets/css/settingStyle.css">
-
-    <title>Definições do Sistema</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="../../assets/css/default.css">
+  <link rel="stylesheet" href="../../assets/css/popup.css">
+  <link rel="stylesheet" href="../../assets/css/settingStyle.css">
+  <title>Definições do Sistema</title>
 </head>
-
 <body>
-    <header id="header">
-        <div class="buttonHeader">
-            <button type="button" class="buttonBack" id="backIndex">
-                <img src="../../assets/img/icons/angle-left.png" alt="arrow-left" class="arrowLeft icon">
-            </button>
-        </div>
-
-        <div class="userProfile">
-            <button type="button" class="imgProfile">
-                <img src="../../assets/img/icons/user.png" alt="userIcon">
-            </button>
-            <div class="textProfile">
-                <h2 class="userName">
-                    Lamine Yamal
-                </h2>
-                <span class="userEmail">
-                    lamineyamal@gmail.com
-                </span>
-            </div>
-        </div>
-    </header>
-
-    <div class="containerActivity">
-        <section class="containerSettingMenu">
-            <h2 class="title">Definições</h2>
-            <nav id="nav">
-                <ul id="menu">
-                    <li>
-                        <button type="button" class="list active">Perfil</button>
-                    </li>
-                    <li>
-                        <button type="button" class="list">Conta</button>
-                    </li>
-                    <!-- <li>
-                        <button type="button">Comunicação</button>
-                    </li> -->
-                    <!-- <li>
-                        <button type="button">Carteira</button>
-                    </li> -->
-                    <li>
-                        <button type="button" class="logOut">Sair</button>
-                    </li>
-                </ul>
-            </nav>
-        </section>
-
-        <section id="containerMain" class="">
-            <main id="main">
-                <button type="button" class="closeMenu mobile" id="closeMenu">
-                    <img src="../../assets/img/icons/cross.png" alt="cross-icon" class="cross">
-                </button>
-                <section id="mainPerfil" class="">
-                    <h2 class="titleMain">
-                        Perfil
-                    </h2>
-                    <form class="containerForm">
-                        <div class="main__userName">
-                            <label for="userName">Nome do Usuário:</label>
-                            <input type="text" id="userName" name="userName">
-                        </div>
-                        <div class="main__textArea">
-                            <label for="userBio">Biografia: </label>
-                            <textarea name="userBio" id="userBio" minlength="3" maxlength="250" rows="3"
-                                cols="100%"></textarea>
-                        </div>
-                        <div class="main__Genero">
-                            <label for="userGenero">Gênero:</label>
-                            <select name="userGenero" id="userGenero">
-                                <option value="" disabled selected>Selecione</option>
-                                <option value="masculino">Masculino</option>
-                                <option value="feminino">Feminino</option>
-                            </select>
-                        </div>
-                        <div class="main__userType">
-                            <label for="userType">Tipo de Usuário: </label>
-                            <select name="userType" id="userType">
-                                <option value="" disabled selected>Selecione</option>
-                                <option value="paciente">Paciente</option>
-                                <option value="psicologo">Psicólogo</option>
-                            </select>
-                        </div>
-                        <div class="btn">
-                            <button type="button">Salvar</button>
-                        </div>
-                    </form>
-                </section>
-
-                <section id="mainConta" class="active">
-                    <h2 class="titleMain">
-                        Conta
-                    </h2>
-                    <form class="containerForm">
-                        <div class="main__emailUser">
-                            <label for="emailUser">Email:</label>
-                            <input type="email" id="emailUser" name="emailUser">
-                        </div>
-                        <div class="main__passwordUser">
-                            <label for="passwordUser">Senha Atual:</label>
-                            <input type="password" id="passwordUser" name="passwordUser">
-                        </div>
-                        <div class="main__newPassword">
-                            <label for="newPassword">Nova Senha:</label>
-                            <input type="password" id="newPassword" name="newPassword">
-                        </div>
-                        <div class="btn">
-                            <button type="button">Salvar</button>
-                            <button type="button" class="deliteAccount">Excluir Conta</button>
-                        </div>
-                    </form>
-                </section>
-
-                <!-- <section id="mainComunicacao">
-                </section> -->
-                <!-- <section id="mainCarteira">
-                </section> -->
-            </main>
-        </section>
+  <header id="header">
+    <div class="buttonHeader">
+      <button type="button" class="buttonBack" id="backIndex" aria-label="Voltar">
+        <img src="../../assets/img/icons/angle-left.png" alt="arrow-left" class="arrowLeft icon">
+      </button>
     </div>
 
-    <!-- POPUPS (mesmo em todos os arquivos) -->
-    <div class="popup">
-        <div class="popup__container" id="success">
-            <div class="popup__content">
-                <div class="header__popup">
-                    <img src="../assets/img/icons/tick-mark.png" alt="tick">
-                    <span class="title">Sucesso</span>
-                </div>
-                <div class="main__popup">
-                    <span class="mensagens"></span>
-                </div>
-                <div class="footer__popup">
-                    <button type="button">Ok</button>
-                </div>
-            </div>
-        </div>
-        <div class="popup__container" id="error">
-            <div class="popup__content">
-                <div class="header__popup">
-                    <img src="../assets/img/icons/cross.png" alt="cross">
-                    <span class="title">Erro</span>
-                </div>
-                <div class="main__popup">
-                    <span class="mensagens"></span>
-                </div>
-                <div class="footer__popup">
-                    <button type="button">Ok</button>
-                </div>
-            </div>
-        </div>
+    <div class="userProfile">
+      <button type="button" class="imgProfile" aria-label="Alterar foto de perfil">
+        <img src="../../assets/img/icons/user.png" alt="userIcon">
+      </button>
+      <div class="textProfile">
+        <h2 class="userName">Lamine Yamal</h2>
+        <span class="userEmail">lamineyamal@gmail.com</span>
+      </div>
     </div>
+  </header>
 
-    <script type="module" src="../../assets/js/popup.js"></script>
-    <script type="module" src="../../assets/js/firebaseConfig.js"></script>
-    <script type="module" src="../../assets/js/settingScripts.js"></script>
+  <!-- Input para alteração da foto de perfil (oculto) -->
+  <input type="file" id="profilePhoto" accept="image/*" style="display: none;">
+
+  <div class="containerActivity">
+    <section class="containerSettingMenu">
+      <h2 class="title">Definições</h2>
+      <nav id="nav">
+        <ul id="menu">
+          <li>
+            <button type="button" class="list">Perfil</button>
+          </li>
+          <li>
+            <button type="button" class="list">Conta</button>
+          </li>
+          <li>
+            <button type="button" class="logOut">Sair</button>
+          </li>
+        </ul>
+      </nav>
+    </section>
+
+    <section id="containerMain">
+      <main id="main">
+        <button type="button" class="closeMenu mobile" id="closeMenu" aria-label="Fechar menu">
+          <img src="../../assets/img/icons/cross.png" alt="cross-icon" class="cross">
+        </button>
+        <section id="mainPerfil">
+          <h2 class="titleMain">Perfil</h2>
+          <form class="containerForm">
+            <div class="main__userName">
+              <label for="userName">Nome do Usuário:</label>
+              <input type="text" id="userName" name="userName" required>
+            </div>
+            <div class="main__textArea">
+              <label for="userBio">Biografia: </label>
+              <textarea name="userBio" id="userBio" minlength="3" maxlength="250" rows="3" cols="100%"></textarea>
+            </div>
+            <div class="main__Genero">
+              <label for="userGenero">Gênero:</label>
+              <select name="userGenero" id="userGenero">
+                <option value="" disabled selected>Selecione</option>
+                <option value="masculino">Masculino</option>
+                <option value="feminino">Feminino</option>
+              </select>
+            </div>
+            <div class="main__userType">
+              <label for="userType">Tipo de Usuário: </label>
+              <select name="userType" id="userType">
+                <option value="" disabled selected>Selecione</option>
+                <option value="paciente">Paciente</option>
+                <option value="psicologo">Psicólogo</option>
+              </select>
+            </div>
+            <div class="btn">
+              <button type="button">Salvar</button>
+            </div>
+          </form>
+        </section>
+
+        <section id="mainConta">
+          <h2 class="titleMain">Conta</h2>
+          <form class="containerForm">
+            <div class="main__emailUser">
+              <label for="emailUser">Email:</label>
+              <input type="email" id="emailUser" name="emailUser" disabled>
+            </div>
+            <div class="main__passwordUser">
+              <label for="passwordUser">Senha Atual:</label>
+              <input type="password" id="passwordUser" name="passwordUser">
+            </div>
+            <div class="main__newPassword">
+              <label for="newPassword">Nova Senha:</label>
+              <input type="password" id="newPassword" name="newPassword">
+            </div>
+            <div class="btn">
+              <button type="button">Salvar</button>
+              <button type="button" class="deliteAccount">Excluir Conta</button>
+            </div>
+          </form>
+        </section>
+      </main>
+    </section>
+  </div>
+
+  <!-- POPUPS -->
+  <div class="popup">
+    <div class="popup__container" id="success">
+      <div class="popup__content">
+        <div class="header__popup">
+          <img src="../../assets/img/icons/tick-mark.png" alt="tick">
+          <span class="title">Sucesso</span>
+        </div>
+        <div class="main__popup">
+          <span class="mensagens"></span>
+        </div>
+        <div class="footer__popup">
+          <button type="button">Ok</button>
+        </div>
+      </div>
+    </div>
+    <div class="popup__container" id="error">
+      <div class="popup__content">
+        <div class="header__popup">
+          <img src="../../assets/img/icons/cross.png" alt="cross">
+          <span class="title">Erro</span>
+        </div>
+        <div class="main__popup">
+          <span class="mensagens"></span>
+        </div>
+        <div class="footer__popup">
+          <button type="button">Ok</button>
+        </div>
+      </div>
+    </div>
+    <div class="popup__container" id="alert">
+      <div class="popup__content">
+        <div class="header__popup">
+          <img src="../../assets/img/icons/exclamation.png" alt="alert-icon">
+          <span class="title">Alerta</span>
+        </div>
+        <div class="main__popup">
+          <span class="mensagens"></span>
+          <span class="confirmacao">
+            <label for="alertPop">Insira sua senha para confirmar:</label>
+            <input type="password" class="popupConfirm" id="alertPop" required>
+          </span>
+        </div>
+        <div class="footer__popup alert">
+          <button type="button">Sim</button>
+          <button type="button">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="../../assets/js/popup.js"></script>
+  <script type="module" src="../../assets/js/firebaseConfig.js"></script>
+  <script type="module" src="../../assets/js/settingScripts.js"></script>
 </body>
-
 </html>

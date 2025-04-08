@@ -127,6 +127,14 @@
   font-weight: bold;
 }
 
+.footer__popup.alert{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
 /* Sucesso */
 #success {
   border-color: #c3e6cb;
@@ -156,5 +164,42 @@
 
 #error button {
   background-color: #c82333;
+  color: #fff;
+}
+
+/* Alerta */
+#alert {
+  border-color: #ffeeba;
+  background-color: #fff3cd;
+}
+
+#alert .title,
+#alert .mensagens,
+#alert label {
+  color: #856404;
+}
+
+#alert .confirmacao{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-around;
+}
+
+#alert label{
+  font-size: .8em;
+  text-transform: lowercase;
+}
+
+#alert input{
+  padding: 2px;
+  border: 1px solid #ffeeba;
+  background: #fff;
+  border-radius: 4px;
+  outline: none;
+}
+
+#alert button {
+  background-color: #ffc107;
   color: #fff;
 }
