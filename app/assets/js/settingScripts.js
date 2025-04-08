@@ -143,7 +143,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   window.addEventListener("resize", handleResize);
-  handleResize();
+  // handleResize();
 
   menuButtons.forEach(button => {
     button.addEventListener("click", (e) => {
