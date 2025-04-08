@@ -58,15 +58,15 @@
           <form class="containerForm">
             <div class="main__userName">
               <label for="userName">Nome do Usuário:</label>
-              <input type="text" id="userName" name="userName" required>
+              <input type="text" id="userName" name="userName" required minlength="3">
             </div>
             <div class="main__textArea">
               <label for="userBio">Biografia: </label>
-              <textarea name="userBio" id="userBio" minlength="3" maxlength="250" rows="3" cols="100%"></textarea>
+              <textarea name="userBio" id="userBio" maxlength="250" rows="3" cols="100%"></textarea>
             </div>
             <div class="main__Genero">
               <label for="userGenero">Gênero:</label>
-              <select name="userGenero" id="userGenero">
+              <select name="userGenero" id="userGenero" required>
                 <option value="" disabled selected>Selecione</option>
                 <option value="masculino">Masculino</option>
                 <option value="feminino">Feminino</option>
@@ -74,7 +74,7 @@
             </div>
             <div class="main__userType">
               <label for="userType">Tipo de Usuário: </label>
-              <select name="userType" id="userType">
+              <select name="userType" id="userType" required>
                 <option value="" disabled selected>Selecione</option>
                 <option value="paciente">Paciente</option>
                 <option value="psicologo">Psicólogo</option>
@@ -99,11 +99,11 @@
             </div>
             <div class="main__newPassword">
               <label for="newPassword">Nova Senha:</label>
-              <input type="password" id="newPassword" name="newPassword">
+              <input type="password" id="newPassword" name="newPassword" minlength="6">
             </div>
             <div class="btn">
               <button type="button">Salvar</button>
-              <button type="button" class="deliteAccount">Excluir Conta</button>
+              <button type="button" class="deleteAccount">Excluir Conta</button>
             </div>
           </form>
         </section>
@@ -150,7 +150,7 @@
         <div class="main__popup">
           <span class="mensagens"></span>
           <span class="confirmacao">
-            <label for="alertPop">Senha do usuario:</label>
+            <label for="alertPop">Senha do usuário:</label>
             <input type="password" class="popupConfirm" id="alertPop" required>
           </span>
         </div>

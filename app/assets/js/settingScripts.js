@@ -1,10 +1,11 @@
 // settingScripts.js
 import { subscribeToAuthChanges } from "../../assets/js/models/userModel.js";
-import { auth, firestore } from "../../assets/js/firebaseConfig.js";
+import { auth, firestore, storage } from "../../assets/js/firebaseConfig.js";
 import {
   updateDoc,
   doc,
-  deleteDoc
+  deleteDoc,
+  getDoc
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 import {
   updateEmail,
@@ -14,62 +15,314 @@ import {
   reauthenticateWithCredential,
   EmailAuthProvider
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
-// Importa as funções de popup
-import { showPopup, closePopup } from "../../assets/js/popup.js";
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-storage.js";
 
 /**
- * Exibe um popup de confirmação (do tipo "alert") com dois botões: "sim" e "cancelar".
- * Retorna uma Promise que resolve com true se confirmado ou false se cancelado.
- * Certifique-se de que o HTML contenha o popup com id "alert" com dois botões (na ordem: primeiro "sim", segundo "cancelar").
- * @param {string} message 
- * @returns {Promise<boolean>}
+ * Função simplificada para exibir mensagens
+ * @param {string} message - Mensagem a ser exibida
+ * @param {string} type - Tipo da mensagem: success, error
  */
-function confirmPopup(message) {
-  return new Promise((resolve) => {
-    try {
-      // Exibe o popup de alerta com a mensagem
-      showPopup('alert', message);
-      const alertContainer = document.getElementById("alert");
-      if (!alertContainer) {
-        console.error('Popup de alerta (id "alert") não encontrado.');
-        resolve(false);
-        return;
-      }
-      // Seleciona os botões pelo seu posicionamento (primeiro para confirmar, segundo para cancelar)
-      const buttons = alertContainer.querySelectorAll("button");
-      if (buttons.length < 2) {
-        console.error('Botões de confirmação ou cancelamento não encontrados no popup de alerta.');
-        resolve(false);
-        return;
-      }
-      const confirmBtn = buttons[0]; // "sim"
-      const cancelBtn = buttons[1];  // "cancelar"
+function showMessage(message, type = 'info') {
+  // Verifica se já existe um elemento de mensagem
+  let messageElement = document.getElementById('notification');
+  if (!messageElement) {
+    // Cria um elemento de notificação se não existir
+    messageElement = document.createElement('div');
+    messageElement.id = 'notification';
+    messageElement.style.position = 'fixed';
+    messageElement.style.top = '20px';
+    messageElement.style.right = '20px';
+    messageElement.style.padding = '15px 20px';
+    messageElement.style.borderRadius = '5px';
+    messageElement.style.fontSize = '14px';
+    messageElement.style.fontWeight = '500';
+    messageElement.style.zIndex = '9999';
+    messageElement.style.transition = 'opacity 0.3s ease';
+    document.body.appendChild(messageElement);
+  }
 
-      // Função para limpar os listeners e fechar o popup
-      const cleanup = () => {
-        confirmBtn.removeEventListener("click", onConfirm);
-        cancelBtn.removeEventListener("click", onCancel);
-        // Limpa a mensagem e fecha o popup
-        closePopup('alert');
-      };
-      const onConfirm = () => {
-        cleanup();
-        resolve(true);
-      };
-      const onCancel = () => {
-        cleanup();
-        resolve(false);
-      };
-      confirmBtn.addEventListener("click", onConfirm);
-      cancelBtn.addEventListener("click", onCancel);
-    } catch (err) {
-      console.error("Erro no confirmPopup:", err);
-      resolve(false);
-    }
+  // Define as cores com base no tipo
+  switch (type) {
+    case 'success':
+      messageElement.style.backgroundColor = '#4CAF50';
+      messageElement.style.color = 'white';
+      break;
+    case 'error':
+      messageElement.style.backgroundColor = '#F44336';
+      messageElement.style.color = 'white';
+      break;
+    default:
+      messageElement.style.backgroundColor = '#2196F3';
+      messageElement.style.color = 'white';
+  }
+
+  // Define a mensagem e exibe
+  messageElement.textContent = message;
+  messageElement.style.opacity = '1';
+
+  // Oculta a mensagem após 3 segundos
+  setTimeout(() => {
+    messageElement.style.opacity = '0';
+    setTimeout(() => {
+      messageElement.remove();
+    }, 300);
+  }, 3000);
+}
+
+/**
+ * Função para mostrar um diálogo de confirmação simples
+ * @param {string} message - Mensagem a ser exibida
+ * @returns {Promise<{confirmed: boolean, password: string|null}>}
+ */
+function confirmDialog(message) {
+  return new Promise((resolve) => {
+    // Criar um backdrop overlay
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    overlay.style.zIndex = '1000';
+    overlay.style.display = 'flex';
+    overlay.style.justifyContent = 'center';
+    overlay.style.alignItems = 'center';
+    
+    // Criar o diálogo
+    const dialog = document.createElement('div');
+    dialog.style.backgroundColor = 'white';
+    dialog.style.borderRadius = '8px';
+    dialog.style.padding = '20px';
+    dialog.style.width = '350px';
+    dialog.style.maxWidth = '90%';
+    dialog.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+    
+    // Texto da mensagem
+    const messageEl = document.createElement('p');
+    messageEl.textContent = message;
+    messageEl.style.marginBottom = '20px';
+    
+    // Campo de senha
+    const passwordInput = document.createElement('input');
+    passwordInput.type = 'password';
+    passwordInput.placeholder = 'Digite sua senha para confirmar';
+    passwordInput.style.width = '100%';
+    passwordInput.style.padding = '10px';
+    passwordInput.style.marginBottom = '20px';
+    passwordInput.style.borderRadius = '4px';
+    passwordInput.style.border = '1px solid #ddd';
+    
+    // Container de botões
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.display = 'flex';
+    buttonContainer.style.justifyContent = 'flex-end';
+    buttonContainer.style.gap = '10px';
+    
+    // Botão cancelar
+    const cancelButton = document.createElement('button');
+    cancelButton.textContent = 'Cancelar';
+    cancelButton.style.padding = '8px 15px';
+    cancelButton.style.backgroundColor = '#f1f1f1';
+    cancelButton.style.border = 'none';
+    cancelButton.style.borderRadius = '4px';
+    cancelButton.style.cursor = 'pointer';
+    
+    // Botão confirmar
+    const confirmButton = document.createElement('button');
+    confirmButton.textContent = 'Confirmar';
+    confirmButton.style.padding = '8px 15px';
+    confirmButton.style.backgroundColor = '#e74c3c';
+    confirmButton.style.color = 'white';
+    confirmButton.style.border = 'none';
+    confirmButton.style.borderRadius = '4px';
+    confirmButton.style.cursor = 'pointer';
+    
+    // Montar o diálogo
+    buttonContainer.appendChild(cancelButton);
+    buttonContainer.appendChild(confirmButton);
+    dialog.appendChild(messageEl);
+    dialog.appendChild(passwordInput);
+    dialog.appendChild(buttonContainer);
+    overlay.appendChild(dialog);
+    
+    // Adicionar à página
+    document.body.appendChild(overlay);
+    
+    // Focar no campo de senha
+    setTimeout(() => passwordInput.focus(), 100);
+    
+    // Event listeners
+    cancelButton.addEventListener('click', () => {
+      document.body.removeChild(overlay);
+      resolve({ confirmed: false, password: null });
+    });
+    
+    confirmButton.addEventListener('click', () => {
+      const password = passwordInput.value.trim();
+      document.body.removeChild(overlay);
+      
+      if (!password) {
+        showMessage('Por favor, digite sua senha para confirmar.', 'error');
+        setTimeout(() => {
+          confirmDialog(message).then(resolve);
+        }, 1000);
+        return;
+      }
+      
+      resolve({ confirmed: true, password });
+    });
   });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+/**
+ * Função para atualizar a foto de perfil do usuário
+ * @param {File} file - Arquivo de imagem selecionado
+ * @returns {Promise<string|null>} URL da foto atualizada ou null em caso de erro
+ */
+async function updateProfilePhoto(file) {
+  try {
+    // Validações iniciais
+    if (!file) {
+      throw new Error("Nenhum arquivo selecionado.");
+    }
+
+    if (!file.type.match('image.*')) {
+      throw new Error("O arquivo selecionado não é uma imagem válida.");
+    }
+
+    // Limite de tamanho (5MB)
+    const MAX_FILE_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
+      throw new Error(`A imagem deve ter no máximo 5MB. Tamanho atual: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+    }
+
+    // Verificar usuário autenticado
+    const user = auth.currentUser;
+    if (!user) {
+      throw new Error("Usuário não autenticado. Faça login novamente.");
+    }
+
+    // Mostrar indicador de carregamento
+    showMessage("Enviando foto...", "info");
+
+    try {
+      // Criar nome único para evitar problemas de cache
+      const timestamp = new Date().getTime();
+      const storageRef = ref(storage, `profilePhotos/${user.uid}_${timestamp}`);
+
+      // Upload da imagem
+      const uploadTask = await uploadBytes(storageRef, file);
+      
+      // Obter URL da imagem
+      const photoURL = await getDownloadURL(uploadTask.ref);
+
+      // Atualizar perfil no Authentication
+      await updateProfile(user, { photoURL });
+
+      // Atualizar dados no Firestore
+      const userDoc = doc(firestore, "users", user.uid);
+      await updateDoc(userDoc, {
+        photoURL,
+        updatedAt: new Date()
+      });
+
+      // Atualizar interface imediatamente
+      const profileImg = document.querySelector(".imgProfile img");
+      if (profileImg) {
+        profileImg.src = photoURL;
+      }
+
+      // Atualizar dados no localStorage para persistência
+      const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+      const updatedUser = { ...userData, photoURL };
+      localStorage.setItem("userData", JSON.stringify(updatedUser));
+
+      // Mostrar sucesso
+      showMessage("Foto de perfil atualizada com sucesso!", "success");
+      
+      return photoURL;
+    } catch (uploadError) {
+      // Tratamento específico para erros de CORS (Firebase Storage)
+      console.error("Erro de upload:", uploadError);
+      
+      if (uploadError.code === 'storage/unauthorized' || 
+          uploadError.message?.includes('CORS') || 
+          uploadError.message?.includes('access control check')) {
+        showMessage("Erro de permissão ao fazer upload da imagem. Verifique as permissões ou tente fazer login novamente.", "error");
+      } else {
+        showMessage("Erro ao fazer upload da imagem: " + (uploadError.message || "Tente novamente mais tarde."), "error");
+      }
+      return null;
+    }
+  } catch (error) {
+    // Tratamento de erros gerais
+    console.error("Erro ao atualizar foto de perfil:", error);
+    showMessage(error.message || "Erro ao atualizar foto de perfil. Tente novamente.", "error");
+    return null;
+  }
+}
+
+/**
+ * Verifica se uma imagem é válida e tem dimensões adequadas
+ * @param {File} file - Arquivo de imagem
+ * @returns {Promise<boolean>}
+ */
+function isValidImage(file) {
+  const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+  
+  if (!validTypes.includes(file.type)) {
+    return Promise.resolve(false);
+  }
+  
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        // Verifica dimensões mínimas e máximas
+        const isValidSize = img.width >= 100 && img.height >= 100 && 
+                           img.width <= 2000 && img.height <= 2000;
+        resolve(isValidSize);
+      };
+      img.onerror = () => resolve(false);
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * Verifica se os campos obrigatórios estão preenchidos no Firestore
+ * @param {string} userId - ID do usuário
+ * @returns {Promise<{hasGender: boolean, hasUserType: boolean}>}
+ */
+async function checkRequiredFields(userId) {
+  try {
+    const userDoc = doc(firestore, "users", userId);
+    const userSnapshot = await getDoc(userDoc);
+    
+    if (userSnapshot.exists()) {
+      const userData = userSnapshot.data();
+      return {
+        hasGender: Boolean(userData.gender),
+        hasUserType: Boolean(userData.userType)
+      };
+    }
+    
+    return { hasGender: false, hasUserType: false };
+  } catch (error) {
+    console.error("Erro ao verificar campos no banco de dados:", error);
+    return { hasGender: false, hasUserType: false };
+  }
+}
+
+// Inicialização quando o DOM estiver carregado
+document.addEventListener("DOMContentLoaded", async () => {
   /* Elementos de Layout */
   const setting = document.querySelector(".containerSettingMenu");
   const main = document.querySelector("#containerMain");
@@ -85,14 +338,6 @@ document.addEventListener("DOMContentLoaded", () => {
   /* Elemento para alteração da foto de perfil (input file) */
   const profilePhotoInput = document.getElementById("profilePhoto");
 
-  /* Dispara o seletor de arquivo ao clicar na foto de perfil */
-  const imgProfileBtn = document.querySelector(".imgProfile");
-  if (imgProfileBtn && profilePhotoInput) {
-    imgProfileBtn.addEventListener("click", () => {
-      profilePhotoInput.click();
-    });
-  }
-
   /* Seções do conteúdo */
   const sections = {
     perfil: document.getElementById("mainPerfil"),
@@ -102,18 +347,18 @@ document.addEventListener("DOMContentLoaded", () => {
   /* Formulários e Botões de Ação */
   const perfilForm = document.querySelector("#mainPerfil form");
   const contaForm = document.querySelector("#mainConta form");
-  const contaSaveBtn = contaForm?.querySelector("button:not(.deliteAccount)");
-  const deleteAccountBtn = contaForm?.querySelector("button.deliteAccount");
+  const contaSaveBtn = contaForm?.querySelector("button:not(.deleteAccount)");
+  const deleteAccountBtn = contaForm?.querySelector("button.deleteAccount");
 
   /* FUNÇÕES AUXILIARES DE LAYOUT */
   const clearActive = () => {
-    Object.values(sections).forEach(s => s.classList.remove("active"));
+    Object.values(sections).forEach(s => s?.classList.remove("active"));
     menuButtons.forEach(btn => btn.classList.remove("active"));
   };
 
   const clearMobileActive = () => {
-    setting.classList.remove("active");
-    main.classList.remove("active");
+    setting?.classList.remove("active");
+    main?.classList.remove("active");
   };
 
   const activateSection = (text) => {
@@ -133,6 +378,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
+  // Chamar setDefaultActive para garantir que uma seção esteja selecionada ao carregar
+  setDefaultActive();
+
+  /* Event Listeners para elementos de layout */
   menuButtons.forEach(button => {
     button.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -141,47 +390,108 @@ document.addEventListener("DOMContentLoaded", () => {
       button.classList.add("active");
       activateSection(text);
       if (window.innerWidth <= 600) {
-        setting.classList.add("active");
-        main.classList.add("active");
+        setting?.classList.add("active");
+        main?.classList.add("active");
       }
     });
   });
 
-  cross.addEventListener("click", (e) => {
+  cross?.addEventListener("click", (e) => {
     e.stopPropagation();
     clearActive();
     clearMobileActive();
+    setDefaultActive(); // Reseleciona a seção padrão ao fechar
   });
 
-  backButton.addEventListener("click", (e) => {
+  backButton?.addEventListener("click", (e) => {
     e.stopPropagation();
     window.location.href = "./index.html";
   });
 
   /* ATUALIZAÇÃO DINÂMICA DO HEADER E PREENCHE CAMPOS DE CONTA */
-  const updateHeaderProfile = (user) => {
+  const updateHeaderProfile = async (user) => {
     if (user) {
-      // Salva os dados do usuário no localStorage para otimização
-      localStorage.setItem("userData", JSON.stringify(user));
-      profileImgEl.src = user.photoURL || "../../assets/img/icons/user.png";
-      userNameEl.textContent = user.name || user.displayName || "Usuário";
-      userEmailEl.textContent = user.email;
-      // Preenche o input de email e o desabilita
+      // Verificar campos obrigatórios no banco de dados
+      const { hasGender, hasUserType } = await checkRequiredFields(user.uid);
+      
+      // Salvar no localStorage
+      const userData = {
+        ...user,
+        _hasGender: hasGender,
+        _hasUserType: hasUserType
+      };
+      localStorage.setItem("userData", JSON.stringify(userData));
+      
+      // Atualizar UI
+      if (profileImgEl) {
+        profileImgEl.src = user.photoURL || "../../assets/img/icons/user.png";
+        // Pré-carregar a imagem para evitar falhas
+        const preloadImg = new Image();
+        preloadImg.src = user.photoURL || "../../assets/img/icons/user.png";
+      }
+      
+      if (userNameEl) {
+        userNameEl.textContent = user.name || user.displayName || "Usuário";
+      }
+      
+      if (userEmailEl) {
+        userEmailEl.textContent = user.email || "";
+      }
+      
       const emailInput = document.getElementById("emailUser");
       if (emailInput) {
         emailInput.value = user.email || "";
         emailInput.disabled = true;
       }
+      
+      // Preencher campos do perfil
+      const nameInput = document.getElementById("userName");
+      const bioInput = document.getElementById("userBio");
+      const generoSelect = document.getElementById("userGenero");
+      const typeSelect = document.getElementById("userType");
+      
+      if (nameInput) nameInput.value = user.name || user.displayName || "";
+      if (bioInput) bioInput.value = user.bio || "";
+      
+      if (generoSelect) {
+        if (user.gender) {
+          generoSelect.value = user.gender;
+        } else {
+          // Destacar campo se estiver vazio
+          generoSelect.classList.add("required-field");
+          generoSelect.style.borderColor = hasGender ? "" : "red";
+        }
+      }
+      
+      if (typeSelect) {
+        if (user.userType) {
+          typeSelect.value = user.userType;
+        } else {
+          // Destacar campo se estiver vazio
+          typeSelect.classList.add("required-field");
+          typeSelect.style.borderColor = hasUserType ? "" : "red";
+        }
+      }
+      
+      // Disparar evento de input para atualizar contadores
+      if (bioInput) bioInput.dispatchEvent(new Event('input'));
+      
+      // Mostrar aviso se campos obrigatórios estiverem vazios
+      if (!hasGender || !hasUserType) {
+        showMessage("Por favor, preencha os campos obrigatórios de gênero e tipo de usuário.", "error");
+      }
     }
   };
 
-  subscribeToAuthChanges((user) => {
+  // Inscrever-se para alterações de autenticação
+  subscribeToAuthChanges(async (user) => {
     if (user) {
-      updateHeaderProfile(user);
+      await updateHeaderProfile(user);
     } else {
-      profileImgEl.src = "../../assets/img/icons/user.png";
-      userNameEl.textContent = "";
-      userEmailEl.textContent = "";
+      if (profileImgEl) profileImgEl.src = "../../assets/img/icons/user.png";
+      if (userNameEl) userNameEl.textContent = "";
+      if (userEmailEl) userEmailEl.textContent = "";
+      
       const emailInput = document.getElementById("emailUser");
       if (emailInput) {
         emailInput.value = "";
@@ -189,90 +499,172 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  /* Melhorar a interação do usuário com foto de perfil */
+  const imgProfileBtn = document.querySelector(".imgProfile");
+  if (imgProfileBtn && profilePhotoInput) {
+    // Adicionar estilo para indicar que é clicável
+    imgProfileBtn.style.cursor = "pointer";
+    
+    // Adicionar tooltip
+    imgProfileBtn.title = "Clique para alterar sua foto de perfil";
+    
+    imgProfileBtn.addEventListener("click", () => {
+      profilePhotoInput.click();
+    });
+  }
+
   /* ALTERAÇÃO DA IMAGEM DE PERFIL */
   if (profilePhotoInput) {
-    profilePhotoInput.addEventListener("change", () => {
+    profilePhotoInput.addEventListener("change", async () => {
       const file = profilePhotoInput.files[0];
       if (file) {
+        // Validação do tipo de arquivo
         if (!file.type.startsWith("image/")) {
-          showPopup('error', "Por favor, selecione uma imagem válida.");
+          showMessage("Por favor, selecione uma imagem válida.", "error");
+          profilePhotoInput.value = ""; // Limpa o input
           return;
         }
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-          const photoURL = e.target.result; // imagem em base64
-          try {
-            // Atualiza o perfil do usuário
-            await updateProfile(auth.currentUser, { photoURL });
-            const userDoc = doc(firestore, "users", auth.currentUser.uid);
-            await updateDoc(userDoc, { photoURL, updatedAt: new Date() });
-            profileImgEl.src = photoURL;
-            // Atualiza localStorage
-            const updatedUser = { ...JSON.parse(localStorage.getItem("userData")), photoURL };
-            localStorage.setItem("userData", JSON.stringify(updatedUser));
-            showPopup('success', "Foto de perfil atualizada com sucesso!");
-          } catch (error) {
-            console.error("Erro ao atualizar foto de perfil:", error.message);
-            showPopup('error', "Erro ao atualizar foto de perfil. Tente novamente.");
-          }
-        };
-        reader.readAsDataURL(file);
+        
+        // Validação avançada da imagem
+        const isValid = await isValidImage(file);
+        if (!isValid) {
+          showMessage("A imagem selecionada tem dimensões inválidas. Use uma imagem entre 100x100 e 2000x2000 pixels.", "error");
+          profilePhotoInput.value = "";
+          return;
+        }
+        
+        // Realizar upload
+        await updateProfilePhoto(file);
+        
+        // Limpar input para permitir selecionar a mesma imagem novamente
+        profilePhotoInput.value = "";
       }
     });
+  }
+
+  /* Adicionar contador de caracteres para o campo bio */
+  const userBioInput = perfilForm?.querySelector("#userBio");
+  if (userBioInput) {
+    const bioCharCount = document.createElement("small");
+    bioCharCount.classList.add("char-count");
+    bioCharCount.style.display = "block";
+    bioCharCount.style.marginTop = "5px";
+    bioCharCount.style.fontSize = "12px";
+    bioCharCount.style.textAlign = "right";
+    
+    // Inserir após o campo de texto
+    userBioInput.parentNode.insertBefore(bioCharCount, userBioInput.nextSibling);
+    
+    userBioInput.addEventListener("input", () => {
+      const remaining = 250 - userBioInput.value.length;
+      bioCharCount.textContent = `${remaining} caracteres restantes`;
+      bioCharCount.style.color = remaining < 0 ? "red" : "#666";
+    });
+    
+    // Disparar o evento para mostrar contagem inicial
+    userBioInput.dispatchEvent(new Event("input"));
   }
 
   /* ATUALIZAÇÃO DO PERFIL - Formulário de Perfil */
   perfilForm?.querySelector("button[type='button']").addEventListener("click", async (e) => {
     e.preventDefault();
+    
     const userName = perfilForm.querySelector("#userName").value.trim();
     const userBio = perfilForm.querySelector("#userBio").value.trim();
     const userGenero = perfilForm.querySelector("#userGenero").value;
     const userType = perfilForm.querySelector("#userType").value;
 
+    // Validações
     if (!userName) {
-      showPopup('error', "O nome é obrigatório.");
+      showMessage("O nome é obrigatório.", "error");
+      return;
+    }
+    if (userName.length < 3) {
+      showMessage("O nome deve ter pelo menos 3 caracteres.", "error");
       return;
     }
     if (userBio.length > 250) {
-      showPopup('error', "A bio não pode exceder 250 caracteres.");
+      showMessage("A bio não pode exceder 250 caracteres.", "error");
+      return;
+    }
+    if (!userGenero) {
+      showMessage("Selecione um gênero.", "error");
+      perfilForm.querySelector("#userGenero").style.borderColor = "red";
+      return;
+    }
+    if (!userType) {
+      showMessage("Selecione um tipo de usuário.", "error");
+      perfilForm.querySelector("#userType").style.borderColor = "red";
       return;
     }
 
     try {
+      showMessage("Atualizando perfil...", "info");
+      
       const currentUser = auth.currentUser;
-      if (currentUser) {
-        // Atualiza displayName no Auth
-        await updateProfile(currentUser, { displayName: userName });
-        const userDoc = doc(firestore, "users", currentUser.uid);
-        await updateDoc(userDoc, {
-          name: userName,
-          bio: userBio,
-          gender: userGenero,
-          userType: userType,
-          updatedAt: new Date()
-        });
-        // Atualiza localStorage
-        const updatedUser = { ...JSON.parse(localStorage.getItem("userData")), name: userName };
-        localStorage.setItem("userData", JSON.stringify(updatedUser));
-        showPopup('success', "Perfil atualizado com sucesso!");
+      if (!currentUser) {
+        throw new Error("Usuário não autenticado.");
       }
+
+      // Atualizar perfil no Authentication
+      await updateProfile(currentUser, { displayName: userName });
+      
+      // Atualizar dados no Firestore
+      const userDoc = doc(firestore, "users", currentUser.uid);
+      await updateDoc(userDoc, {
+        name: userName,
+        bio: userBio,
+        gender: userGenero,
+        userType: userType,
+        updatedAt: new Date()
+      });
+      
+      // Atualizar dados em cache
+      const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+      const updatedUser = { 
+        ...userData, 
+        name: userName,
+        bio: userBio,
+        gender: userGenero,  
+        userType: userType,
+        _hasGender: true,
+        _hasUserType: true
+      };
+      localStorage.setItem("userData", JSON.stringify(updatedUser));
+      
+      // Atualizar interface
+      await updateHeaderProfile({
+        ...currentUser,
+        name: userName,
+        bio: userBio,
+        gender: userGenero,
+        userType: userType
+      });
+      
+      // Resetar estilos de validação
+      if (perfilForm.querySelector("#userGenero")) {
+        perfilForm.querySelector("#userGenero").style.borderColor = "";
+      }
+      if (perfilForm.querySelector("#userType")) {
+        perfilForm.querySelector("#userType").style.borderColor = "";
+      }
+      
+      showMessage("Perfil atualizado com sucesso!", "success");
     } catch (error) {
-      console.error("Erro ao atualizar perfil:", error.message);
-      showPopup('error', "Erro ao atualizar perfil. Tente novamente.");
+      console.error("Erro ao atualizar perfil:", error);
+      showMessage(error.message || "Erro ao atualizar perfil. Tente novamente.", "error");
     }
   });
 
   /* ATUALIZAÇÃO DA CONTA - Formulário de Conta */
   contaSaveBtn?.addEventListener("click", async (e) => {
     e.preventDefault();
+    
     try {
       const currentUser = auth.currentUser;
       if (!currentUser) throw new Error("Usuário não autenticado.");
 
-      // O input de email é desabilitado e não pode ser alterado
       const email = currentUser.email;
-
-      // Para atualização da senha: o usuário deve informar a senha antiga e a nova senha
       const oldPassword = contaForm.querySelector("#passwordUser").value;
       const newPassword = contaForm.querySelector("#newPassword").value;
 
@@ -280,44 +672,101 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!oldPassword) {
           throw new Error("Informe sua senha atual para atualizar a senha.");
         }
+        
         if (newPassword.length < 6) {
           throw new Error("A nova senha deve ter pelo menos 6 caracteres.");
         }
-        // Reautentica o usuário utilizando a senha antiga
+        
+        showMessage("Atualizando senha...", "info");
+        
+        // Reautenticar usuário antes de alterar senha
         const credential = EmailAuthProvider.credential(email, oldPassword);
         await reauthenticateWithCredential(currentUser, credential);
+        
+        // Atualizar senha
         await updatePassword(currentUser, newPassword);
+        
+        // Limpar campos
+        contaForm.querySelector("#passwordUser").value = "";
+        contaForm.querySelector("#newPassword").value = "";
       }
 
-      // Atualiza apenas o campo updatedAt no Firestore
+      // Atualizar timestamp no Firestore
       const userDoc = doc(firestore, "users", currentUser.uid);
       await updateDoc(userDoc, { updatedAt: new Date() });
 
-      showPopup('success', "Dados da conta atualizados com sucesso!");
+      showMessage("Dados da conta atualizados com sucesso!", "success");
     } catch (error) {
-      console.error("Erro ao atualizar dados da conta:", error.message);
-      showPopup('error', error.code === 'auth/wrong-password' ? "Senha incorreta." : error.message);
+      console.error("Erro ao atualizar dados da conta:", error);
+      
+      // Mensagens de erro mais amigáveis
+      let errorMessage = "Erro ao atualizar dados da conta.";
+      
+      if (error.code === 'auth/wrong-password') {
+        errorMessage = "Senha atual incorreta.";
+      } else if (error.code === 'auth/requires-recent-login') {
+        errorMessage = "Por segurança, faça login novamente antes de alterar sua senha.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      showMessage(errorMessage, "error");
     }
   });
 
   /* EXCLUSÃO DE CONTA */
   deleteAccountBtn?.addEventListener("click", async (e) => {
     e.preventDefault();
+    
     try {
-      const confirmed = await confirmPopup("Tem certeza que deseja excluir sua conta? Essa ação não pode ser desfeita.");
-      if (confirmed) {
-        const currentUser = auth.currentUser;
-        if (currentUser) {
-          const userDoc = doc(firestore, "users", currentUser.uid);
-          await deleteDoc(userDoc);
-          await deleteUser(currentUser);
-          showPopup('success', "Conta excluída com sucesso!");
-          window.location.href = "../viewsplash.html";
-        }
+      const { confirmed, password } = await confirmDialog("Tem certeza que deseja excluir sua conta? Essa ação não pode ser desfeita.");
+      
+      if (!confirmed) return;
+      
+      if (!password || password.trim() === "") {
+        showMessage("Senha obrigatória para confirmar exclusão da conta.", "error");
+        return;
       }
+      
+      showMessage("Excluindo conta...", "info");
+      
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error("Usuário não autenticado.");
+      }
+      
+      // Reautenticar usuário antes de excluir conta
+      const credential = EmailAuthProvider.credential(currentUser.email, password);
+      await reauthenticateWithCredential(currentUser, credential);
+      
+      // Excluir documento do Firestore
+      const userDoc = doc(firestore, "users", currentUser.uid);
+      await deleteDoc(userDoc);
+      
+      // Excluir usuário do Authentication
+      await deleteUser(currentUser);
+      
+      // Limpar dados locais
+      localStorage.removeItem("userData");
+      
+      showMessage("Conta excluída com sucesso!", "success");
+      
+      // Redirecionar após breve delay
+      setTimeout(() => {
+        window.location.href = "../viewsplash.html";
+      }, 1500);
     } catch (error) {
-      console.error("Erro ao excluir conta:", error.message);
-      showPopup('error', error.code === 'auth/requires-recent-login' ? "Por favor, faça login novamente para excluir a conta." : error.message);
+      console.error("Erro ao excluir conta:", error);
+      
+      let errorMessage = "Erro ao excluir conta.";
+      
+      if (error.code === 'auth/wrong-password') {
+        errorMessage = "Senha incorreta.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      showMessage(errorMessage, "error");
     }
   });
 
@@ -325,13 +774,23 @@ document.addEventListener("DOMContentLoaded", () => {
   const logoutBtn = document.querySelector("#menu button.logOut");
   logoutBtn?.addEventListener("click", async (e) => {
     e.preventDefault();
+    
     try {
+      showMessage("Saindo...", "info");
       await auth.signOut();
-      showPopup('success', "Logout realizado com sucesso!");
-      window.location.href = "../splash.html";
+      
+      // Limpar dados do usuário do localStorage
+      localStorage.removeItem("userData");
+      
+      showMessage("Logout realizado com sucesso!", "success");
+      
+      // Redirecionar após breve delay
+      setTimeout(() => {
+        window.location.href = "../splash.html";
+      }, 1000);
     } catch (error) {
-      console.error("Erro ao fazer logout:", error.message);
-      showPopup('error', "Erro ao fazer logout: " + error.message);
+      console.error("Erro ao fazer logout:", error);
+      showMessage("Erro ao fazer logout: " + (error.message || "Tente novamente"), "error");
     }
   });
 });
