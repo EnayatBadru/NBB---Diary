@@ -19,9 +19,10 @@ import { showPopup, closePopup } from "../../assets/js/popup.js";
 
 /**
  * Exibe um popup de confirmação (do tipo "alert") com dois botões: "sim" e "cancelar".
- * Retorna uma Promise que resolve com a senha inserida no input #alertPop se confirmado, ou null se cancelado.
+ * Retorna uma Promise que resolve com true se confirmado ou false se cancelado.
+ * Certifique-se de que o HTML contenha o popup com id "alert" com dois botões (na ordem: primeiro "sim", segundo "cancelar").
  * @param {string} message 
- * @returns {Promise<string|null>}
+ * @returns {Promise<boolean>}
  */
 function confirmPopup(message) {
   return new Promise((resolve) => {
@@ -31,20 +32,14 @@ function confirmPopup(message) {
       const alertContainer = document.getElementById("alert");
       if (!alertContainer) {
         console.error('Popup de alerta (id "alert") não encontrado.');
-        resolve(null);
-        return;
-      }
-      const inputEl = alertContainer.querySelector("#alertPop");
-      if (!inputEl) {
-        console.error('Input de confirmação não encontrado no popup de alerta.');
-        resolve(null);
+        resolve(false);
         return;
       }
       // Seleciona os botões pelo seu posicionamento (primeiro para confirmar, segundo para cancelar)
       const buttons = alertContainer.querySelectorAll("button");
       if (buttons.length < 2) {
         console.error('Botões de confirmação ou cancelamento não encontrados no popup de alerta.');
-        resolve(null);
+        resolve(false);
         return;
       }
       const confirmBtn = buttons[0]; // "sim"
@@ -56,22 +51,20 @@ function confirmPopup(message) {
         cancelBtn.removeEventListener("click", onCancel);
         // Limpa a mensagem e fecha o popup
         closePopup('alert');
-        inputEl.value = ""; // Limpa o input após fechar
       };
       const onConfirm = () => {
-        const password = inputEl.value.trim();
         cleanup();
-        resolve(password);
+        resolve(true);
       };
       const onCancel = () => {
         cleanup();
-        resolve(null);
+        resolve(false);
       };
       confirmBtn.addEventListener("click", onConfirm);
       cancelBtn.addEventListener("click", onCancel);
     } catch (err) {
       console.error("Erro no confirmPopup:", err);
-      resolve(null);
+      resolve(false);
     }
   });
 }
@@ -323,37 +316,20 @@ document.addEventListener("DOMContentLoaded", () => {
   deleteAccountBtn?.addEventListener("click", async (e) => {
     e.preventDefault();
     try {
-      const password = await confirmPopup("Tem certeza que deseja excluir sua conta? Essa ação não pode ser desfeita.");
-      if (password) {
+      const confirmed = await confirmPopup("Tem certeza que deseja excluir sua conta? Essa ação não pode ser desfeita.");
+      if (confirmed) {
         const currentUser = auth.currentUser;
         if (currentUser) {
-          if (!password) {
-            showPopup('error', "A senha é necessária para excluir a conta.");
-            return;
-          }
-
-          // Cria a credencial e reautentica o usuário
-          const credential = EmailAuthProvider.credential(currentUser.email, password);
-          await reauthenticateWithCredential(currentUser, credential);
-
-          // Após reautenticação, exclui os dados do Firestore e a conta
           const userDoc = doc(firestore, "users", currentUser.uid);
           await deleteDoc(userDoc);
           await deleteUser(currentUser);
-
           showPopup('success', "Conta excluída com sucesso!");
-          window.location.href = "../splash.html";
+          window.location.href = "../viewsplash.html";
         }
       }
     } catch (error) {
       console.error("Erro ao excluir conta:", error.message);
-      if (error.code === 'auth/requires-recent-login') {
-        showPopup('error', "Por favor, faça login novamente para excluir a conta.");
-      } else if (error.code === 'auth/wrong-password') {
-        showPopup('error', "Senha incorreta. Tente novamente.");
-      } else {
-        showPopup('error', "Erro ao excluir a conta: " + error.message);
-      }
+      showPopup('error', error.code === 'auth/requires-recent-login' ? "Por favor, faça login novamente para excluir a conta." : error.message);
     }
   });
 
