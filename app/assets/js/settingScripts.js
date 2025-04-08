@@ -133,18 +133,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  const handleResize = () => {
-    if (window.innerWidth <= 600) {
-      clearActive();
-      clearMobileActive();
-    } else {
-      setDefaultActive();
-    }
-  };
-
-  window.addEventListener("resize", handleResize);
-  // handleResize();
-
   menuButtons.forEach(button => {
     button.addEventListener("click", (e) => {
       e.stopPropagation();
