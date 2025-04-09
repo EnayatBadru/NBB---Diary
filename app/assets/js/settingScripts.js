@@ -591,8 +591,8 @@ document.addEventListener("DOMContentLoaded", async () => {
           }
         }
       } catch (error) {
-        console.error("Erro ao atualizar perfil na interface:", error);
-        showMessage("Erro ao carregar dados do perfil. Atualize a página.", "error");
+        // console.error("Erro ao atualizar perfil na interface:", error);
+        // showMessage("Erro ao carregar dados do perfil. Atualize a página.", "error");
       }
     };
 
