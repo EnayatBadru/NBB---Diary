@@ -1,11 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
 </head>
+
 <body>
-    Em construcao pagina de chat ( onde o usuario vai interagir com o psicologo, onde ele vai poder fazer perguntas e tirar duvidas) <br>
+    <header id="header">
+        <div class="buttonHeader">
+            <button type="button" class="buttonBack" id="backIndex" aria-label="Voltar">
+                <img src="../../assets/img/icons/angle-left.png" alt="arrow-left" class="arrowLeft icon">
+            </button>
+        </div>
+
+        <div class="userProfile">
+            <button type="button" class="imgProfile" aria-label="Alterar foto de perfil">
+                <img src="../../assets/img/icons/user.png" alt="userIcon">
+            </button>
+            <div class="textProfile">
+                <h2 class="userName">Lamine Yamal</h2>
+                <span class="userEmail">lamineyamal@gmail.com</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Input para alteração da foto de perfil (oculto) -->
+    <input type="file" id="profilePhoto" accept="image/*" style="display: none;">
+
+    <div class="containerActivity">
+        <section class="containerSettingMenu">
+            <h2 class="title">Definições</h2>
+            <nav id="nav">
+                <ul id="menu">
+                    <li>
+                        <button type="button" class="list active">Perfil</button>
+                    </li>
+                    <li>
+                        <button type="button" class="list">Conta</button>
+                    </li>
+                    <li>
+                        <button type="button" class="logOut">Sair</button>
+                    </li>
+                </ul>
+            </nav>
+        </section>
+
+        <section id="containerMain">
+            <main id="main">
+                <div class="main__header">
+
+                </div>
+                <div class="main_content">
+
+                </div>
+                <div class="main__footer">
+
+                </div>
+            </main>
+        </section>
+
+    </div>
 </body>
+
 </html>

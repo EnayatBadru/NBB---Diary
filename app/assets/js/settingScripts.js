@@ -8,7 +8,7 @@ import {
   getDoc
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 import {
-  updateEmail,
+  // updateEmail,
   updatePassword,
   deleteUser,
   updateProfile,
