@@ -94,7 +94,7 @@
 }
 
 .containerUserChat {
-    display: flex;
+  display: flex;
   flex-direction: column;
   width: 250px;
   height: calc(100vh - 69.6px);
@@ -139,7 +139,7 @@
 }
 
 .containerUserChat .container__settingChat .searchChatUser::placeholder {
-    color: #00dfc4;
+  color: #00dfc4;
 }
 
 .containerUserChat #menu {
@@ -182,24 +182,39 @@
   transition: all 0.3s ease-in-out;
 }
 
-.containerUserChat #menu li > div button{
-    background: none;
-    cursor: pointer;
-    outline: none;
-    /* border: 1px solid none; */
-    border: none;
-    border-radius: 6px;
+.containerUserChat #menu li > div button {
+  background: none;
+  cursor: pointer;
+  outline: none;
+  /* border: 1px solid none; */
+  border: none;
+  border-radius: 6px;
 }
 
-.containerUserChat #menu li > div .button__pic{
-    width: 30px;
-    height: 30px;
+.containerUserChat #menu li > div .button__pic {
+  width: 30px;
+  height: 30px;
+  background: red;
 }
 
-.containerUserChat #menu li > div .button__pic img{
-    width: inherit;
-    height: inherit;
-    object-fit: contain;
+.containerUserChat #menu li > div .button__pic .container__left,
+.containerUserChat #menu li > div .button__pic .container__right{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.containerUserChat #menu li > div .button__pic img {
+  width: inherit;
+  height: inherit;
+  object-fit: contain;
+}
+
+.containerUserChat #menu li > div .button__user{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
 }
 
 @media screen and (max-width: 600px) {
