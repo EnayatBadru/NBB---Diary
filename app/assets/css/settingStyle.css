@@ -317,7 +317,7 @@ main {
   transition: all 0.3s ease-in-out;
 }
 
-.deliteAccount {
+.deleteAccount {
   background: #ff4d4d !important;
 }
 
