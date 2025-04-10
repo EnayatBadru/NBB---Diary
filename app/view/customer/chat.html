@@ -4,6 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="../../assets/css/default.css">
+    <link rel="stylesheet" href="../../assets/css/chatStyle.css">
+
     <title>Document</title>
 </head>
 
@@ -30,21 +34,21 @@
     <input type="file" id="profilePhoto" accept="image/*" style="display: none;">
 
     <div class="containerActivity">
-        <section class="containerSettingMenu">
-            <h2 class="title">Mensagens</h2>
+        <section class="containerUserChat">
+            <h2 class="title">Mensagem</h2>
             <div class="container__settingChat">
-                <div class="searchUser">
-                    <input type="text" name="searchUser" id="searchUser">
-                </div>
+                <input type="text" name="searchUser" class="searchChatUser" id="searchUser" placeholder="Procurar usuario...">
             </div>
             <nav id="nav">
                 <ul id="menu">
                     <li>
-                        <button type="button" class="list">
+                        <div class="list">
+                            <button type="button" class="profile__pic">
+                                <img src="../../assets/img/icons/profile.png" alt="user__mensage__profile">
+                            </button>
+
+
                             <span class="container__left">
-                                <span class="profile__pic">
-                                    <img src="../../assets/img/icons/profile.png" alt="user__mensage__profile">
-                                </span>
                                 <div class="content__text__userMessage">
                                     <span class="nameUser__message">
                                         Lamine Yamal
@@ -62,7 +66,7 @@
                                     5
                                 </span>
                             </div>
-                        </button>
+                        </div>
                     </li>
                 </ul>
             </nav>
