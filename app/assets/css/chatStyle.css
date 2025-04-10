@@ -111,6 +111,7 @@
   font-size: 1.5em;
   text-transform: uppercase;
   font-weight: bolder;
+  pointer-events: none;
   color: #00dfc4;
 }
 
@@ -153,7 +154,7 @@
   padding: 0 7px;
 }
 
-.containerUserChat #menu li button {
+.containerUserChat #menu li > div {
   width: 100%;
   background: #00dfc4;
   color: #1d2b3a;
@@ -170,15 +171,35 @@
   transition: all 0.3s ease-in-out;
 }
 
-.containerUserChat #menu li button.active {
+.containerUserChat #menu li > div.active {
   background: rgba(0, 223, 197, 0.3);
   color: #fff;
   transition: all 0.3s ease-in-out;
 }
 
-.containerUserChat #menu li button:hover {
+.containerUserChat #menu li > div:hover {
   opacity: 0.8;
   transition: all 0.3s ease-in-out;
+}
+
+.containerUserChat #menu li > div button{
+    background: none;
+    cursor: pointer;
+    outline: none;
+    /* border: 1px solid none; */
+    border: none;
+    border-radius: 6px;
+}
+
+.containerUserChat #menu li > div .button__pic{
+    width: 30px;
+    height: 30px;
+}
+
+.containerUserChat #menu li > div .button__pic img{
+    width: inherit;
+    height: inherit;
+    object-fit: contain;
 }
 
 @media screen and (max-width: 600px) {
