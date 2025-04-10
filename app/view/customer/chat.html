@@ -31,17 +31,33 @@
 
     <div class="containerActivity">
         <section class="containerSettingMenu">
-            <h2 class="title">Definições</h2>
+            <h2 class="title">Mensagens</h2>
+            <div class="container__settingChat">
+                <div class="searchUser">
+                    <input type="text" name="searchUser" id="searchUser">
+                </div>
+            </div>
             <nav id="nav">
                 <ul id="menu">
                     <li>
-                        <button type="button" class="list active">Perfil</button>
-                    </li>
-                    <li>
-                        <button type="button" class="list">Conta</button>
-                    </li>
-                    <li>
-                        <button type="button" class="logOut">Sair</button>
+                        <button type="button" class="list">
+                            <span class="container__left">
+                                <span class="profile__pic">
+                                    <img src="../../assets/img/icons/profile.png" alt="user__mensage__profile">
+                                </span>
+                                <div class="content__text__userMessage">
+                                    <span class="nameUser__message">
+                                        Lamine Yamal
+                                    </span>
+                                    <span class="messageUser">
+                                        Oie Tudo bem contigo?...
+                                    </span>
+                                </div>
+                            </span>
+                            <span class="container__right">
+                                5
+                            </span>
+                        </button>
                     </li>
                 </ul>
             </nav>
