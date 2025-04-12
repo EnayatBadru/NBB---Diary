@@ -1,7 +1,12 @@
 // chatScript.js
 import { auth, firestore, realtimeDb } from "./firebaseConfig.js";
 import { showPopup, confirmDialog } from "./popup.js";
-import { updateOnlineStatus, getUserContacts, getAllUsers, fetchUserData } from "./models/userModel.js";
+import {
+  updateOnlineStatus,
+  getUserContacts,
+  getAllUsers,
+  fetchUserData,
+} from "./models/userModel.js";
 
 import {
   collection,
@@ -18,7 +23,7 @@ import {
   serverTimestamp,
   onSnapshot,
   Timestamp,
-  arrayUnion
+  arrayUnion,
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
 import {
@@ -29,7 +34,7 @@ import {
   onChildAdded,
   onChildChanged,
   update,
-  serverTimestamp as rtServerTimestamp
+  serverTimestamp as rtServerTimestamp,
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
 
 /**
@@ -52,7 +57,7 @@ const chatState = {
     messages: false,
     search: false,
   },
-  searchCache: {}
+  searchCache: {},
 };
 
 /**
@@ -72,7 +77,10 @@ function loadConversationsFromCache() {
 
 function updateConversationsCache() {
   try {
-    localStorage.setItem("chatConversations", JSON.stringify(chatState.conversations));
+    localStorage.setItem(
+      "chatConversations",
+      JSON.stringify(chatState.conversations)
+    );
   } catch (e) {
     console.error("Erro ao atualizar cache de conversas:", e);
   }
@@ -114,7 +122,10 @@ function formatTime(timestamp) {
   } else {
     date = timestamp;
   }
-  return date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  return date.toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 /**
@@ -160,18 +171,29 @@ function initChatElements() {
   if (backButton) backButton.addEventListener("click", handleBackToContacts);
 
   const createChatButton = document.querySelector(".createChat");
-  if (createChatButton) createChatButton.addEventListener("click", showNewChatDialog);
+  if (createChatButton)
+    createChatButton.addEventListener("click", showNewChatDialog);
 
   const createGroupButton = document.querySelector(".createGroup");
-  if (createGroupButton) createGroupButton.addEventListener("click", showCreateGroupDialog);
+  if (createGroupButton)
+    createGroupButton.addEventListener("click", showCreateGroupDialog);
 
   const attachButton = document.querySelector(".attachButton");
   const emojiButton = document.querySelector(".emojiButton");
   const voiceButton = document.querySelector(".voiceButton");
 
-  if (attachButton) attachButton.addEventListener("click", () => showPopup("info", "Envio de arquivos em breve"));
-  if (emojiButton) emojiButton.addEventListener("click", () => showPopup("info", "Emojis em breve"));
-  if (voiceButton) voiceButton.addEventListener("click", () => showPopup("info", "Mensagens de voz em breve"));
+  if (attachButton)
+    attachButton.addEventListener("click", () =>
+      showPopup("info", "Envio de arquivos em breve")
+    );
+  if (emojiButton)
+    emojiButton.addEventListener("click", () =>
+      showPopup("info", "Emojis em breve")
+    );
+  if (voiceButton)
+    voiceButton.addEventListener("click", () =>
+      showPopup("info", "Mensagens de voz em breve")
+    );
 
   window.addEventListener("resize", adjustLayout);
 }
@@ -184,10 +206,14 @@ function setupAuth() {
     if (user) {
       try {
         const userDoc = await getDoc(doc(firestore, "users", user.uid));
-        chatState.currentUser = userDoc.exists() ? { ...user, ...userDoc.data() } : user;
+        chatState.currentUser = userDoc.exists()
+          ? { ...user, ...userDoc.data() }
+          : user;
 
         await updateOnlineStatus(user.uid, true);
-        window.addEventListener("beforeunload", () => updateOnlineStatus(user.uid, false));
+        window.addEventListener("beforeunload", () =>
+          updateOnlineStatus(user.uid, false)
+        );
 
         updateUserUI(chatState.currentUser);
         chatState.contacts = await getUserContacts(chatState.currentUser.uid);
@@ -242,7 +268,8 @@ function setupUserStatusListener(userId) {
  */
 function setupConversationsListener() {
   try {
-    if (chatState.unsubscribeListeners.conversations) chatState.unsubscribeListeners.conversations();
+    if (chatState.unsubscribeListeners.conversations)
+      chatState.unsubscribeListeners.conversations();
 
     if (!chatState.currentUser?.uid) throw new Error("Usuário não autenticado");
 
@@ -254,14 +281,20 @@ function setupConversationsListener() {
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      chatState.conversations = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      chatState.conversations = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
       renderContacts();
       updateConversationsCache(); // Atualiza o cache com as conversas atuais
       chatState.isLoading.contacts = false;
       updateContactsLoadingState(false);
       if (chatState.activeConversation) {
-        const updatedConversation = chatState.conversations.find((c) => c.id === chatState.activeConversation.id);
-        if (updatedConversation) chatState.activeConversation = updatedConversation;
+        const updatedConversation = chatState.conversations.find(
+          (c) => c.id === chatState.activeConversation.id
+        );
+        if (updatedConversation)
+          chatState.activeConversation = updatedConversation;
       }
     });
     chatState.unsubscribeListeners.conversations = unsubscribe;
@@ -276,7 +309,10 @@ function setupConversationsListener() {
 /**
  * Atualiza o indicador de carregamento dos contatos
  */
-function updateContactsLoadingState(isLoading, message = "Carregando conversas...") {
+function updateContactsLoadingState(
+  isLoading,
+  message = "Carregando conversas..."
+) {
   const contactsList = document.getElementById("menu");
   if (!contactsList) return;
   if (isLoading) {
@@ -385,8 +421,12 @@ function displaySearchResults(contactsList, results) {
             <span class="messageUser">Iniciar conversa</span>
           </div>
           <div class="container__right">
-            <span class="online-indicator" style="width: 10px; height: 10px; border-radius: 50%; background-color: ${user.isOnline ? "#4CAF50" : "#ccc"}; margin-right: 5px;"></span>
-            <span class="userType__badge" style="font-size: 0.7em; padding: 2px 6px; border-radius: 10px; background-color: ${user.userType === "paciente" ? "#2196F3" : "#FF9800"}; color: white;">${user.userType || "usuário"}</span>
+            <span class="online-indicator" style="width: 10px; height: 10px; border-radius: 50%; background-color: ${
+              user.isOnline ? "#4CAF50" : "#ccc"
+            }; margin-right: 5px;"></span>
+            <span class="userType__badge" style="font-size: 0.7em; padding: 2px 6px; border-radius: 10px; background-color: ${
+              user.userType === "paciente" ? "#2196F3" : "#FF9800"
+            }; color: white;">${user.userType || "usuário"}</span>
           </div>
         </button>
       </div>
@@ -421,34 +461,52 @@ function renderConversations(contactsList) {
         </div>
       </li>
     `;
-    document.querySelector(".start-chat-btn")?.addEventListener("click", showNewChatDialog);
+    document
+      .querySelector(".start-chat-btn")
+      ?.addEventListener("click", showNewChatDialog);
     return;
   }
 
   chatState.conversations.forEach((conversation) => {
-    let displayName = conversation.isGroup ? conversation.name || "Grupo" : "Conversa";
+    let displayName = conversation.isGroup
+      ? conversation.name || "Grupo"
+      : "Conversa";
     let otherParticipantData = null;
     if (!conversation.isGroup) {
-      const otherParticipantId = conversation.participants.find((id) => id !== chatState.currentUser.uid);
-      otherParticipantData = chatState.contacts.find((contact) => contact.id === otherParticipantId) || chatState.usersCache[otherParticipantId];
+      const otherParticipantId = conversation.participants.find(
+        (id) => id !== chatState.currentUser.uid
+      );
+      otherParticipantData =
+        chatState.contacts.find(
+          (contact) => contact.id === otherParticipantId
+        ) || chatState.usersCache[otherParticipantId];
       if (!otherParticipantData) {
         fetchUserData(otherParticipantId).then((data) => {
           chatState.usersCache[otherParticipantId] = data;
           renderContacts();
         });
-        otherParticipantData = { id: otherParticipantId, name: "Usuário", isOnline: false };
+        otherParticipantData = {
+          id: otherParticipantId,
+          name: "Usuário",
+          isOnline: false,
+        };
       }
       displayName = otherParticipantData.name;
     }
 
-    const unreadCount = conversation.unreadCount?.[chatState.currentUser.uid] || 0;
+    const unreadCount =
+      conversation.unreadCount?.[chatState.currentUser.uid] || 0;
     const lastMessage = conversation.lastMessage || "Iniciar conversa...";
-    const lastMessageTime = conversation.lastMessageAt ? formatTime(conversation.lastMessageAt) : "";
+    const lastMessageTime = conversation.lastMessageAt
+      ? formatTime(conversation.lastMessageAt)
+      : "";
     const isActive = chatState.activeConversation?.id === conversation.id;
 
     const listItem = document.createElement("li");
     listItem.innerHTML = `
-      <div class="list ${isActive ? "active" : ""}" data-conversation-id="${conversation.id}">
+      <div class="list ${isActive ? "active" : ""}" data-conversation-id="${
+      conversation.id
+    }">
         <button type="button" class="button__pic">
           ${
             conversation.isGroup
@@ -469,7 +527,11 @@ function renderConversations(contactsList) {
           </div>
           <div class="container__right">
             <span class="Time__message">${lastMessageTime}</span>
-            ${unreadCount > 0 ? `<span class="length__message">${unreadCount}</span>` : ""}
+            ${
+              unreadCount > 0
+                ? `<span class="length__message">${unreadCount}</span>`
+                : ""
+            }
             ${
               !conversation.isGroup && otherParticipantData?.isOnline
                 ? `<span class="online-indicator" style="width: 8px; height: 8px; border-radius: 50%; background-color: #4CAF50; margin-top: 5px;"></span>`
@@ -482,15 +544,19 @@ function renderConversations(contactsList) {
     contactsList.appendChild(listItem);
   });
 
-  document.querySelectorAll("#menu li .list[data-conversation-id]").forEach((item) => {
-    item.addEventListener("click", async () => {
-      document.querySelectorAll("#menu li .list").forEach((el) => el.classList.remove("active"));
-      item.classList.add("active");
-      const conversationId = item.getAttribute("data-conversation-id");
-      await openConversation(conversationId);
-      showConversationView();
+  document
+    .querySelectorAll("#menu li .list[data-conversation-id]")
+    .forEach((item) => {
+      item.addEventListener("click", async () => {
+        document
+          .querySelectorAll("#menu li .list")
+          .forEach((el) => el.classList.remove("active"));
+        item.classList.add("active");
+        const conversationId = item.getAttribute("data-conversation-id");
+        await openConversation(conversationId);
+        showConversationView();
+      });
     });
-  });
 }
 
 /**
@@ -523,9 +589,12 @@ async function createConversation(targetUserId) {
         isGroup: false,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        unreadCount: {}
+        unreadCount: {},
       };
-      const docRef = await addDoc(collection(firestore, "conversations"), conversationData);
+      const docRef = await addDoc(
+        collection(firestore, "conversations"),
+        conversationData
+      );
       conversation = { id: docRef.id, ...conversationData };
       chatState.conversations.unshift(conversation); // Adiciona a nova conversa no topo da lista
       updateConversationsCache();
@@ -545,7 +614,9 @@ async function openConversation(conversationId) {
   try {
     chatState.isLoading.messages = true;
     showMessagesLoading(true);
-    const conversationDoc = await getDoc(doc(firestore, "conversations", conversationId));
+    const conversationDoc = await getDoc(
+      doc(firestore, "conversations", conversationId)
+    );
     if (!conversationDoc.exists()) {
       showPopup("error", "Conversa não encontrada");
       chatState.isLoading.messages = false;
@@ -563,20 +634,27 @@ async function openConversation(conversationId) {
         );
       }
     } else {
-      const otherParticipantId = conversationData.participants.find((id) => id !== chatState.currentUser.uid);
-      if (otherParticipantId) participants.push(await fetchUserData(otherParticipantId));
+      const otherParticipantId = conversationData.participants.find(
+        (id) => id !== chatState.currentUser.uid
+      );
+      if (otherParticipantId)
+        participants.push(await fetchUserData(otherParticipantId));
     }
-    chatState.activeConversation = { ...conversationData, id: conversationId, participants };
+    chatState.activeConversation = {
+      ...conversationData,
+      id: conversationId,
+      participants,
+    };
     if (conversationData.unreadCount?.[chatState.currentUser.uid] > 0) {
       await updateDoc(doc(firestore, "conversations", conversationId), {
         [`unreadCount.${chatState.currentUser.uid}`]: 0,
       });
     }
     updateConversationUI();
-    
+
     // Tenta carregar mensagens do cache primeiro
     loadMessagesFromCache(conversationId);
-    
+
     // Carrega as mensagens atualizadas do Firestore
     await loadMessages(conversationId);
     setupMessagesListener(conversationId);
@@ -620,7 +698,9 @@ function updateConversationUI() {
   const { isGroup, participants, name } = chatState.activeConversation;
   const headerName = document.querySelector(".nameUserMensages");
   if (headerName) {
-    headerName.textContent = isGroup ? name || "Grupo" : participants[0]?.name || "Conversa";
+    headerName.textContent = isGroup
+      ? name || "Grupo"
+      : participants[0]?.name || "Conversa";
   }
   const headerPhoto = document.querySelector(".ProfileMensagesPic");
   if (headerPhoto) {
@@ -646,10 +726,16 @@ function updateConversationUI() {
  */
 async function loadMessages(conversationId) {
   try {
-    const messagesRef = collection(firestore, `conversations/${conversationId}/messages`);
+    const messagesRef = collection(
+      firestore,
+      `conversations/${conversationId}/messages`
+    );
     const q = query(messagesRef, orderBy("timestamp", "asc"), limit(50));
     const messagesSnapshot = await getDocs(q);
-    chatState.messages = messagesSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    chatState.messages = messagesSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
     renderMessages();
     scrollToBottom();
     updateMessagesCache(conversationId); // Atualiza o cache das mensagens
@@ -664,7 +750,8 @@ async function loadMessages(conversationId) {
  */
 function setupMessagesListener(conversationId) {
   try {
-    if (chatState.unsubscribeListeners.messages) chatState.unsubscribeListeners.messages();
+    if (chatState.unsubscribeListeners.messages)
+      chatState.unsubscribeListeners.messages();
 
     const messagesRef = ref(realtimeDb, `messages/${conversationId}`);
     const onNewMessage = onChildAdded(messagesRef, (snapshot) => {
@@ -675,17 +762,27 @@ function setupMessagesListener(conversationId) {
         renderMessages();
         scrollToBottom();
         updateMessagesCache(conversationId);
-        if (messageData.senderId !== chatState.currentUser.uid && messageData.status === "sent") {
-          update(ref(realtimeDb, `messages/${conversationId}/${messageId}`), { status: "delivered" });
+        if (
+          messageData.senderId !== chatState.currentUser.uid &&
+          messageData.status === "sent"
+        ) {
+          update(ref(realtimeDb, `messages/${conversationId}/${messageId}`), {
+            status: "delivered",
+          });
         }
       }
     });
     const onStatusChanged = onChildChanged(messagesRef, (snapshot) => {
       const messageData = snapshot.val();
       const messageId = snapshot.key;
-      const messageIndex = chatState.messages.findIndex((m) => m.id === messageId);
+      const messageIndex = chatState.messages.findIndex(
+        (m) => m.id === messageId
+      );
       if (messageIndex !== -1) {
-        chatState.messages[messageIndex] = { ...chatState.messages[messageIndex], ...messageData };
+        chatState.messages[messageIndex] = {
+          ...chatState.messages[messageIndex],
+          ...messageData,
+        };
         renderMessages();
         updateMessagesCache(conversationId);
       }
@@ -742,7 +839,8 @@ function renderMessages() {
       statusIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="#1d2b3a"/></svg>`;
     }
 
-    let messageContent = message.type === "text" ? message.text : "Mensagem não suportada";
+    let messageContent =
+      message.type === "text" ? message.text : "Mensagem não suportada";
     li.innerHTML = `<div class="messageWrapper"><span class="mensages">${messageContent}</span><div class="containerSettingMensages_icons"><span class="timeSend">${messageTime}</span><span class="checkedMensages">${statusIcon}</span></div></div>`;
     conversationArea.appendChild(li);
   });
@@ -766,7 +864,7 @@ async function sendMessage(text) {
       senderId: currentUserId,
       timestamp: Date.now(),
       status: "pending",
-      type: "text"
+      type: "text",
     };
     const messagesRef = ref(realtimeDb, `messages/${conversationId}`);
     const newMessageRef = push(messagesRef);
@@ -785,20 +883,31 @@ async function sendMessage(text) {
       unreadCount,
     });
     setTimeout(async () => {
-      await update(ref(realtimeDb, `messages/${conversationId}/${newMessageRef.key}`), { status: "sent" });
-      await addDoc(collection(firestore, `conversations/${conversationId}/messages`), {
-        text: text.trim(),
-        senderId: currentUserId,
-        timestamp: Timestamp.fromDate(new Date(newMessage.timestamp)),
-        status: "sent",
-        type: "text"
-      });
+      await update(
+        ref(realtimeDb, `messages/${conversationId}/${newMessageRef.key}`),
+        { status: "sent" }
+      );
+      await addDoc(
+        collection(firestore, `conversations/${conversationId}/messages`),
+        {
+          text: text.trim(),
+          senderId: currentUserId,
+          timestamp: Timestamp.fromDate(new Date(newMessage.timestamp)),
+          status: "sent",
+          type: "text",
+        }
+      );
     }, 500);
     // Atualiza a lista de conversas para refletir a nova mensagem
     const updatedConversation = await getDoc(conversationRef);
-    const conversationIndex = chatState.conversations.findIndex(conv => conv.id === conversationId);
+    const conversationIndex = chatState.conversations.findIndex(
+      (conv) => conv.id === conversationId
+    );
     if (conversationIndex !== -1) {
-      chatState.conversations[conversationIndex] = { id: conversationId, ...updatedConversation.data() };
+      chatState.conversations[conversationIndex] = {
+        id: conversationId,
+        ...updatedConversation.data(),
+      };
       updateConversationsCache();
     }
     renderContacts();
@@ -813,7 +922,8 @@ async function sendMessage(text) {
  */
 function scrollToBottom() {
   const conversationArea = document.querySelector(".mainSelectedMensages");
-  if (conversationArea) conversationArea.scrollTop = conversationArea.scrollHeight;
+  if (conversationArea)
+    conversationArea.scrollTop = conversationArea.scrollHeight;
 }
 
 /**
@@ -857,22 +967,28 @@ function adjustLayout() {
 async function showNewChatDialog() {
   try {
     const backdrop = document.createElement("div");
-    backdrop.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); z-index: 10000; display: flex; justify-content: center; align-items: center;";
+    backdrop.style.cssText =
+      "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); z-index: 10000; display: flex; justify-content: center; align-items: center;";
 
     const dialog = document.createElement("div");
-    dialog.style.cssText = "background-color: #1d2b3a; border-radius: 10px; padding: 20px; width: 90%; max-width: 400px; max-height: 80vh; overflow: auto; color: #fff;";
+    dialog.style.cssText =
+      "background-color: #1d2b3a; border-radius: 10px; padding: 20px; width: 90%; max-width: 400px; max-height: 80vh; overflow: auto; color: #fff;";
 
     const header = document.createElement("div");
-    header.style.cssText = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #00dfc4; padding-bottom: 10px;";
-    header.innerHTML = '<h3 style="margin: 0;">Nova conversa</h3><button style="background: none; border: none; color: #00dfc4; font-size: 24px; cursor: pointer;">×</button>';
+    header.style.cssText =
+      "display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #00dfc4; padding-bottom: 10px;";
+    header.innerHTML =
+      '<h3 style="margin: 0;">Nova conversa</h3><button style="background: none; border: none; color: #00dfc4; font-size: 24px; cursor: pointer;">×</button>';
 
     const searchInput = document.createElement("input");
     searchInput.type = "text";
     searchInput.placeholder = "Procurar usuário...";
-    searchInput.style.cssText = "width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #00dfc4; background-color: #1d2b3a; color: #fff; box-sizing: border-box; margin-bottom: 15px;";
+    searchInput.style.cssText =
+      "width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #00dfc4; background-color: #1d2b3a; color: #fff; box-sizing: border-box; margin-bottom: 15px;";
 
     const usersList = document.createElement("div");
-    usersList.style.cssText = "display: flex; flex-direction: column; gap: 10px;";
+    usersList.style.cssText =
+      "display: flex; flex-direction: column; gap: 10px;";
 
     async function renderUsersList(searchTerm = "") {
       const users = await getAllUsers(chatState.currentUser.uid, searchTerm);
@@ -883,7 +999,8 @@ async function showNewChatDialog() {
       }
       users.forEach((user) => {
         const userItem = document.createElement("div");
-        userItem.style.cssText = "display: flex; align-items: center; padding: 10px; border-radius: 5px; cursor: pointer; background-color: rgba(0, 223, 196, 0.1); transition: background-color: 0.2s;";
+        userItem.style.cssText =
+          "display: flex; align-items: center; padding: 10px; border-radius: 5px; cursor: pointer; background-color: rgba(0, 223, 196, 0.1); transition: background-color: 0.2s;";
         userItem.innerHTML = `
           <div style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; margin-right: 10px; border: 1px solid #00dfc4; background-color: rgba(0, 0, 0, 0.2);">
             ${
@@ -894,10 +1011,14 @@ async function showNewChatDialog() {
           </div>
           <div style="flex-grow: 1;">
             <div style="font-weight: bold;">${user.name}</div>
-            <div style="font-size: 0.8em; opacity: 0.7;">${user.email || user.userType || ""}</div>
+            <div style="font-size: 0.8em; opacity: 0.7;">${
+              user.email || user.userType || ""
+            }</div>
           </div>
           <div style="display: flex; align-items: center;">
-            <span style="width: 8px; height: 8px; border-radius: 50%; background-color: ${user.isOnline ? "#4CAF50" : "#ccc"}; margin-right: 5px;"></span>
+            <span style="width: 8px; height: 8px; border-radius: 50%; background-color: ${
+              user.isOnline ? "#4CAF50" : "#ccc"
+            }; margin-right: 5px;"></span>
           </div>
         `;
         userItem.addEventListener("click", async () => {
@@ -910,7 +1031,9 @@ async function showNewChatDialog() {
       });
     }
 
-    searchInput.addEventListener("input", () => renderUsersList(searchInput.value.trim()));
+    searchInput.addEventListener("input", () =>
+      renderUsersList(searchInput.value.trim())
+    );
     renderUsersList();
 
     dialog.appendChild(header);
@@ -919,7 +1042,9 @@ async function showNewChatDialog() {
     backdrop.appendChild(dialog);
     document.body.appendChild(backdrop);
 
-    header.querySelector("button").addEventListener("click", () => document.body.removeChild(backdrop));
+    header
+      .querySelector("button")
+      .addEventListener("click", () => document.body.removeChild(backdrop));
     backdrop.addEventListener("click", (e) => {
       if (e.target === backdrop) document.body.removeChild(backdrop);
     });
@@ -930,8 +1055,214 @@ async function showNewChatDialog() {
 }
 
 /**
- * Placeholder para criação de grupos
+ * Exibe o diálogo de criação de grupo e implementa toda a funcionalidade:
+ * - Permite definir nome do grupo
+ * - Permite pesquisar e selecionar múltiplos usuários da app
+ * - Cria o grupo com os participantes selecionados, incluindo o usuário atual
  */
-function showCreateGroupDialog() {
-  showPopup("info", "Funcionalidade de grupos em breve");
+async function showCreateGroupDialog() {
+  try {
+    // Cria backdrop do modal
+    const backdrop = document.createElement("div");
+    backdrop.style.cssText =
+      "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); z-index: 10000; display: flex; justify-content: center; align-items: center;";
+
+    // Cria o container do diálogo
+    const dialog = document.createElement("div");
+    dialog.style.cssText =
+      "background-color: #1d2b3a; border-radius: 10px; padding: 20px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; color: #fff;";
+
+    // Cabeçalho do diálogo com título e botão fechar
+    const header = document.createElement("div");
+    header.style.cssText =
+      "display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #00dfc4; padding-bottom: 10px;";
+    header.innerHTML =
+      '<h3 style="margin: 0;">Criar Grupo</h3><button style="background: none; border: none; color: #00dfc4; font-size: 24px; cursor: pointer;">×</button>';
+
+    // Input para o nome do grupo
+    const groupNameInput = document.createElement("input");
+    groupNameInput.type = "text";
+    groupNameInput.placeholder = "Nome do grupo";
+    groupNameInput.style.cssText =
+      "width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #00dfc4; background-color: #1d2b3a; color: #fff; box-sizing: border-box; margin-bottom: 15px;";
+
+    // Input para pesquisar usuários
+    const searchInput = document.createElement("input");
+    searchInput.type = "text";
+    searchInput.placeholder = "Buscar usuários...";
+    searchInput.style.cssText =
+      "width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #00dfc4; background-color: #1d2b3a; color: #fff; box-sizing: border-box; margin-bottom: 15px;";
+
+    // Área para exibir resultados da pesquisa
+    const resultsContainer = document.createElement("div");
+    resultsContainer.style.cssText =
+      "display: flex; flex-direction: column; gap: 10px; max-height: 200px; overflow-y: auto; margin-bottom: 15px;";
+
+    // Área para exibir os usuários selecionados
+    const selectedContainer = document.createElement("div");
+    selectedContainer.style.cssText =
+      "display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 15px;";
+
+    // Array para armazenar os usuários selecionados
+    let selectedUsers = [];
+
+    // Função para renderizar os usuários selecionados
+    function renderSelectedUsers() {
+      selectedContainer.innerHTML = "";
+      selectedUsers.forEach((user) => {
+        const userTag = document.createElement("div");
+        userTag.style.cssText =
+          "background-color: #00dfc4; color: #1d2b3a; padding: 5px 10px; border-radius: 15px; font-size: 0.9em; display: flex; align-items: center;";
+        userTag.textContent = user.name;
+
+        // Botão para remover o usuário da seleção
+        const removeBtn = document.createElement("button");
+        removeBtn.textContent = "×";
+        removeBtn.style.cssText =
+          "background: none; border: none; margin-left: 5px; cursor: pointer; color: #1d2b3a;";
+        removeBtn.addEventListener("click", () => {
+          selectedUsers = selectedUsers.filter((u) => u.id !== user.id);
+          renderSelectedUsers();
+        });
+        userTag.appendChild(removeBtn);
+        selectedContainer.appendChild(userTag);
+      });
+    }
+
+    // Função que busca usuários da app e renderiza resultados
+    async function renderUserResults(searchTerm = "") {
+      try {
+        // Utiliza a função getAllUsers para buscar todos os usuários, exceto o atual
+        const users = await getAllUsers(chatState.currentUser.uid, searchTerm);
+        resultsContainer.innerHTML = "";
+        if (users.length === 0) {
+          resultsContainer.innerHTML = `<div style="text-align: center; padding: 20px; color: #00dfc4;">Nenhum usuário encontrado</div>`;
+          return;
+        }
+        users.forEach((user) => {
+          // Cria o item para cada usuário
+          const userItem = document.createElement("div");
+          userItem.style.cssText =
+            "display: flex; align-items: center; padding: 10px; border-radius: 5px; cursor: pointer; background-color: rgba(0,223,196,0.1); transition: background-color 0.2s;";
+          userItem.innerHTML = `
+              <div style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; margin-right: 10px; border: 1px solid #00dfc4; background-color: rgba(0,0,0,0.2);">
+                ${
+                  user.photoURL
+                    ? `<img src="${user.photoURL}" alt="${user.name}" style="width:100%; height:100%; object-fit: cover;">`
+                    : `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00dfc4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`
+                }
+              </div>
+              <div style="flex-grow: 1;">
+                <div style="font-weight: bold;">${user.name}</div>
+                <div style="font-size: 0.8em; opacity: 0.7;">${
+                  user.email || user.userType || ""
+                }</div>
+              </div>
+              <div style="display: flex; align-items: center;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background-color: ${
+                  user.isOnline ? "#4CAF50" : "#ccc"
+                }; margin-right: 5px;"></span>
+              </div>
+            `;
+
+          // Ao clicar, adiciona o usuário se ainda não estiver selecionado
+          userItem.addEventListener("click", () => {
+            if (!selectedUsers.find((u) => u.id === user.id)) {
+              selectedUsers.push(user);
+              renderSelectedUsers();
+            }
+          });
+          resultsContainer.appendChild(userItem);
+        });
+      } catch (error) {
+        console.error("Erro ao buscar usuários:", error);
+        showPopup("error", "Erro ao buscar usuários");
+      }
+    }
+
+    // Atualiza os resultados sempre que o usuário digitar
+    searchInput.addEventListener("input", () =>
+      renderUserResults(searchInput.value.trim())
+    );
+
+    // Renderiza resultados sem filtro inicial
+    renderUserResults();
+
+    // Cria botão para finalizar a criação do grupo
+    const createGroupBtn = document.createElement("button");
+    createGroupBtn.textContent = "Criar Grupo";
+    createGroupBtn.style.cssText =
+      "width: 100%; padding: 10px; border: none; border-radius: 5px; background-color: #00dfc4; color: #1d2b3a; cursor: pointer; font-size: 1em;";
+    createGroupBtn.addEventListener("click", async () => {
+      const groupName = groupNameInput.value.trim();
+      if (!groupName) {
+        showPopup("error", "Informe o nome do grupo.");
+        return;
+      }
+      if (selectedUsers.length === 0) {
+        showPopup(
+          "error",
+          "Selecione pelo menos um usuário para adicionar ao grupo."
+        );
+        return;
+      }
+      // Inclui o usuário atual automaticamente aos participantes
+      const participants = [
+        chatState.currentUser.uid,
+        ...selectedUsers.map((u) => u.id),
+      ];
+      const groupData = {
+        name: groupName,
+        participants,
+        isGroup: true,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
+
+      try {
+        // Cria o documento da conversa de grupo no Firestore
+        const docRef = await addDoc(
+          collection(firestore, "conversations"),
+          groupData
+        );
+        const newGroup = { id: docRef.id, ...groupData };
+        // Atualiza a lista de conversas e o cache
+        chatState.conversations.unshift(newGroup);
+        updateConversationsCache();
+        renderContacts();
+        showPopup("success", "Grupo criado com sucesso!");
+        // Abre a conversa recém-criada para o usuário
+        chatState.activeConversation = newGroup;
+        await openConversation(newGroup.id);
+        showConversationView();
+      } catch (error) {
+        console.error("Erro ao criar grupo:", error);
+        showPopup("error", "Erro ao criar grupo");
+      }
+
+      // Remove o diálogo da tela
+      document.body.removeChild(backdrop);
+    });
+
+    // Adiciona os elementos ao container do diálogo
+    dialog.appendChild(header);
+    dialog.appendChild(groupNameInput);
+    dialog.appendChild(searchInput);
+    dialog.appendChild(resultsContainer);
+    dialog.appendChild(selectedContainer);
+    dialog.appendChild(createGroupBtn);
+    backdrop.appendChild(dialog);
+    document.body.appendChild(backdrop);
+
+    // Eventos para fechar o diálogo
+    header
+      .querySelector("button")
+      .addEventListener("click", () => document.body.removeChild(backdrop));
+    backdrop.addEventListener("click", (e) => {
+      if (e.target === backdrop) document.body.removeChild(backdrop);
+    });
+  } catch (error) {
+    console.error("Erro ao mostrar diálogo de criação de grupo:", error);
+    showPopup("error", "Erro ao mostrar diálogo de criação de grupo");
+  }
 }
