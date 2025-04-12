@@ -1,4 +1,5 @@
-import { auth, firestore as db } from "../firebaseConfig.js";
+// userModel.js
+import { auth, firestore as db, realtimeDb } from "../firebaseConfig.js";
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -7,7 +8,23 @@ import {
   createUserWithEmailAndPassword,
   signOut,
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
-import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+import { 
+  doc,
+  getDoc, 
+  setDoc,
+  updateDoc,
+  collection,
+  getDocs,
+  serverTimestamp,
+  query,
+  where,
+  limit
+} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+import { 
+  ref, 
+  set, 
+  onDisconnect 
+} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
 import { showPopup } from "../popup.js";
 
 function isValidEmail(email) {
@@ -31,10 +48,16 @@ async function handleFirstLogin(user) {
       gender: "não especificado",
       userType: "paciente",
       createdAt: new Date(),
+      updatedAt: new Date(),
+      isOnline: true,
+      lastActive: serverTimestamp()
     };
 
     localStorage.setItem("userData", JSON.stringify(userData));
     await syncWithFirestore(userData);
+    await updateOnlineStatus(user.uid, true);
+  } else {
+    await updateOnlineStatus(user.uid, true);
   }
 }
 
@@ -47,11 +70,42 @@ async function syncWithFirestore(userData) {
   }
 }
 
+/**
+ * Atualiza o status online do usuário no Firestore e Realtime Database
+ */
+export async function updateOnlineStatus(userId, isOnline) {
+  try {
+    if (!userId) return;
+    const userDoc = doc(db, "users", userId);
+    await updateDoc(userDoc, {
+      isOnline: isOnline,
+      lastActive: serverTimestamp()
+    });
+    const presenceRef = ref(realtimeDb, `presence/${userId}`);
+    const statusData = {
+      status: isOnline ? 'online' : 'offline',
+      lastActive: Date.now()
+    };
+    await set(presenceRef, statusData);
+    if (isOnline) {
+      onDisconnect(presenceRef).set({
+        status: 'offline',
+        lastActive: Date.now()
+      });
+    }
+  } catch (error) {
+    console.error("Erro ao atualizar status online:", error);
+  }
+}
+
 export function subscribeToAuthChanges(callback) {
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       await handleFirstLogin(user);
       const userData = await fetchUserData(user.uid);
+      window.addEventListener('beforeunload', () => {
+        updateOnlineStatus(user.uid, false);
+      });
       callback({ ...user, ...userData });
     } else {
       callback(null);
@@ -73,8 +127,8 @@ export async function loginWithEmailAndPassword(email, password) {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
     const userData = await fetchUserData(user.uid);
+    await updateOnlineStatus(user.uid, true);
     localStorage.setItem("userData", JSON.stringify(userData));
-
     return { ...user, ...userData };
   } catch (error) {
     console.error("Erro no login:", error.message);
@@ -95,6 +149,7 @@ export async function loginWithGoogle() {
     const userCredential = await signInWithPopup(auth, provider);
     const user = userCredential.user;
     const userData = await fetchUserData(user.uid);
+    await updateOnlineStatus(user.uid, true);
     localStorage.setItem("userData", JSON.stringify(userData));
     return { ...user, ...userData };
   } catch (error) {
@@ -125,11 +180,14 @@ export async function signupWithEmailAndPassword(email, password, userType, user
       gender: userGender,
       name: userName,
       createdAt: new Date(),
+      updatedAt: new Date(),
+      isOnline: true,
+      lastActive: serverTimestamp()
     };
 
     localStorage.setItem("userData", JSON.stringify(userData));
     await syncWithFirestore(userData);
-
+    await updateOnlineStatus(user.uid, true);
     return userData;
   } catch (error) {
     console.error("Erro no cadastro:", error.message);
@@ -146,6 +204,10 @@ export async function signupWithEmailAndPassword(email, password, userType, user
 
 export async function signOutUser() {
   try {
+    const user = auth.currentUser;
+    if (user) {
+      await updateOnlineStatus(user.uid, false);
+    }
     await signOut(auth);
     localStorage.removeItem("userData");
   } catch (error) {
@@ -155,7 +217,7 @@ export async function signOutUser() {
   }
 }
 
-async function fetchUserData(uid) {
+export async function fetchUserData(uid) {
   try {
     const docRef = doc(db, "users", uid);
     const docSnap = await getDoc(docRef);
@@ -164,5 +226,91 @@ async function fetchUserData(uid) {
     console.error("Erro ao buscar dados do usuário:", error.message);
     showPopup("error", "Erro ao carregar dados do usuário.");
     return {};
+  }
+}
+
+/**
+ * Busca todos os usuários disponíveis para chat
+ */
+export async function getAllUsers(currentUserId, searchTerm = '') {
+  try {
+    const usersRef = collection(db, "users");
+    let userQuery;
+    
+    if (searchTerm) {
+      userQuery = query(usersRef, 
+        where("name", ">=", searchTerm), 
+        where("name", "<=", searchTerm + '\uf8ff'),
+        limit(20));
+    } else {
+      userQuery = query(usersRef, limit(50));
+    }
+    
+    const querySnapshot = await getDocs(userQuery);
+    const users = [];
+    querySnapshot.forEach((doc) => {
+      if (doc.id !== currentUserId) {
+        const userData = doc.data();
+        users.push({
+          id: doc.id,
+          name: userData.name || userData.displayName || "Usuário",
+          email: userData.email || "",
+          photoURL: userData.photoURL || "",
+          userType: userData.userType || "",
+          gender: userData.gender || "",
+          isOnline: userData.isOnline || false,
+          lastActive: userData.lastActive || null
+        });
+      }
+    });
+    return users;
+  } catch (error) {
+    console.error("Erro ao buscar usuários:", error);
+    showPopup("error", "Erro ao buscar usuários.");
+    return [];
+  }
+}
+
+/**
+ * Busca apenas contatos com quem já conversou
+ */
+export async function getUserContacts(currentUserId) {
+  try {
+    const conversationsQuery = query(
+      collection(db, "conversations"),
+      where("participants", "array-contains", currentUserId)
+    );
+    const convSnapshot = await getDocs(conversationsQuery);
+    const contactIds = new Set();
+    convSnapshot.forEach(doc => {
+      const data = doc.data();
+      if (data.participants) {
+        data.participants.forEach(participantId => {
+          if (participantId !== currentUserId) {
+            contactIds.add(participantId);
+          }
+        });
+      }
+    });
+    const contacts = [];
+    for (const contactId of contactIds) {
+      const userDoc = await getDoc(doc(db, "users", contactId));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        contacts.push({
+          id: contactId,
+          name: userData.name || userData.displayName || "Usuário",
+          email: userData.email || "",
+          photoURL: userData.photoURL || "",
+          userType: userData.userType || "",
+          isOnline: userData.isOnline || false,
+          lastActive: userData.lastActive || null
+        });
+      }
+    }
+    return contacts;
+  } catch (error) {
+    console.error("Erro ao buscar contatos:", error);
+    return [];
   }
 }
