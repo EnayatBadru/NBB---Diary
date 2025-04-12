@@ -56,6 +56,52 @@ const chatState = {
 };
 
 /**
+ * Funções para cache utilizando localStorage
+ */
+function loadConversationsFromCache() {
+  try {
+    const cached = localStorage.getItem("chatConversations");
+    if (cached) {
+      chatState.conversations = JSON.parse(cached);
+      renderContacts(); // Renderiza imediato com os dados do cache
+    }
+  } catch (e) {
+    console.error("Erro ao carregar cache de conversas:", e);
+  }
+}
+
+function updateConversationsCache() {
+  try {
+    localStorage.setItem("chatConversations", JSON.stringify(chatState.conversations));
+  } catch (e) {
+    console.error("Erro ao atualizar cache de conversas:", e);
+  }
+}
+
+function loadMessagesFromCache(conversationId) {
+  try {
+    const key = `chatMessages_${conversationId}`;
+    const cached = localStorage.getItem(key);
+    if (cached) {
+      chatState.messages = JSON.parse(cached);
+      renderMessages();
+      scrollToBottom();
+    }
+  } catch (e) {
+    console.error("Erro ao carregar cache de mensagens:", e);
+  }
+}
+
+function updateMessagesCache(conversationId) {
+  try {
+    const key = `chatMessages_${conversationId}`;
+    localStorage.setItem(key, JSON.stringify(chatState.messages));
+  } catch (e) {
+    console.error("Erro ao atualizar cache de mensagens:", e);
+  }
+}
+
+/**
  * Formata timestamp para exibição de horário (HH:MM)
  */
 function formatTime(timestamp) {
@@ -78,6 +124,7 @@ document.addEventListener("DOMContentLoaded", () => {
   try {
     initChatElements();
     setupAuth();
+    loadConversationsFromCache(); // Tenta carregar conversas em cache para exibir de imediato
   } catch (error) {
     console.error("Erro na inicialização do chat:", error);
     showPopup("error", "Erro ao iniciar o chat. Tente atualizar a página.");
@@ -191,7 +238,7 @@ function setupUserStatusListener(userId) {
 }
 
 /**
- * Configura listener para conversas
+ * Configura listener para conversas com cache e atualização em tempo-real
  */
 function setupConversationsListener() {
   try {
@@ -209,6 +256,7 @@ function setupConversationsListener() {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       chatState.conversations = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       renderContacts();
+      updateConversationsCache(); // Atualiza o cache com as conversas atuais
       chatState.isLoading.contacts = false;
       updateContactsLoadingState(false);
       if (chatState.activeConversation) {
@@ -480,6 +528,7 @@ async function createConversation(targetUserId) {
       const docRef = await addDoc(collection(firestore, "conversations"), conversationData);
       conversation = { id: docRef.id, ...conversationData };
       chatState.conversations.unshift(conversation); // Adiciona a nova conversa no topo da lista
+      updateConversationsCache();
     }
     chatState.activeConversation = conversation;
     await openConversation(conversation.id);
@@ -490,7 +539,7 @@ async function createConversation(targetUserId) {
 }
 
 /**
- * Abre uma conversa existente e carrega as mensagens
+ * Abre uma conversa existente e carrega as mensagens (utiliza cache para mensagens)
  */
 async function openConversation(conversationId) {
   try {
@@ -524,6 +573,11 @@ async function openConversation(conversationId) {
       });
     }
     updateConversationUI();
+    
+    // Tenta carregar mensagens do cache primeiro
+    loadMessagesFromCache(conversationId);
+    
+    // Carrega as mensagens atualizadas do Firestore
     await loadMessages(conversationId);
     setupMessagesListener(conversationId);
     chatState.isLoading.messages = false;
@@ -598,6 +652,7 @@ async function loadMessages(conversationId) {
     chatState.messages = messagesSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     renderMessages();
     scrollToBottom();
+    updateMessagesCache(conversationId); // Atualiza o cache das mensagens
   } catch (error) {
     console.error("Erro ao carregar mensagens:", error);
     showPopup("error", "Erro ao carregar mensagens");
@@ -619,6 +674,7 @@ function setupMessagesListener(conversationId) {
         chatState.messages.push({ id: messageId, ...messageData });
         renderMessages();
         scrollToBottom();
+        updateMessagesCache(conversationId);
         if (messageData.senderId !== chatState.currentUser.uid && messageData.status === "sent") {
           update(ref(realtimeDb, `messages/${conversationId}/${messageId}`), { status: "delivered" });
         }
@@ -631,6 +687,7 @@ function setupMessagesListener(conversationId) {
       if (messageIndex !== -1) {
         chatState.messages[messageIndex] = { ...chatState.messages[messageIndex], ...messageData };
         renderMessages();
+        updateMessagesCache(conversationId);
       }
     });
     chatState.unsubscribeListeners.messages = () => {
@@ -742,6 +799,7 @@ async function sendMessage(text) {
     const conversationIndex = chatState.conversations.findIndex(conv => conv.id === conversationId);
     if (conversationIndex !== -1) {
       chatState.conversations[conversationIndex] = { id: conversationId, ...updatedConversation.data() };
+      updateConversationsCache();
     }
     renderContacts();
   } catch (error) {
