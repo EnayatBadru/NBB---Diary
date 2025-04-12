@@ -1,3 +1,4 @@
+// chatScript.js
 import { auth, firestore, realtimeDb } from "./firebaseConfig.js";
 import { showPopup, confirmDialog } from "./popup.js";
 import {
@@ -257,38 +258,38 @@ const timeUtils = {
       });
     }
   },
+ // Get time passed since a given timestamp in human-readable format
+ getTimeSince(timestamp) {
+  if (!timestamp) return "";
 
-  // Get time passed since a given timestamp in human-readable format
-  getTimeSince(timestamp) {
-    if (!timestamp) return "";
+  let date;
+  if (timestamp instanceof Timestamp) {
+    date = timestamp.toDate();
+  } else if (typeof timestamp === "number") {
+    date = new Date(timestamp);
+  } else {
+    date = timestamp;
+  }
 
-    let date;
-    if (timestamp instanceof Timestamp) {
-      date = timestamp.toDate();
-    } else if (typeof timestamp === "number") {
-      date = new Date(timestamp);
-    } else {
-      date = timestamp;
-    }
+  const now = new Date();
+  const diffMinutes = Math.floor((now - date) / (1000 * 60));
 
-    const now = new Date();
-    const diffMinutes = Math.floor((now - date) / (1000 * 60));
+  if (diffMinutes < 1) return "agora";
+  if (diffMinutes < 60) return `${diffMinutes}m`;
 
-    if (diffMinutes < 1) return "agora";
-    if (diffMinutes < 60) return `${diffMinutes}m`;
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h`;
 
-    const diffHours = Math.floor(diffMinutes / 60);
-    if (diffHours < 24) return `${diffHours}h`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 7) return `${diffDays}d`;
 
-    const diffDays = Math.floor(diffHours / 24);
-    if (diffDays < 7) return `${diffDays}d`;
-
-    return date.toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-    });
-  },
+  return date.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+  });
+},
 };
+
 
 /**
  * Initialize chat application
@@ -301,26 +302,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // Try to show cached data first for instant loading
     cacheManager.loadConversations();
     cacheManager.loadLastSeen();
-
-    // Set up back button to index page
-    const backIndexButton = document.getElementById("backIndex");
-    if (backIndexButton) {
-      backIndexButton.addEventListener("click", () => {
-        window.location.href = "./index.html"; // Adjust path if needed
-      });
-    }
-
-    // Set up profile photo change
-    const profilePhotoButton = document.querySelector(".imgProfile");
-    const profilePhotoInput = document.getElementById("profilePhoto");
-
-    if (profilePhotoButton && profilePhotoInput) {
-      profilePhotoButton.addEventListener("click", () => {
-        profilePhotoInput.click();
-      });
-
-      profilePhotoInput.addEventListener("change", handleProfilePhotoChange);
-    }
   } catch (error) {
     console.error("Chat initialization error:", error);
     showPopup("error", "Erro ao iniciar o chat. Tente atualizar a página.");
@@ -328,62 +309,17 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /**
- * Handle profile photo change
- */
-async function handleProfilePhotoChange(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  try {
-    showPopup("info", "Atualizando foto de perfil...");
-
-    // Here you would implement the logic to upload the photo to Firebase Storage
-    // and update the user's profile
-
-    showPopup(
-      "success",
-      "Funcionalidade de troca de foto será implementada em breve!"
-    );
-  } catch (error) {
-    console.error("Error changing profile photo:", error);
-    showPopup("error", "Erro ao atualizar foto de perfil.");
-  }
-}
-
-/**
  * Initialize UI elements and add event listeners
  */
 function initChatElements() {
   // Search functionality
   const searchInput = document.getElementById("searchUser");
-  const clearSearchButton = document.querySelector(".clearSearchButton");
-
   if (searchInput) {
     // Use debounce for search to avoid excessive queries
     let searchTimeout;
     searchInput.addEventListener("input", (e) => {
       clearTimeout(searchTimeout);
-
-      // Show/hide clear button
-      if (e.target.value.trim() !== "") {
-        if (clearSearchButton) clearSearchButton.style.display = "block";
-      } else {
-        if (clearSearchButton) clearSearchButton.style.display = "none";
-      }
-
-      searchTimeout = setTimeout(() => handleSearch(e.target.value), 300);
-    });
-  }
-
-  // Clear search button
-  if (clearSearchButton) {
-    clearSearchButton.addEventListener("click", () => {
-      if (searchInput) {
-        searchInput.value = "";
-        searchInput.focus();
-        clearSearchButton.style.display = "none";
-        renderContacts(); // Show original contacts list
-      }
+      searchTimeout = setTimeout(() => handleSearch(e), 300);
     });
   }
 
@@ -411,13 +347,8 @@ function initChatElements() {
 
   // Navigation and UI buttons
   const backButton = document.querySelector(".backButtonMensages");
-  if (backButton) {
-    // Inicialmente esconde o botão de voltar, a visibilidade será controlada pela função updateBackButtonVisibility
-    updateBackButtonVisibility();
-    backButton.addEventListener("click", handleBackToContacts);
-  }
+  if (backButton) backButton.addEventListener("click", handleBackToContacts);
 
-  // Create chat and group buttons
   const createChatButton = document.querySelector(".createChat");
   if (createChatButton)
     createChatButton.addEventListener("click", showNewChatDialog);
@@ -437,10 +368,7 @@ function initChatElements() {
   if (voiceButton) voiceButton.addEventListener("click", toggleVoiceRecording);
 
   // Setup responsive layout behavior
-  window.addEventListener("resize", () => {
-    adjustLayout();
-    updateBackButtonVisibility();
-  });
+  window.addEventListener("resize", adjustLayout);
 
   // Add scroll event listener for messages container for lazy loading
   const messagesContainer = document.querySelector(".mainSelectedMensages");
@@ -453,35 +381,6 @@ function initChatElements() {
 
   // Setup online/offline status detection
   setupConnectionStatusListener();
-}
-
-/**
- * Handle search functionality
- */
-function handleSearch(searchTerm) {
-  const contactsList = document.getElementById("menu");
-  if (!contactsList) return;
-
-  if (!searchTerm || searchTerm.trim() === "") {
-    renderContacts(); // Show original contacts
-    return;
-  }
-
-  renderSearchResults(contactsList, searchTerm.trim());
-}
-
-/**
- * Update back button visibility based on screen size
- */
-function updateBackButtonVisibility() {
-  const backButton = document.querySelector(".backButtonMensages");
-  if (backButton) {
-    if (window.innerWidth <= 700) {
-      backButton.style.display = "flex"; // ou "block" dependendo do estilo original
-    } else {
-      backButton.style.display = "none";
-    }
-  }
 }
 
 /**
@@ -595,11 +494,8 @@ function setupTypingIndicatorsListener(conversationId) {
  * Show typing indicator in the UI
  */
 function showTypingIndicator(userIds) {
-  const typingIndicator = document.querySelector(".typingIndicator");
-  if (!typingIndicator) return;
-
-  // Set display to flex to show it
-  typingIndicator.style.display = "flex";
+  const typingIndicator =
+    document.querySelector(".typingIndicator") || createTypingIndicator();
 
   // Get user names for users who are typing
   Promise.all(
@@ -624,11 +520,47 @@ function showTypingIndicator(userIds) {
       text = "Várias pessoas estão digitando...";
     }
 
-    const typingText = typingIndicator.querySelector(".typingText");
-    if (typingText) {
-      typingText.textContent = text;
-    }
+    typingIndicator.querySelector(".typingText").textContent = text;
+    typingIndicator.style.display = "flex";
   });
+}
+
+/**
+ * Create typing indicator element
+ */
+function createTypingIndicator() {
+  const container = document.querySelector(".SelectedMensages");
+  const typingIndicator = document.createElement("div");
+  typingIndicator.className = "typingIndicator";
+  typingIndicator.style.cssText =
+    "display: none; align-items: center; padding: 5px 15px; color: #00dfc4; font-size: 0.9em;";
+
+  typingIndicator.innerHTML = `
+    <div class="typingDots" style="display: flex; margin-right: 8px;">
+      <span style="width: 8px; height: 8px; background-color: #00dfc4; border-radius: 50%; margin-right: 4px; animation: typingAnimation 1s infinite 0s;"></span>
+      <span style="width: 8px; height: 8px; background-color: #00dfc4; border-radius: 50%; margin-right: 4px; animation: typingAnimation 1s infinite 0.2s;"></span>
+      <span style="width: 8px; height: 8px; background-color: #00dfc4; border-radius: 50%; animation: typingAnimation 1s infinite 0.4s;"></span>
+    </div>
+    <span class="typingText"></span>
+  `;
+
+  // Add animation style
+  const style = document.createElement("style");
+  style.textContent = `
+    @keyframes typingAnimation {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-5px); }
+      100% { transform: translateY(0px); }
+    }
+  `;
+  document.head.appendChild(style);
+
+  // Insert before the message input area
+  const inputArea =
+    container.querySelector(".containerInput") || container.lastElementChild;
+  container.insertBefore(typingIndicator, inputArea);
+
+  return typingIndicator;
 }
 
 /**
@@ -688,7 +620,7 @@ async function handleMessagesScroll(e) {
           const olderMessages = await loadOlderMessages(
             conversationId,
             oldestTimestamp,
-            20 // Passa o número diretamente, agora recebido como 'messageLimit'
+            20
           );
 
           // If we have older messages, add them to the state and rerender
@@ -1360,9 +1292,11 @@ function hideRecordingIndicator() {
 
     // Reset to original icon
     voiceButton.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" fill="#1d2b3a"/>
-        <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" fill="#1d2b3a"/>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+        <line x1="12" y1="19" x2="12" y2="23"></line>
+        <line x1="8" y1="23" x2="16" y2="23"></line>
       </svg>
     `;
 
@@ -1385,16 +1319,12 @@ function updateUserUI(user) {
   const nameEl = document.querySelector(".userName");
   const emailEl = document.querySelector(".userEmail");
   const onlineStatusEl = document.querySelector(".onlineStatus");
-  const statusTextEl = document.querySelector(".statusText");
 
   if (nameEl) nameEl.textContent = user.name || user.displayName || "Usuário";
   if (emailEl) emailEl.textContent = user.email || "";
   if (onlineStatusEl) {
     onlineStatusEl.style.backgroundColor = user.isOnline ? "#4CAF50" : "#ccc";
     onlineStatusEl.title = user.isOnline ? "Online" : "Offline";
-  }
-  if (statusTextEl) {
-    statusTextEl.textContent = user.isOnline ? "Online" : "Offline";
   }
 
   // Update profile image if available
@@ -1415,6 +1345,12 @@ function updateUserUI(user) {
         ${initials}
       </div>
     `;
+  }
+
+  // Update the menu button to show user is initialized
+  const menuButton = document.querySelector(".toggleMenu");
+  if (menuButton) {
+    menuButton.classList.add("user-loaded");
   }
 }
 
@@ -1533,6 +1469,7 @@ function setupConversationsListener() {
     updateContactsLoadingState(false);
   }
 }
+
 
 /**
  * Prefetch user data for conversations to improve loading experience
@@ -1824,6 +1761,7 @@ function displaySearchResults(contactsList, results) {
     return;
   }
 
+  // Create a title for search results
   const titleElement = document.createElement("div");
   titleElement.className = "search-results-title";
   titleElement.style.cssText =
@@ -1831,9 +1769,11 @@ function displaySearchResults(contactsList, results) {
   titleElement.textContent = `Resultados da busca (${results.length})`;
   contactsList.appendChild(titleElement);
 
+  // Display each result
   results.forEach((user) => {
     const listItem = document.createElement("li");
 
+    // Check if this user already has a conversation with the current user
     const existingConversation = chatState.conversations.find(
       (conv) =>
         !conv.isGroup &&
@@ -1893,6 +1833,7 @@ function displaySearchResults(contactsList, results) {
     contactsList.appendChild(listItem);
   });
 
+  // Add event listeners to search results
   document.querySelectorAll("#menu li .list.search-result").forEach((item) => {
     item.addEventListener("click", async () => {
       const userId = item.getAttribute("data-user-id");
@@ -1901,18 +1842,1668 @@ function displaySearchResults(contactsList, results) {
       );
 
       if (existingConversationId) {
+        // Open existing conversation
         await openConversation(existingConversationId);
       } else {
+        // Create new conversation
         await createConversation(userId);
       }
 
+      // Clear search input
       document.getElementById("searchUser").value = "";
-      document.querySelector(".clearSearchButton").style.display = "none";
 
+      // Update UI
       renderContacts();
       showConversationView();
     });
   });
+}
+
+/**
+ * Render conversations with improved UI and organization
+ */
+function renderConversations(contactsList) {
+  if (chatState.conversations.length === 0) {
+    contactsList.innerHTML = `
+      <li>
+        <div class="no-conversations" style="text-align: center; padding: 20px; color: #00dfc4;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+          <p>Nenhuma conversa ainda</p>
+          <button class="start-chat-btn" style="background-color: #00dfc4; color: #1d2b3a; border: none; border-radius: 5px; padding: 8px 15px; margin-top: 10px; cursor: pointer;">Iniciar conversa</button>
+        </div>
+      </li>
+    `;
+
+    document
+      .querySelector(".start-chat-btn")
+      ?.addEventListener("click", showNewChatDialog);
+
+    return;
+  }
+
+  // Group conversations by date of last message
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  const lastWeek = new Date(today);
+  lastWeek.setDate(lastWeek.getDate() - 7);
+
+  const groups = {
+    today: [],
+    yesterday: [],
+    thisWeek: [],
+    older: [],
+  };
+
+  // Sort conversations into groups
+  chatState.conversations.forEach((conversation) => {
+    const lastMessageDate = conversation.lastMessageAt
+      ? conversation.lastMessageAt instanceof Timestamp
+        ? conversation.lastMessageAt.toDate()
+        : new Date(conversation.lastMessageAt)
+      : new Date(0);
+
+    lastMessageDate.setHours(0, 0, 0, 0);
+
+    if (lastMessageDate.getTime() === today.getTime()) {
+      groups.today.push(conversation);
+    } else if (lastMessageDate.getTime() === yesterday.getTime()) {
+      groups.yesterday.push(conversation);
+    } else if (lastMessageDate >= lastWeek) {
+      groups.thisWeek.push(conversation);
+    } else {
+      groups.older.push(conversation);
+    }
+  });
+
+  // Function to render a group of conversations
+  const renderGroup = (conversations, title) => {
+    if (conversations.length === 0) return;
+
+    // Create group header
+    const groupHeader = document.createElement("div");
+    groupHeader.className = "conversation-group-header";
+    groupHeader.style.cssText =
+      "padding: 5px 15px; color: #00dfc4; font-size: 0.8em; opacity: 0.8;";
+    groupHeader.textContent = title;
+    contactsList.appendChild(groupHeader);
+
+    // Render conversations in this group
+    conversations.forEach((conversation) =>
+      renderConversationItem(contactsList, conversation)
+    );
+  };
+
+  // Render each group
+  renderGroup(groups.today, "Hoje");
+  renderGroup(groups.yesterday, "Ontem");
+  renderGroup(groups.thisWeek, "Esta semana");
+  renderGroup(groups.older, "Anteriores");
+
+  // Add click handlers to all conversation items
+  document
+    .querySelectorAll("#menu li .list[data-conversation-id]")
+    .forEach((item) => {
+      item.addEventListener("click", async () => {
+        document
+          .querySelectorAll("#menu li .list")
+          .forEach((el) => el.classList.remove("active"));
+
+        item.classList.add("active");
+
+        const conversationId = item.getAttribute("data-conversation-id");
+        await openConversation(conversationId);
+        showConversationView();
+      });
+    });
+}
+
+/**
+ * Render a single conversation item
+ */
+function renderConversationItem(contactsList, conversation) {
+  let displayName = conversation.isGroup
+    ? conversation.name || "Grupo"
+    : "Conversa";
+  let lastMessagePreview = conversation.lastMessage || "Iniciar conversa...";
+  let otherParticipantData = null;
+
+  // For regular conversations, get the other participant's details
+  if (!conversation.isGroup) {
+    const otherParticipantId = conversation.participants.find(
+      (id) => id !== chatState.currentUser.uid
+    );
+
+    otherParticipantData =
+      chatState.contacts.find((contact) => contact.id === otherParticipantId) ||
+      chatState.usersCache[otherParticipantId];
+
+    if (!otherParticipantData) {
+      // If we don't have the user data yet, fetch it asynchronously
+      fetchUserData(otherParticipantId).then((data) => {
+        if (data) {
+          chatState.usersCache[otherParticipantId] = data;
+          cacheManager.saveUserData(otherParticipantId, data);
+          renderContacts(); // Re-render to show the new data
+        }
+      });
+
+      // Use placeholder data while we fetch
+      otherParticipantData = {
+        id: otherParticipantId,
+        name: "Carregando...",
+        isOnline: false,
+      };
+    }
+
+    displayName = otherParticipantData.name;
+  }
+
+  // Get unread count and format timestamps
+  const unreadCount =
+    conversation.unreadCount?.[chatState.currentUser.uid] || 0;
+  const lastMessageTime = conversation.lastMessageAt
+    ? timeUtils.formatTime(conversation.lastMessageAt)
+    : "";
+  const lastMessageDate = conversation.lastMessageAt
+    ? timeUtils.formatMessageDate(conversation.lastMessageAt)
+    : "";
+
+  // Determine if this is the active conversation
+  const isActive = chatState.activeConversation?.id === conversation.id;
+
+  // Create list item
+  const listItem = document.createElement("li");
+
+  // Truncate message preview if too long
+  if (lastMessagePreview.length > 40) {
+    lastMessagePreview = lastMessagePreview.substring(0, 37) + "...";
+  }
+
+  // If this is a media message, show appropriate preview
+  if (conversation.lastMessageType === "image") {
+    lastMessagePreview = "📷 Imagem";
+  } else if (conversation.lastMessageType === "audio") {
+    lastMessagePreview = "🎤 Mensagem de voz";
+  } else if (conversation.lastMessageType === "file") {
+    lastMessagePreview = "📎 Arquivo";
+  } else if (conversation.lastMessageType === "location") {
+    lastMessagePreview = "📍 Localização";
+  }
+
+  // If message was sent by the current user, prefix with "Você: "
+  if (conversation.lastMessageSenderId === chatState.currentUser.uid) {
+    lastMessagePreview = `Você: ${lastMessagePreview}`;
+  }
+
+  // Construct the HTML
+  listItem.innerHTML = `
+    <div class="list ${isActive ? "active" : ""} ${
+    unreadCount > 0 ? "unread" : ""
+  }" data-conversation-id="${conversation.id}">
+      <button type="button" class="button__pic">
+        ${
+          conversation.isGroup
+            ? `<div style="width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: #1d2b3a; color: #00dfc4; font-weight: bold; font-size: 16px;">${
+                conversation.name
+                  ? conversation.name.charAt(0).toUpperCase()
+                  : "G"
+              }</div>`
+            : otherParticipantData.photoURL
+            ? `<img src="${otherParticipantData.photoURL}" alt="${displayName}" style="width:45px;height:45px;border-radius:50%;">`
+            : `<div style="width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: #1d2b3a; color: #00dfc4; font-weight: bold; font-size: 16px;">${
+                displayName ? displayName.charAt(0).toUpperCase() : "U"
+              }</div>`
+        }
+        ${
+          !conversation.isGroup && otherParticipantData?.isOnline
+            ? `<span class="online-indicator" style="position: absolute; bottom: 0; right: 0; width: 12px; height: 12px; border-radius: 50%; background-color: #4CAF50; border: 2px solid #1d2b3a;"></span>`
+            : ""
+        }
+      </button>
+      <button type="button" class="button__user">
+        <div class="container__left">
+          <span class="nameUser__message">${displayName}</span>
+          <span class="messageUser ${
+            unreadCount > 0 ? "unread-message" : ""
+          }">${lastMessagePreview}</span>
+        </div>
+        <div class="container__right">
+          <span class="Time__message">${lastMessageTime}</span>
+          ${
+            unreadCount > 0
+              ? `<span class="length__message">${
+                  unreadCount > 99 ? "99+" : unreadCount
+                }</span>`
+              : ""
+          }
+          ${
+            conversation.isGroup &&
+            conversation.typing &&
+            conversation.typing.length > 0
+              ? `<span class="typing-indicator" style="font-size: 0.7em; color: #00dfc4;">digitando...</span>`
+              : ""
+          }
+        </div>
+      </button>
+    </div>
+  `;
+
+  contactsList.appendChild(listItem);
+}
+
+/**
+ * Handle search input changes with debounce
+ */
+function handleSearch(e) {
+  renderContacts();
+}
+
+/**
+ * Create or retrieve a conversation with a specific user
+ */
+async function createConversation(targetUserId) {
+  try {
+    // Show loading indicator
+    showPopup("info", "Criando conversa...", 1000);
+
+    // Check if conversation already exists
+    const convQuery = query(
+      collection(firestore, "conversations"),
+      where("participants", "array-contains", chatState.currentUser.uid)
+    );
+
+    const snapshot = await getDocs(convQuery);
+    let conversation = null;
+
+    snapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      if (!data.isGroup && data.participants.includes(targetUserId)) {
+        conversation = { id: docSnap.id, ...data };
+      }
+    });
+
+    if (!conversation) {
+      // Create new conversation
+      const conversationData = {
+        participants: [chatState.currentUser.uid, targetUserId],
+        isGroup: false,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        unreadCount: {},
+        creator: chatState.currentUser.uid,
+      };
+
+      const docRef = await addDoc(
+        collection(firestore, "conversations"),
+        conversationData
+      );
+
+      conversation = { id: docRef.id, ...conversationData };
+
+      // Add to local state and cache
+      chatState.conversations.unshift(conversation);
+      cacheManager.saveConversations();
+
+      // Trigger welcome message
+      await sendSystemMessage(conversation.id, "Conversa iniciada. Diga olá!");
+    }
+
+    // Set as active conversation and open it
+    chatState.activeConversation = conversation;
+    await openConversation(conversation.id);
+
+    return conversation;
+  } catch (error) {
+    console.error("Error creating conversation:", error);
+    showPopup("error", "Erro ao iniciar conversa");
+    throw error;
+  }
+}
+
+/**
+ * Send a system message to a conversation
+ */
+async function sendSystemMessage(conversationId, text) {
+  try {
+    // Create system message
+    const systemMessage = {
+      text: text,
+      senderId: "system",
+      timestamp: Date.now(),
+      status: "delivered",
+      type: "system",
+    };
+
+    // Add to realtime database
+    const messagesRef = ref(realtimeDb, `messages/${conversationId}`);
+    const newMessageRef = push(messagesRef);
+    await set(newMessageRef, systemMessage);
+
+    // Add to Firestore for persistence
+    await addDoc(
+      collection(firestore, `conversations/${conversationId}/messages`),
+      {
+        text: text,
+        senderId: "system",
+        timestamp: Timestamp.fromDate(new Date(systemMessage.timestamp)),
+        status: "delivered",
+        type: "system",
+      }
+    );
+
+    return true;
+  } catch (error) {
+    console.error("Error sending system message:", error);
+    return false;
+  }
+}
+
+/**
+ * Open an existing conversation and load messages with optimized caching
+ */
+async function openConversation(conversationId) {
+  try {
+    // Show loading state
+    chatState.isLoading.messages = true;
+    showMessagesLoading(true);
+
+    // Get conversation data
+    const conversationDoc = await getDoc(
+      doc(firestore, "conversations", conversationId)
+    );
+
+    if (!conversationDoc.exists()) {
+      showPopup("error", "Conversa não encontrada");
+      chatState.isLoading.messages = false;
+      showMessagesLoading(false);
+      return;
+    }
+
+    const conversationData = conversationDoc.data();
+
+    // Load participants data
+    let participants = [];
+
+    if (conversationData.isGroup) {
+      // For groups, load all participants
+      const participantPromises = conversationData.participants.map(
+        async (participantId) => {
+          if (participantId === chatState.currentUser.uid) {
+            return chatState.currentUser;
+          }
+
+          // Try cache first
+          let userData = chatState.usersCache[participantId];
+
+          if (!userData) {
+            userData = await fetchUserData(participantId);
+            if (userData) {
+              chatState.usersCache[participantId] = userData;
+              cacheManager.saveUserData(participantId, userData);
+            }
+          }
+
+          return userData || { id: participantId, name: "Usuário" };
+        }
+      );
+
+      participants = await Promise.all(participantPromises);
+    } else {
+      // For direct conversations, just load the other user
+      const otherParticipantId = conversationData.participants.find(
+        (id) => id !== chatState.currentUser.uid
+      );
+
+      if (otherParticipantId) {
+        // Try cache first
+        let userData = chatState.usersCache[otherParticipantId];
+
+        if (!userData) {
+          userData = await fetchUserData(otherParticipantId);
+          if (userData) {
+            chatState.usersCache[otherParticipantId] = userData;
+            cacheManager.saveUserData(otherParticipantId, userData);
+          }
+        }
+
+        participants.push(
+          userData || { id: otherParticipantId, name: "Usuário" }
+        );
+      }
+    }
+
+    // Update active conversation state
+    chatState.activeConversation = {
+      ...conversationData,
+      id: conversationId,
+      participants,
+    };
+
+    // Reset unread count
+    if (conversationData.unreadCount?.[chatState.currentUser.uid] > 0) {
+      await updateDoc(doc(firestore, "conversations", conversationId), {
+        [`unreadCount.${chatState.currentUser.uid}`]: 0,
+      });
+
+      // Update local state to reflect this change
+      const conversationIndex = chatState.conversations.findIndex(
+        (c) => c.id === conversationId
+      );
+
+      if (conversationIndex !== -1) {
+        chatState.conversations[conversationIndex] = {
+          ...chatState.conversations[conversationIndex],
+          unreadCount: {
+            ...chatState.conversations[conversationIndex].unreadCount,
+            [chatState.currentUser.uid]: 0,
+          },
+        };
+
+        cacheManager.saveConversations();
+      }
+    }
+
+    // Update UI with conversation data
+    updateConversationUI();
+
+    // Try to load messages from cache first
+    const messagesLoaded = cacheManager.loadMessages(conversationId);
+
+    // Load messages from Firestore
+    await loadMessages(conversationId);
+
+    // Setup listeners for real-time updates
+    setupMessagesListener(conversationId);
+    setupTypingIndicatorsListener(conversationId);
+
+    // Mark messages as read
+    await markMessagesAsRead(conversationId);
+
+    // Update last seen timestamp
+    updateLastSeen(conversationId);
+
+    // Update loading state
+    chatState.isLoading.messages = false;
+    showMessagesLoading(false);
+
+    return chatState.activeConversation;
+  } catch (error) {
+    console.error("Error opening conversation:", error);
+    showPopup("error", "Erro ao abrir conversa");
+    chatState.isLoading.messages = false;
+    showMessagesLoading(false);
+    throw error;
+  }
+}
+
+/**
+ * Update last seen timestamp for a conversation
+ */
+function updateLastSeen(conversationId) {
+  if (!chatState.currentUser || !conversationId) return;
+
+  // Update timestamp locally
+  chatState.lastSeenTimestamps[conversationId] = Date.now();
+  cacheManager.saveLastSeen();
+
+  // Update in database
+  const lastSeenRef = doc(
+    firestore,
+    `conversations/${conversationId}/lastSeen`,
+    chatState.currentUser.uid
+  );
+  setDoc(
+    lastSeenRef,
+    {
+      timestamp: serverTimestamp(),
+      userId: chatState.currentUser.uid,
+    },
+    { merge: true }
+  );
+}
+
+/**
+ * Mark all messages in conversation as read
+ */
+async function markMessagesAsRead(conversationId) {
+  if (!chatState.currentUser || !conversationId) return;
+
+  try {
+    // Get unread messages
+    const unreadMessages = chatState.messages.filter(
+      (msg) =>
+        msg.senderId !== chatState.currentUser.uid && msg.status !== "read"
+    );
+
+    if (unreadMessages.length === 0) return;
+
+    // Update status in Realtime Database
+    const batch = [];
+
+    unreadMessages.forEach((msg) => {
+      batch.push(
+        update(ref(realtimeDb, `messages/${conversationId}/${msg.id}`), {
+          status: "read",
+        })
+      );
+    });
+
+    await Promise.all(batch);
+
+    // Update UI
+    unreadMessages.forEach((msg) => {
+      const index = chatState.messages.findIndex((m) => m.id === msg.id);
+      if (index !== -1) {
+        chatState.messages[index].status = "read";
+      }
+    });
+
+    renderMessages();
+    cacheManager.saveMessages(conversationId);
+
+    return true;
+  } catch (error) {
+    console.error("Error marking messages as read:", error);
+    return false;
+  }
+}
+
+/**
+ * Show loading indicator while messages are being fetched
+ */
+function showMessagesLoading(isLoading) {
+  const conversationArea = document.querySelector(".mainSelectedMensages");
+  if (!conversationArea) return;
+
+  if (isLoading) {
+    conversationArea.innerHTML = `
+      <div class="loading-messages" style="display: flex; justify-content: center; align-items: center; height: 100%; flex-direction: column;">
+        <div style="width: 40px; height: 40px; border: 4px solid rgba(0, 223, 196, 0.3); border-radius: 50%; border-top-color: #00dfc4; animation: spin 1s linear infinite;"></div>
+        <p style="color: #00dfc4; margin-top: 15px;">Carregando mensagens...</p>
+      </div>
+    `;
+  } else {
+    // We'll leave the clearance of content to the rendering function
+  }
+}
+
+/**
+ * Update conversation UI in the header area
+ */
+function updateConversationUI() {
+  if (!chatState.activeConversation) return;
+
+  const { isGroup, participants, name, typing } = chatState.activeConversation;
+
+  // Update conversation name
+  const headerName = document.querySelector(".nameUserMensages");
+  if (headerName) {
+    headerName.textContent = isGroup
+      ? name || "Grupo"
+      : participants[0]?.name || "Conversa";
+  }
+
+  // Update online status indicator for direct conversations
+  const onlineStatus = document.querySelector(".userStatusMensages");
+  if (onlineStatus) {
+    if (!isGroup && participants[0]) {
+      onlineStatus.style.display = "inline-block";
+      onlineStatus.style.backgroundColor = participants[0].isOnline
+        ? "#4CAF50"
+        : "#ccc";
+      onlineStatus.title = participants[0].isOnline ? "Online" : "Offline";
+    } else {
+      onlineStatus.style.display = "none";
+    }
+  }
+
+  // Update user/group photo
+  const headerPhoto = document.querySelector(".ProfileMensagesPic");
+  if (headerPhoto) {
+    if (isGroup) {
+      // Show group avatar with first letter
+      headerPhoto.innerHTML = `
+        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: #1d2b3a; border-radius: 50%; color: #00dfc4; font-weight: bold; font-size: 18px;">
+          ${name ? name.charAt(0).toUpperCase() : "G"}
+        </div>
+      `;
+    } else {
+      // Show user avatar
+      const otherParticipant = participants[0];
+      if (otherParticipant?.photoURL) {
+        headerPhoto.innerHTML = `<img src="${otherParticipant.photoURL}" alt="Foto de perfil" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+      } else {
+        // Default avatar with initial
+        headerPhoto.innerHTML = `
+          <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: #1d2b3a; border-radius: 50%; color: #00dfc4; font-weight: bold; font-size: 18px;">
+            ${
+              otherParticipant?.name
+                ? otherParticipant.name.charAt(0).toUpperCase()
+                : "U"
+            }
+          </div>
+        `;
+      }
+    }
+  }
+
+  // Update participants info for group conversations
+  const participantsInfo = document.querySelector(
+    ".headerMensages .participantsInfo"
+  );
+  if (!participantsInfo && isGroup) {
+    // Create participants info element if it doesn't exist
+    const headerRight = document.querySelector(".headerMensages .right");
+    if (headerRight) {
+      const infoElement = document.createElement("div");
+      infoElement.className = "participantsInfo";
+      infoElement.style.cssText =
+        "font-size: 0.8em; color: #ccc; margin-top: 2px;";
+      infoElement.textContent = `${participants.length} participantes`;
+      headerRight.appendChild(infoElement);
+    }
+  } else if (participantsInfo) {
+    if (isGroup) {
+      participantsInfo.style.display = "block";
+      participantsInfo.textContent = `${participants.length} participantes`;
+    } else {
+      participantsInfo.style.display = "none";
+    }
+  }
+
+  // Enable message input
+  const messageInput = document.querySelector(".messageInput");
+  if (messageInput) {
+    messageInput.disabled = false;
+    messageInput.placeholder = "Digite uma mensagem...";
+    messageInput.focus();
+  }
+
+  // Show conversation actions button
+  const actionsButton = document.querySelector(".conversationActions");
+  if (!actionsButton) {
+    const headerMensages = document.querySelector(".headerMensages");
+    if (headerMensages) {
+      const actionsBtn = document.createElement("button");
+      actionsBtn.className = "conversationActions";
+      actionsBtn.style.cssText =
+        "background: none; border: none; color: #00dfc4; margin-left: 10px; cursor: pointer;";
+      actionsBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="1"></circle>
+          <circle cx="19" cy="12" r="1"></circle>
+          <circle cx="5" cy="12" r="1"></circle>
+        </svg>
+      `;
+      actionsBtn.addEventListener("click", showConversationMenu);
+
+      const rightContainer = headerMensages.querySelector(".right");
+      if (rightContainer) {
+        rightContainer.appendChild(actionsBtn);
+      }
+    }
+  }
+}
+
+/**
+ * Show conversation options menu
+ */
+function showConversationMenu(e) {
+  e.stopPropagation();
+
+  // Create menu
+  const menu = document.createElement("div");
+  menu.className = "conversation-menu";
+  menu.style.cssText =
+    "position: absolute; right: 20px; top: 50px; background-color: #1d2b3a; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 100; min-width: 150px;";
+
+  const options = [];
+
+  if (chatState.activeConversation?.isGroup) {
+    // Group conversation options
+    options.push(
+      { label: "Informações do grupo", icon: "info", action: showGroupInfo },
+      {
+        label: "Adicionar participante",
+        icon: "user-plus",
+        action: addGroupParticipant,
+      },
+      { label: "Sair do grupo", icon: "log-out", action: leaveGroup }
+    );
+  } else {
+    // Direct conversation options
+    options.push(
+      { label: "Ver perfil", icon: "user", action: viewUserProfile },
+      { label: "Limpar conversa", icon: "trash-2", action: clearConversation },
+      { label: "Bloquear usuário", icon: "slash", action: blockUser }
+    );
+  }
+
+  // Common options for all conversations
+  options.push(
+    {
+      label: "Arquivar conversa",
+      icon: "archive",
+      action: archiveConversation,
+    },
+    {
+      label: "Silenciar notificações",
+      icon: "bell-off",
+      action: muteConversation,
+    }
+  );
+
+  // Create menu items
+  options.forEach((option) => {
+    const item = document.createElement("div");
+    item.className = "menu-item";
+    item.style.cssText =
+      "padding: 10px 15px; display: flex; align-items: center; cursor: pointer; transition: background-color 0.2s;";
+
+    item.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00dfc4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 10px;">
+        ${getIconPath(option.icon)}
+      </svg>
+      <span style="color: white;">${option.label}</span>
+    `;
+
+    item.addEventListener("mouseenter", () => {
+      item.style.backgroundColor = "rgba(0, 223, 196, 0.1)";
+    });
+
+    item.addEventListener("mouseleave", () => {
+      item.style.backgroundColor = "transparent";
+    });
+
+    item.addEventListener("click", () => {
+      document.body.removeChild(menu);
+      option.action();
+    });
+
+    menu.appendChild(item);
+  });
+
+  // Add to document
+  document.body.appendChild(menu);
+
+  // Close when clicking outside
+  document.addEventListener("click", function closeMenu(e) {
+    if (
+      !menu.contains(e.target) &&
+      e.target !== document.querySelector(".conversationActions")
+    ) {
+      if (document.body.contains(menu)) {
+        document.body.removeChild(menu);
+      }
+      document.removeEventListener("click", closeMenu);
+    }
+  });
+
+  // Helper function to get SVG path for icons
+  function getIconPath(icon) {
+    switch (icon) {
+      case "info":
+        return '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>';
+      case "user-plus":
+        return '<path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line>';
+      case "log-out":
+        return '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line>';
+      case "user":
+        return '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>';
+      case "trash-2":
+        return '<polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line>';
+      case "slash":
+        return '<circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>';
+      case "archive":
+        return '<polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line>';
+      case "bell-off":
+        return '<path d="M13.73 21a2 2 0 0 1-3.46 0"></path><path d="M18.63 13A17.89 17.89 0 0 1 18 8"></path><path d="M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14"></path><path d="M18 8a6 6 0 0 0-9.33-5"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+      default:
+        return "";
+    }
+  }
+}
+
+/**
+ * Conversation action handlers
+ */
+function showGroupInfo() {
+  if (!chatState.activeConversation?.isGroup) return;
+
+  const { name, participants, createdAt } = chatState.activeConversation;
+
+  const backdrop = document.createElement("div");
+  backdrop.style.cssText =
+    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); z-index: 10000; display: flex; justify-content: center; align-items: center;";
+
+  const dialog = document.createElement("div");
+  dialog.style.cssText =
+    "background-color: #1d2b3a; border-radius: 10px; padding: 20px; width: 90%; max-width: 450px; max-height: 80vh; overflow: auto; color: #fff;";
+
+  const header = document.createElement("div");
+  header.style.cssText =
+    "display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #00dfc4; padding-bottom: 10px;";
+  header.innerHTML = `
+    <h3 style="margin: 0;">Informações do Grupo</h3>
+    <button class="close-dialog" style="background: none; border: none; color: #00dfc4; font-size: 24px; cursor: pointer;">×</button>
+  `;
+
+  const content = document.createElement("div");
+
+  // Group avatar and name
+  const groupInfo = document.createElement("div");
+  groupInfo.style.cssText =
+    "display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;";
+  groupInfo.innerHTML = `
+    <div style="width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: #00dfc4; color: #1d2b3a; font-size: 32px; font-weight: bold; margin-bottom: 10px;">
+      ${name ? name.charAt(0).toUpperCase() : "G"}
+    </div>
+    <h2 style="margin: 0;">${name || "Grupo"}</h2>
+    <p style="margin: 5px 0; color: #ccc; font-size: 0.9em;">Criado em ${
+      createdAt
+        ? new Date(createdAt.seconds * 1000).toLocaleDateString()
+        : "data desconhecida"
+    }</p>
+  `;
+
+  // Edit group name button
+  const editNameBtn = document.createElement("button");
+  editNameBtn.style.cssText =
+    "background: none; border: 1px solid #00dfc4; color: #00dfc4; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.9em; margin-top: 10px;";
+  editNameBtn.textContent = "Editar nome";
+  editNameBtn.addEventListener("click", () => {
+    const newName = prompt("Digite o novo nome do grupo:", name);
+    if (newName && newName.trim() && newName !== name) {
+      updateGroupName(chatState.activeConversation.id, newName.trim());
+    }
+  });
+  groupInfo.appendChild(editNameBtn);
+
+  // Participants list
+  const participantsList = document.createElement("div");
+  participantsList.style.cssText = "margin-top: 20px;";
+  participantsList.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+      <h4 style="margin: 0;">Participantes (${participants.length})</h4>
+      <button class="add-participant" style="background: none; border: none; color: #00dfc4; font-size: 0.9em; cursor: pointer; display: flex; align-items: center;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        Adicionar
+      </button>
+    </div>
+    <div class="participants-container" style="max-height: 300px; overflow-y: auto;"></div>
+  `;
+
+  const participantsContainer = participantsList.querySelector(
+    ".participants-container"
+  );
+
+  // Add participants to list
+  participants.forEach((participant) => {
+    const isCurrentUser = participant.id === chatState.currentUser.uid;
+    const item = document.createElement("div");
+    item.style.cssText =
+      "display: flex; align-items: center; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);";
+
+    item.innerHTML = `
+      <div style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; margin-right: 10px;">
+        ${
+          participant.photoURL
+            ? `<img src="${participant.photoURL}" alt="${participant.name}" style="width: 100%; height: 100%; object-fit: cover;">`
+            : `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: #1d2b3a; color: #00dfc4; font-weight: bold;">${
+                participant.name
+                  ? participant.name.charAt(0).toUpperCase()
+                  : "U"
+              }</div>`
+        }
+      </div>
+      <div style="flex-grow: 1;">
+        <div style="font-weight: bold;">${participant.name}${
+      isCurrentUser ? " (Você)" : ""
+    }</div>
+        <div style="font-size: 0.8em; color: #ccc;">${
+          participant.isOnline ? "Online" : "Offline"
+        }</div>
+      </div>
+      ${
+        !isCurrentUser
+          ? `
+        <button class="remove-participant" data-user-id="${participant.id}" style="background: none; border: none; color: #f44336; cursor: pointer;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="15" y1="9" x2="9" y2="15"></line>
+            <line x1="9" y1="9" x2="15" y2="15"></line>
+          </svg>
+        </button>
+      `
+          : ""
+      }
+    `;
+
+    participantsContainer.appendChild(item);
+  });
+
+  // Attach event listeners for participant actions
+  participantsList
+    .querySelector(".add-participant")
+    .addEventListener("click", () => {
+      document.body.removeChild(backdrop);
+      addGroupParticipant();
+    });
+
+  participantsList.querySelectorAll(".remove-participant").forEach((button) => {
+    button.addEventListener("click", (e) => {
+      const userId = e.currentTarget.getAttribute("data-user-id");
+      if (confirm("Remover este participante do grupo?")) {
+        removeGroupParticipant(chatState.activeConversation.id, userId);
+      }
+    });
+  });
+
+  // Leave group button
+  const leaveButton = document.createElement("button");
+  leaveButton.style.cssText =
+    "width: 100%; background-color: #f44336; color: white; border: none; padding: 10px; border-radius: 5px; margin-top: 20px; cursor: pointer;";
+  leaveButton.textContent = "Sair do grupo";
+  leaveButton.addEventListener("click", () => {
+    if (confirm("Tem certeza que deseja sair deste grupo?")) {
+      document.body.removeChild(backdrop);
+      leaveGroup();
+    }
+  });
+
+  // Assemble dialog
+  content.appendChild(groupInfo);
+  content.appendChild(participantsList);
+  content.appendChild(leaveButton);
+
+  dialog.appendChild(header);
+  dialog.appendChild(content);
+  backdrop.appendChild(dialog);
+
+  // Close dialog
+  dialog.querySelector(".close-dialog").addEventListener("click", () => {
+    document.body.removeChild(backdrop);
+  });
+
+  document.body.appendChild(backdrop);
+}
+
+/**
+ * Update group name
+ */
+async function updateGroupName(groupId, newName) {
+  try {
+    await updateDoc(doc(firestore, "conversations", groupId), {
+      name: newName,
+      updatedAt: serverTimestamp(),
+    });
+
+    // Send system message about name change
+    await sendSystemMessage(
+      groupId,
+      `${
+        chatState.currentUser.name || "Um usuário"
+      } alterou o nome do grupo para "${newName}"`
+    );
+
+    showPopup("success", "Nome do grupo atualizado!");
+  } catch (error) {
+    console.error("Error updating group name:", error);
+    showPopup("error", "Erro ao atualizar nome do grupo");
+  }
+}
+
+/**
+ * Add participant to group
+ */
+function addGroupParticipant() {
+  if (!chatState.activeConversation?.isGroup) return;
+
+  // Get current participants
+  const currentParticipantIds = chatState.activeConversation.participants.map(
+    (p) => (typeof p === "string" ? p : p.id)
+  );
+
+  // Create dialog
+  const backdrop = document.createElement("div");
+  backdrop.style.cssText =
+    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); z-index: 10000; display: flex; justify-content: center; align-items: center;";
+
+  const dialog = document.createElement("div");
+  dialog.style.cssText =
+    "background-color: #1d2b3a; border-radius: 10px; padding: 20px; width: 90%; max-width: 450px; max-height: 80vh; overflow: auto; color: #fff;";
+
+  const header = document.createElement("div");
+  header.style.cssText =
+    "display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #00dfc4; padding-bottom: 10px;";
+  header.innerHTML = `
+    <h3 style="margin: 0;">Adicionar Participantes</h3>
+    <button class="close-dialog" style="background: none; border: none; color: #00dfc4; font-size: 24px; cursor: pointer;">×</button>
+  `;
+
+  // Search input
+  const searchInput = document.createElement("input");
+  searchInput.type = "text";
+  searchInput.placeholder = "Buscar usuários...";
+  searchInput.style.cssText =
+    "width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #00dfc4; background-color: #1d2b3a; color: #fff; box-sizing: border-box; margin-bottom: 15px;";
+
+  // Results container
+  const resultsContainer = document.createElement("div");
+  resultsContainer.style.cssText = "max-height: 300px; overflow-y: auto;";
+
+  // Selected users container
+  const selectedContainer = document.createElement("div");
+  selectedContainer.style.cssText =
+    "display: flex; flex-wrap: wrap; gap: 5px; margin: 15px 0;";
+
+  // Selected users array
+  let selectedUsers = [];
+
+  // Function to render selected users
+  function renderSelectedUsers() {
+    selectedContainer.innerHTML = "";
+
+    if (selectedUsers.length === 0) {
+      selectedContainer.innerHTML = `<div style="color: #ccc; width: 100%; text-align: center; padding: 10px;">Nenhum usuário selecionado</div>`;
+      return;
+    }
+
+    selectedUsers.forEach((user) => {
+      const userTag = document.createElement("div");
+      userTag.style.cssText =
+        "background-color: #00dfc4; color: #1d2b3a; padding: 5px 10px; border-radius: 15px; font-size: 0.9em; display: flex; align-items: center;";
+      userTag.textContent = user.name;
+
+      // Remove button
+      const removeBtn = document.createElement("button");
+      removeBtn.textContent = "×";
+      removeBtn.style.cssText =
+        "background: none; border: none; margin-left: 5px; cursor: pointer; color: #1d2b3a;";
+      removeBtn.addEventListener("click", () => {
+        selectedUsers = selectedUsers.filter((u) => u.id !== user.id);
+        renderSelectedUsers();
+      });
+
+      userTag.appendChild(removeBtn);
+      selectedContainer.appendChild(userTag);
+    });
+  }
+
+  // Initial render
+  renderSelectedUsers();
+
+  // Search users function
+  let searchTimeout;
+  searchInput.addEventListener("input", () => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(async () => {
+      const searchTerm = searchInput.value.trim();
+
+      if (searchTerm.length < 2) {
+        resultsContainer.innerHTML = `<div style="text-align: center; padding: 10px; color: #ccc;">Digite pelo menos 2 caracteres para buscar</div>`;
+        return;
+      }
+
+      resultsContainer.innerHTML = `
+        <div style="text-align: center; padding: 10px; color: #00dfc4;">
+          <div class="loading-spinner" style="width: 20px; height: 20px; border: 2px solid rgba(0, 223, 196, 0.3); border-radius: 50%; border-top-color: #00dfc4; animation: spin 1s linear infinite; display: inline-block; margin-right: 10px;"></div>
+          Buscando usuários...
+        </div>
+      `;
+
+      try {
+        // Get users that aren't already in the group
+        const users = await getAllUsers();
+        const filteredUsers = users.filter(
+          (user) =>
+            // Not in current participants
+            !currentParticipantIds.includes(user.id) &&
+            // Not current user
+            user.id !== chatState.currentUser.uid &&
+            // Matches search term
+            user.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+
+        if (filteredUsers.length === 0) {
+          resultsContainer.innerHTML = `<div style="text-align: center; padding: 10px; color: #ccc;">Nenhum usuário encontrado</div>`;
+          return;
+        }
+
+        // Render users
+        resultsContainer.innerHTML = "";
+        filteredUsers.forEach((user) => {
+          const isSelected = selectedUsers.some((u) => u.id === user.id);
+
+          const userItem = document.createElement("div");
+          userItem.style.cssText = `
+            display: flex; 
+            align-items: center; 
+            padding: 10px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            background-color: ${
+              isSelected ? "rgba(0, 223, 196, 0.2)" : "transparent"
+            }; 
+            margin-bottom: 5px;
+            transition: background-color 0.2s;
+          `;
+
+          userItem.innerHTML = `
+            <div style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; margin-right: 10px;">
+              ${
+                user.photoURL
+                  ? `<img src="${user.photoURL}" alt="${user.name}" style="width: 100%; height: 100%; object-fit: cover;">`
+                  : `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: #1d2b3a; color: #00dfc4; font-weight: bold;">${
+                      user.name ? user.name.charAt(0).toUpperCase() : "U"
+                    }</div>`
+              }
+            </div>
+            <div style="flex-grow: 1;">
+              <div style="font-weight: bold;">${user.name}</div>
+              <div style="font-size: 0.8em; color: #ccc;">${
+                user.email || user.userType || ""
+              }</div>
+            </div>
+            <div style="margin-left: 10px;">
+              ${
+                isSelected
+                  ? `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00dfc4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`
+                  : `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>`
+              }
+            </div>
+          `;
+
+          userItem.addEventListener("mouseenter", () => {
+            if (!isSelected)
+              userItem.style.backgroundColor = "rgba(0, 223, 196, 0.1)";
+          });
+
+          userItem.addEventListener("mouseleave", () => {
+            if (!isSelected) userItem.style.backgroundColor = "transparent";
+          });
+
+          userItem.addEventListener("click", () => {
+            if (isSelected) {
+              // Remove from selection
+              selectedUsers = selectedUsers.filter((u) => u.id !== user.id);
+            } else {
+              // Add to selection
+              selectedUsers.push(user);
+            }
+            renderSelectedUsers();
+            renderSearchResults();
+          });
+
+          resultsContainer.appendChild(userItem);
+        });
+      } catch (error) {
+        console.error("Error searching users:", error);
+        resultsContainer.innerHTML = `<div style="text-align: center; padding: 10px; color: #f44336;">Erro ao buscar usuários</div>`;
+      }
+    }, 500);
+  });
+
+  // Add button
+  const addButton = document.createElement("button");
+  addButton.style.cssText =
+    "width: 100%; background-color: #00dfc4; color: #1d2b3a; border: none; padding: 10px; border-radius: 5px; margin-top: 20px; cursor: pointer; font-weight: bold;";
+  addButton.textContent = "Adicionar Participantes";
+  addButton.addEventListener("click", async () => {
+    if (selectedUsers.length === 0) {
+      showPopup(
+        "warning",
+        "Selecione pelo menos um usuário para adicionar ao grupo"
+      );
+      return;
+    }
+
+    dialog.innerHTML = `
+      <div style="text-align: center; padding: 20px; color: #00dfc4;">
+        <div class="loading-spinner" style="width: 30px; height: 30px; border: 3px solid rgba(0, 223, 196, 0.3); border-radius: 50%; border-top-color: #00dfc4; animation: spin 1s linear infinite; display: inline-block; margin-bottom: 15px;"></div>
+        <p>Adicionando participantes...</p>
+      </div>
+    `;
+
+    try {
+      await addParticipantsToGroup(
+        chatState.activeConversation.id,
+        selectedUsers.map((u) => u.id)
+      );
+
+      document.body.removeChild(backdrop);
+      showPopup("success", "Participantes adicionados com sucesso!");
+    } catch (error) {
+      console.error("Error adding participants:", error);
+      showPopup("error", "Erro ao adicionar participantes");
+
+      // Restore dialog
+      renderDialog();
+    }
+  });
+
+  // Assemble dialog
+  function renderDialog() {
+    dialog.innerHTML = "";
+    dialog.appendChild(header);
+    dialog.appendChild(searchInput);
+    dialog.appendChild(selectedContainer);
+    dialog.appendChild(resultsContainer);
+    dialog.appendChild(addButton);
+  }
+
+  renderDialog();
+  backdrop.appendChild(dialog);
+
+  // Close dialog
+  header.querySelector(".close-dialog").addEventListener("click", () => {
+    document.body.removeChild(backdrop);
+  });
+
+  document.body.appendChild(backdrop);
+  searchInput.focus();
+
+  // Function to re-render search results when selection changes
+  function renderSearchResults() {
+    searchInput.dispatchEvent(new Event("input"));
+  }
+}
+
+/**
+ * Add participants to group
+ */
+async function addParticipantsToGroup(groupId, userIds) {
+  if (!userIds || userIds.length === 0) return;
+
+  try {
+    const groupRef = doc(firestore, "conversations", groupId);
+
+    // Get current group data
+    const groupDoc = await getDoc(groupRef);
+    if (!groupDoc.exists()) throw new Error("Group does not exist");
+
+    const groupData = groupDoc.data();
+    const currentParticipants = groupData.participants || [];
+
+    // Add new participants
+    const newParticipants = [...new Set([...currentParticipants, ...userIds])];
+
+    // Update group
+    await updateDoc(groupRef, {
+      participants: newParticipants,
+      updatedAt: serverTimestamp(),
+    });
+
+    // Get added user names for the system message
+    const addedUserPromises = userIds.map(async (userId) => {
+      const userData =
+        chatState.usersCache[userId] || (await fetchUserData(userId));
+      return userData?.name || "Novo usuário";
+    });
+
+    const addedUserNames = await Promise.all(addedUserPromises);
+
+    // Send system message
+    await sendSystemMessage(
+      groupId,
+      `${
+        chatState.currentUser.name || "Usuário"
+      } adicionou ${addedUserNames.join(", ")} ao grupo`
+    );
+
+    return true;
+  } catch (error) {
+    console.error("Error adding participants to group:", error);
+    throw error;
+  }
+}
+
+/**
+ * Remove participant from group
+ */
+async function removeGroupParticipant(groupId, userId) {
+  try {
+    const groupRef = doc(firestore, "conversations", groupId);
+
+    // Get current group data
+    const groupDoc = await getDoc(groupRef);
+    if (!groupDoc.exists()) throw new Error("Group does not exist");
+
+    const groupData = groupDoc.data();
+    const currentParticipants = groupData.participants || [];
+
+    // Remove participant
+    const newParticipants = currentParticipants.filter((id) => id !== userId);
+
+    // Update group
+    await updateDoc(groupRef, {
+      participants: newParticipants,
+      updatedAt: serverTimestamp(),
+    });
+
+    // Get removed user name
+    const userData =
+      chatState.usersCache[userId] || (await fetchUserData(userId));
+    const userName = userData?.name || "Usuário";
+
+    // Send system message
+    await sendSystemMessage(
+      groupId,
+      `${chatState.currentUser.name || "Usuário"} removeu ${userName} do grupo`
+    );
+
+    showPopup("success", "Participante removido com sucesso!");
+
+    return true;
+  } catch (error) {
+    console.error("Error removing participant from group:", error);
+    showPopup("error", "Erro ao remover participante");
+    throw error;
+  }
+}
+
+/**
+ * Leave group
+ */
+async function leaveGroup() {
+  if (!chatState.activeConversation?.isGroup) return;
+
+  try {
+    const groupId = chatState.activeConversation.id;
+    const groupRef = doc(firestore, "conversations", groupId);
+
+    // Get current group data
+    const groupDoc = await getDoc(groupRef);
+    if (!groupDoc.exists()) throw new Error("Group does not exist");
+
+    const groupData = groupDoc.data();
+    const currentParticipants = groupData.participants || [];
+
+    // Remove current user
+    const newParticipants = currentParticipants.filter(
+      (id) => id !== chatState.currentUser.uid
+    );
+
+    // If no participants left, delete the group
+    if (newParticipants.length === 0) {
+      // TODO: implement group deletion logic
+      showPopup("warning", "Você era o último membro. O grupo será arquivado.");
+    } else {
+      // Update group
+      await updateDoc(groupRef, {
+        participants: newParticipants,
+        updatedAt: serverTimestamp(),
+      });
+
+      // Send system message
+      await sendSystemMessage(
+        groupId,
+        `${chatState.currentUser.name || "Usuário"} saiu do grupo`
+      );
+    }
+
+    // Return to conversations list
+    handleBackToContacts();
+
+    // Remove from local state
+    const conversationIndex = chatState.conversations.findIndex(
+      (conv) => conv.id === groupId
+    );
+
+    if (conversationIndex !== -1) {
+      chatState.conversations.splice(conversationIndex, 1);
+      cacheManager.saveConversations();
+      renderContacts();
+    }
+
+    showPopup("success", "Você saiu do grupo");
+
+    return true;
+  } catch (error) {
+    console.error("Error leaving group:", error);
+    showPopup("error", "Erro ao sair do grupo");
+    throw error;
+  }
+}
+
+/**
+ * View user profile
+ */
+function viewUserProfile() {
+  if (chatState.activeConversation?.isGroup) return;
+
+  const otherUser = chatState.activeConversation?.participants[0];
+  if (!otherUser) return;
+
+  const backdrop = document.createElement("div");
+  backdrop.style.cssText =
+    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); z-index: 10000; display: flex; justify-content: center; align-items: center;";
+
+  const dialog = document.createElement("div");
+  dialog.style.cssText =
+    "background-color: #1d2b3a; border-radius: 10px; padding: 20px; width: 90%; max-width: 400px; max-height: 80vh; overflow: auto; color: #fff;";
+
+  const header = document.createElement("div");
+  header.style.cssText =
+    "display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #00dfc4; padding-bottom: 10px;";
+  header.innerHTML = `
+    <h3 style="margin: 0;">Perfil</h3>
+    <button class="close-dialog" style="background: none; border: none; color: #00dfc4; font-size: 24px; cursor: pointer;">×</button>
+  `;
+
+  const content = document.createElement("div");
+  content.style.cssText =
+    "display: flex; flex-direction: column; align-items: center;";
+
+  // User avatar
+  content.innerHTML = `
+    <div style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden; margin-bottom: 15px;">
+      ${
+        otherUser.photoURL
+          ? `<img src="${otherUser.photoURL}" alt="${otherUser.name}" style="width: 100%; height: 100%; object-fit: cover;">`
+          : `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: #00dfc4; color: #1d2b3a; font-weight: bold; font-size: 40px;">${
+              otherUser.name ? otherUser.name.charAt(0).toUpperCase() : "U"
+            }</div>`
+      }
+    </div>
+    <h2 style="margin: 0 0 5px 0;">${otherUser.name}</h2>
+    <div style="display: flex; align-items: center; margin-bottom: 20px;">
+      <span style="width: 10px; height: 10px; border-radius: 50%; background-color: ${
+        otherUser.isOnline ? "#4CAF50" : "#ccc"
+      }; margin-right: 5px;"></span>
+      <span style="color: #ccc;">${
+        otherUser.isOnline ? "Online" : "Offline"
+      }</span>
+    </div>
+  `;
+
+  // User info
+  if (otherUser.email) {
+    const emailRow = document.createElement("div");
+    emailRow.style.cssText =
+      "display: flex; align-items: center; width: 100%; margin-bottom: 10px;";
+    emailRow.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00dfc4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 10px;">
+        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+        <polyline points="22,6 12,13 2,6"></polyline>
+      </svg>
+      <span>${otherUser.email}</span>
+    `;
+    content.appendChild(emailRow);
+  }
+
+  if (otherUser.userType) {
+    const typeRow = document.createElement("div");
+    typeRow.style.cssText =
+      "display: flex; align-items: center; width: 100%; margin-bottom: 10px;";
+    typeRow.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00dfc4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 10px;">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+        <circle cx="8.5" cy="7" r="4"></circle>
+        <line x1="20" y1="8" x2="20" y2="14"></line>
+        <line x1="23" y1="11" x2="17" y2="11"></line>
+      </svg>
+      <span>${
+        otherUser.userType === "paciente"
+          ? "Paciente"
+          : otherUser.userType === "medico"
+          ? "Médico"
+          : otherUser.userType
+      }</span>
+    `;
+    content.appendChild(typeRow);
+  }
+
+  // Action buttons
+  const actions = document.createElement("div");
+  actions.style.cssText =
+    "display: flex; justify-content: space-between; width: 100%; margin-top: 20px;";
+
+  const blockButton = document.createElement("button");
+  blockButton.style.cssText =
+    "flex: 1; background-color: #f44336; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; margin-right: 10px;";
+  blockButton.textContent = "Bloquear";
+  blockButton.addEventListener("click", () => {
+    if (confirm(`Tem certeza que deseja bloquear ${otherUser.name}?`)) {
+      document.body.removeChild(backdrop);
+      blockUser();
+    }
+  });
+
+  const messageButton = document.createElement("button");
+  messageButton.style.cssText =
+    "flex: 1; background-color: #00dfc4; color: #1d2b3a; border: none; padding: 10px; border-radius: 5px; cursor: pointer;";
+  messageButton.textContent = "Mensagem";
+  messageButton.addEventListener("click", () => {
+    document.body.removeChild(backdrop);
+  });
+
+  actions.appendChild(blockButton);
+  actions.appendChild(messageButton);
+
+  // Assemble dialog
+  dialog.appendChild(header);
+  dialog.appendChild(content);
+  dialog.appendChild(actions);
+  backdrop.appendChild(dialog);
+
+  // Close dialog
+  dialog.querySelector(".close-dialog").addEventListener("click", () => {
+    document.body.removeChild(backdrop);
+  });
+
+  document.body.appendChild(backdrop);
+}
+
+/**
+ * Clear conversation messages
+ */
+async function clearConversation() {
+  if (!chatState.activeConversation) return;
+
+  if (
+    !confirm(
+      "Tem certeza que deseja limpar todas as mensagens desta conversa? Esta ação não pode ser desfeita."
+    )
+  ) {
+    return;
+  }
+
+  try {
+    showPopup("info", "Limpando conversa...");
+
+    const conversationId = chatState.activeConversation.id;
+
+    // Update conversation with empty last message
+    await updateDoc(doc(firestore, "conversations", conversationId), {
+      lastMessage: "",
+      lastMessageAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    // Clear local messages
+    chatState.messages = [];
+
+    // Update cache
+    cacheManager.saveMessages(conversationId);
+
+    // Render empty messages
+    renderMessages();
+
+    // Send system message
+    await sendSystemMessage(conversationId, "Conversa limpa");
+
+    showPopup("success", "Conversa limpa com sucesso!");
+  } catch (error) {
+    console.error("Error clearing conversation:", error);
+    showPopup("error", "Erro ao limpar conversa");
+  }
+}
+
+/**
+ * Block user
+ */
+async function blockUser() {
+  if (chatState.activeConversation?.isGroup) return;
+
+  const otherUser = chatState.activeConversation?.participants[0];
+  if (!otherUser) return;
+
+  try {
+    showPopup("info", "Bloqueando usuário...");
+
+    // Update user document with blocked user
+    const userRef = doc(firestore, "users", chatState.currentUser.uid);
+    await updateDoc(userRef, {
+      blockedUsers: arrayUnion(otherUser.id),
+    });
+
+    // Update conversation with blocked status
+    await updateDoc(
+      doc(firestore, "conversations", chatState.activeConversation.id),
+      {
+        [`blocked.${chatState.currentUser.uid}`]: true,
+        updatedAt: serverTimestamp(),
+      }
+    );
+
+    showPopup("success", `${otherUser.name} foi bloqueado`);
+
+    // Return to conversation list
+    handleBackToContacts();
+  } catch (error) {
+    console.error("Error blocking user:", error);
+    showPopup("error", "Erro ao bloquear usuário");
+  }
+}
+
+/**
+ * Archive conversation
+ */
+function archiveConversation() {
+  showPopup(
+    "info",
+    "Funcionalidade de arquivar conversas será implementada em breve!"
+  );
+}
+
+/**
+ * Mute conversation notifications
+ */
+function muteConversation() {
+  showPopup(
+    "info",
+    "Funcionalidade de silenciar notificações será implementada em breve!"
+  );
 }
 
 /**
@@ -1947,6 +3538,149 @@ async function loadMessages(conversationId) {
     console.error("Error loading messages:", error);
     showPopup("error", "Erro ao carregar mensagens");
     throw error;
+  }
+}
+
+/**
+ * Set up listeners for real-time message updates
+ */
+function setupMessagesListener(conversationId) {
+  try {
+    // Unsubscribe from previous listener
+    if (chatState.unsubscribeListeners.messages) {
+      chatState.unsubscribeListeners.messages();
+    }
+
+    // Use Realtime Database for better performance with real-time updates
+    const messagesRef = ref(realtimeDb, `messages/${conversationId}`);
+
+    // Listen for new messages
+    const onNewMessage = onChildAdded(messagesRef, (snapshot) => {
+      const messageData = snapshot.val();
+      const messageId = snapshot.key;
+
+      // Check if we already have this message
+      if (!chatState.messages.some((m) => m.id === messageId)) {
+        // Add new message to state
+        chatState.messages.push({ id: messageId, ...messageData });
+
+        // Update UI and cache
+        renderMessages();
+        scrollToBottom();
+        cacheManager.saveMessages(conversationId);
+
+        // Update message status if it's from another user
+        if (
+          messageData.senderId !== chatState.currentUser.uid &&
+          messageData.status === "sent"
+        ) {
+          update(ref(realtimeDb, `messages/${conversationId}/${messageId}`), {
+            status: "delivered",
+          });
+        }
+
+        // Show notification if app is not focused
+        if (
+          messageData.senderId !== chatState.currentUser.uid &&
+          document.visibilityState !== "visible"
+        ) {
+          showMessageNotification(messageData);
+        }
+
+        // Mark as read if viewing this conversation
+        if (
+          messageData.senderId !== chatState.currentUser.uid &&
+          document.visibilityState === "visible" &&
+          chatState.activeConversation?.id === conversationId
+        ) {
+          update(ref(realtimeDb, `messages/${conversationId}/${messageId}`), {
+            status: "read",
+          });
+        }
+
+        // Update last seen
+        updateLastSeen(conversationId);
+      }
+    });
+
+    // Listen for status updates
+    const onStatusChanged = onChildChanged(messagesRef, (snapshot) => {
+      const messageData = snapshot.val();
+      const messageId = snapshot.key;
+
+      // Find and update message
+      const messageIndex = chatState.messages.findIndex(
+        (m) => m.id === messageId
+      );
+
+      if (messageIndex !== -1) {
+        chatState.messages[messageIndex] = {
+          ...chatState.messages[messageIndex],
+          ...messageData,
+        };
+
+        // Update UI and cache
+        renderMessages();
+        cacheManager.saveMessages(conversationId);
+      }
+    });
+
+    // Store unsubscribe functions
+    chatState.unsubscribeListeners.messages = () => {
+      onNewMessage();
+      onStatusChanged();
+    };
+
+    return chatState.unsubscribeListeners.messages;
+  } catch (error) {
+    console.error("Error setting up message listener:", error);
+    showPopup("error", "Erro ao monitorar novas mensagens");
+  }
+}
+
+/**
+ * Show browser notification for new messages
+ */
+function showMessageNotification(messageData) {
+  if (!("Notification" in window) || Notification.permission !== "granted") {
+    return;
+  }
+
+  try {
+    // Get sender info
+    const senderId = messageData.senderId;
+    let senderName = "Nova mensagem";
+    let senderPhoto = null;
+
+    // Find sender in contacts or cache
+    if (senderId === "system") {
+      senderName = "Sistema";
+    } else if (chatState.usersCache[senderId]) {
+      senderName = chatState.usersCache[senderId].name || "Usuário";
+      senderPhoto = chatState.usersCache[senderId].photoURL;
+    }
+
+    // Create notification
+    const notification = new Notification(senderName, {
+      body: messageData.text,
+      icon: senderPhoto || "/assets/images/icon.png",
+      badge: "/assets/images/badge.png",
+      tag: `message-${messageData.id}`,
+    });
+
+    // Handle notification click
+    notification.onclick = function () {
+      window.focus();
+      if (chatState.activeConversation?.id !== messageData.conversationId) {
+        openConversation(messageData.conversationId);
+      }
+      notification.close();
+    };
+
+    // Auto close after 5 seconds
+    setTimeout(() => notification.close(), 5000);
+  } catch (error) {
+    console.error("Error showing notification:", error);
   }
 }
 
@@ -2023,17 +3757,7 @@ function renderMessageItem(container, message, index) {
   const isMyMessage = message.senderId === chatState.currentUser.uid;
   const isSystemMessage =
     message.senderId === "system" || message.type === "system";
-
-  // Adicionando verificação de segurança para o timestamp
-  let messageTime = "";
-  try {
-    messageTime = message.timestamp
-      ? timeUtils.formatTime(message.timestamp)
-      : "";
-  } catch (error) {
-    console.error("Erro ao obter o timestamp da mensagem:", error, message);
-    messageTime = "";
-  }
+  const messageTime = timeUtils.formatTime(message.timestamp);
 
   if (isSystemMessage) {
     // Render system message
@@ -2282,7 +4006,6 @@ function showScrollToBottomButton() {
 /**
  * Send a message in the active conversation
  */
-// Função sendMessage atualizada
 async function sendMessage(text) {
   try {
     if (!text.trim() || !chatState.activeConversation) return;
@@ -2290,21 +4013,15 @@ async function sendMessage(text) {
     const conversationId = chatState.activeConversation.id;
     const currentUserId = chatState.currentUser.uid;
 
-    // Limpa o campo de input imediatamente para melhor UX
+    // Clear input field immediately for better UX
     const messageInput = document.querySelector(".messageInput");
     if (messageInput) {
       messageInput.value = "";
       messageInput.focus();
     }
 
-    // Cria a referência para a nova mensagem e obtém o ID real
-    const messagesRef = ref(realtimeDb, `messages/${conversationId}`);
-    const newMessageRef = push(messagesRef);
-    const messageId = newMessageRef.key;
-
-    // Cria o objeto da mensagem com o ID real
+    // Create message object
     const newMessage = {
-      id: messageId,
       text: text.trim(),
       senderId: currentUserId,
       timestamp: Date.now(),
@@ -2312,20 +4029,26 @@ async function sendMessage(text) {
       type: "text",
     };
 
-    // Adiciona ao estado local para exibição imediata
-    chatState.messages.push(newMessage);
+    // Add to local state for immediate display
+    const tempId = `temp-${Date.now()}`;
+    const tempMessage = { id: tempId, ...newMessage };
+    chatState.messages.push(tempMessage);
 
-    // Atualiza a UI
+    // Update UI
     renderMessages();
     scrollToBottom();
 
-    // Envia para o Realtime Database
+    // Send to Realtime Database for instant sync
+    const messagesRef = ref(realtimeDb, `messages/${conversationId}`);
+    const newMessageRef = push(messagesRef);
     await set(newMessageRef, newMessage);
 
-    // Atualiza os metadados da conversa
+    // Update conversation metadata
     const unreadCount = {};
 
+    // For each participant, increment unread count (except sender)
     chatState.activeConversation.participants.forEach((participant) => {
+      // If it's a user object, get the ID
       const participantId =
         typeof participant === "string" ? participant : participant.id;
 
@@ -2334,6 +4057,7 @@ async function sendMessage(text) {
         (participantId === currentUserId ? 0 : 1);
     });
 
+    // Update Firestore conversation
     const conversationRef = doc(firestore, "conversations", conversationId);
     await updateDoc(conversationRef, {
       lastMessage: text.trim(),
@@ -2344,17 +4068,17 @@ async function sendMessage(text) {
       unreadCount,
     });
 
-    // Após um pequeno atraso, atualiza o status da mensagem para "sent"
+    // After a slight delay, update message status to "sent"
     setTimeout(async () => {
-      await update(ref(realtimeDb, `messages/${conversationId}/${messageId}`), {
-        status: "sent",
-      });
+      await update(
+        ref(realtimeDb, `messages/${conversationId}/${newMessageRef.key}`),
+        { status: "sent" }
+      );
 
-      // Também salva no Firestore para persistência
+      // Also save to Firestore for persistence
       await addDoc(
         collection(firestore, `conversations/${conversationId}/messages`),
         {
-          id: messageId,
           text: text.trim(),
           senderId: currentUserId,
           timestamp: Timestamp.fromDate(new Date(newMessage.timestamp)),
@@ -2362,9 +4086,15 @@ async function sendMessage(text) {
           type: "text",
         }
       );
+
+      // Remove temporary message and let the listener add the real one
+      const tempIndex = chatState.messages.findIndex((m) => m.id === tempId);
+      if (tempIndex !== -1) {
+        chatState.messages.splice(tempIndex, 1);
+      }
     }, 500);
 
-    // Atualiza a lista de conversas para refletir a nova mensagem
+    // Update conversations list to reflect new message
     const updatedConversation = await getDoc(conversationRef);
     const conversationIndex = chatState.conversations.findIndex(
       (conv) => conv.id === conversationId
@@ -2385,95 +4115,16 @@ async function sendMessage(text) {
     console.error("Error sending message:", error);
     showPopup("error", "Erro ao enviar mensagem");
 
-    // Remove a mensagem falha da UI
-    const failedIndex = chatState.messages.findIndex((m) => m.id === messageId);
-    if (failedIndex !== -1) {
-      chatState.messages.splice(failedIndex, 1);
+    // Remove failed message from UI
+    const tempIndex = chatState.messages.findIndex(
+      (m) => m.status === "pending"
+    );
+    if (tempIndex !== -1) {
+      chatState.messages.splice(tempIndex, 1);
       renderMessages();
     }
 
     return false;
-  }
-}
-
-// Função setupMessagesListener atualizada
-function setupMessagesListener(conversationId) {
-  try {
-    // Unsubscribe do listener anterior, se existir
-    if (chatState.unsubscribeListeners.messages) {
-      chatState.unsubscribeListeners.messages();
-    }
-
-    const messagesRef = ref(realtimeDb, `messages/${conversationId}`);
-
-    // Listener para novas mensagens
-    const unsubscribeAdded = onChildAdded(messagesRef, async (snapshot) => {
-      const newMessage = snapshot.val();
-      newMessage.id = snapshot.key;
-
-      // Verifica se a mensagem já está no estado
-      const existingIndex = chatState.messages.findIndex(
-        (msg) => msg.id === newMessage.id
-      );
-
-      if (existingIndex === -1) {
-        // Se não existe, adiciona
-        chatState.messages.push(newMessage);
-      } else {
-        // Se existe, atualiza com os dados mais recentes
-        chatState.messages[existingIndex] = newMessage;
-      }
-
-      renderMessages();
-      scrollToBottom();
-      cacheManager.saveMessages(conversationId);
-
-      // Reproduz som de notificação se a mensagem não for do usuário atual e a janela não estiver em foco
-      if (
-        newMessage.senderId !== chatState.currentUser.uid &&
-        document.visibilityState !== "visible"
-      ) {
-        playNotificationSound();
-        showBrowserNotification(newMessage);
-      }
-
-      // Marca como lida se esta for a conversa ativa
-      if (
-        chatState.activeConversation &&
-        chatState.activeConversation.id === conversationId &&
-        newMessage.senderId !== chatState.currentUser.uid
-      ) {
-        await markMessageAsRead(conversationId, snapshot.key);
-        chatState.lastSeenTimestamps[conversationId] = Date.now();
-        cacheManager.saveLastSeen();
-      }
-    });
-
-    // Listener para atualizações em mensagens existentes
-    const unsubscribeChanged = onChildChanged(messagesRef, (snapshot) => {
-      const updatedMessage = snapshot.val();
-      updatedMessage.id = snapshot.key;
-
-      const index = chatState.messages.findIndex(
-        (msg) => msg.id === updatedMessage.id
-      );
-
-      if (index !== -1) {
-        chatState.messages[index] = updatedMessage;
-        renderMessages();
-      }
-    });
-
-    // Armazena as funções de unsubscribe
-    chatState.unsubscribeListeners.messages = () => {
-      unsubscribeAdded();
-      unsubscribeChanged();
-    };
-
-    return chatState.unsubscribeListeners.messages;
-  } catch (error) {
-    console.error("Error setting up messages listener:", error);
-    return null;
   }
 }
 
@@ -2520,1037 +4171,683 @@ function adjustLayout() {
     if (containerUserChat) containerUserChat.style.display = "flex";
     if (containerMain) containerMain.style.display = "block";
   }
-
-  // Atualizar visibilidade do botão de voltar
-  updateBackButtonVisibility();
 }
 
 /**
- * Create or retrieve a conversation with a specific user
+ * Show new chat dialog with improved UI
  */
-async function createConversation(targetUserId) {
+async function showNewChatDialog() {
   try {
-    // Show loading indicator
-    showPopup("info", "Criando conversa...", 1000);
+    const backdrop = document.createElement("div");
+    backdrop.style.cssText =
+      "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); z-index: 10000; display: flex; justify-content: center; align-items: center;";
 
-    // Check if conversation already exists
-    const convQuery = query(
-      collection(firestore, "conversations"),
-      where("participants", "array-contains", chatState.currentUser.uid)
-    );
+    const dialog = document.createElement("div");
+    dialog.style.cssText =
+      "background-color: #1d2b3a; border-radius: 10px; padding: 20px; width: 90%; max-width: 450px; max-height: 80vh; overflow: auto; color: #fff; position: relative;";
 
-    const snapshot = await getDocs(convQuery);
-    let conversation = null;
-
-    snapshot.forEach((docSnap) => {
-      const data = docSnap.data();
-      if (!data.isGroup && data.participants.includes(targetUserId)) {
-        conversation = { id: docSnap.id, ...data };
-      }
-    });
-
-    if (!conversation) {
-      // Create new conversation
-      const conversationData = {
-        participants: [chatState.currentUser.uid, targetUserId],
-        isGroup: false,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        unreadCount: {},
-        creator: chatState.currentUser.uid,
-      };
-
-      const docRef = await addDoc(
-        collection(firestore, "conversations"),
-        conversationData
-      );
-
-      conversation = { id: docRef.id, ...conversationData };
-
-      // Add to local state and cache
-      chatState.conversations.unshift(conversation);
-      cacheManager.saveConversations();
-
-      // Trigger welcome message
-      await sendSystemMessage(conversation.id, "Conversa iniciada. Diga olá!");
-    }
-
-    // Set as active conversation and open it
-    chatState.activeConversation = conversation;
-    await openConversation(conversation.id);
-
-    return conversation;
-  } catch (error) {
-    console.error("Error creating conversation:", error);
-    showPopup("error", "Erro ao criar conversa");
-    return null;
-  }
-}
-
-/**
- * Send a system message to a conversation
- */
-async function sendSystemMessage(conversationId, text) {
-  try {
-    // Create system message object
-    const systemMessage = {
-      text: text,
-      senderId: "system",
-      timestamp: Date.now(),
-      status: "sent",
-      type: "system",
-    };
-
-    // Send to Realtime Database for instant sync
-    const messagesRef = ref(realtimeDb, `messages/${conversationId}`);
-    const newMessageRef = push(messagesRef);
-    await set(newMessageRef, systemMessage);
-
-    // Also save to Firestore for persistence
-    await addDoc(
-      collection(firestore, `conversations/${conversationId}/messages`),
-      {
-        text: text,
-        senderId: "system",
-        timestamp: Timestamp.fromDate(new Date(systemMessage.timestamp)),
-        status: "sent",
-        type: "system",
-      }
-    );
-
-    return true;
-  } catch (error) {
-    console.error("Error sending system message:", error);
-    return false;
-  }
-}
-
-/**
- * Open a conversation and setup listeners
- */
-async function openConversation(conversationId) {
-  try {
-    // Unsubscribe from previous messages listeners
-    if (chatState.unsubscribeListeners.messages) {
-      chatState.unsubscribeListeners.messages();
-    }
-
-    // Get conversation data
-    const conversationDoc = await getDoc(
-      doc(firestore, "conversations", conversationId)
-    );
-
-    if (!conversationDoc.exists()) {
-      throw new Error("Conversation not found");
-    }
-
-    const conversationData = conversationDoc.data();
-    chatState.activeConversation = { id: conversationId, ...conversationData };
-
-    // Show loading indicator
-    chatState.isLoading.messages = true;
-
-    // Show conversation UI
-    showConversationView();
-    updateConversationUI();
-
-    // Try to load from cache first for instant display
-    const cacheFound = cacheManager.loadMessages(conversationId);
-
-    // Reset unread count for current user
-    if (
-      chatState.activeConversation.unreadCount &&
-      chatState.activeConversation.unreadCount[chatState.currentUser.uid] > 0
-    ) {
-      const conversationRef = doc(firestore, "conversations", conversationId);
-      const unreadCount = { ...chatState.activeConversation.unreadCount };
-      unreadCount[chatState.currentUser.uid] = 0;
-
-      await updateDoc(conversationRef, { unreadCount });
-
-      // Update local state
-      chatState.activeConversation.unreadCount = unreadCount;
-    }
-
-    // Load messages from server
-    await loadMessages(conversationId);
-
-    // Setup real-time listeners
-    setupMessagesListener(conversationId);
-    setupTypingIndicatorsListener(conversationId);
-
-    // Mark as read in the lastSeen object and save
-    chatState.lastSeenTimestamps[conversationId] = Date.now();
-    cacheManager.saveLastSeen();
-
-    return true;
-  } catch (error) {
-    console.error("Error opening conversation:", error);
-    showPopup("error", "Erro ao abrir conversa");
-    return false;
-  } finally {
-    chatState.isLoading.messages = false;
-  }
-}
-
-/**
- * Setup real-time listener for messages
- */
-
-/**
- * Mark a message as read
- */
-async function markMessageAsRead(conversationId, messageId) {
-  try {
-    // Update message status in Realtime Database
-    await update(ref(realtimeDb, `messages/${conversationId}/${messageId}`), {
-      status: "read",
-    });
-
-    // Also update in Firestore for persistence
-    const messagesRef = collection(
-      firestore,
-      `conversations/${conversationId}/messages`
-    );
-    const q = query(messagesRef, where("id", "==", messageId), limit(1));
-    const querySnapshot = await getDocs(q);
-
-    if (!querySnapshot.empty) {
-      const messageRef = doc(
-        firestore,
-        `conversations/${conversationId}/messages`,
-        querySnapshot.docs[0].id
-      );
-      await updateDoc(messageRef, { status: "read" });
-    }
-
-    return true;
-  } catch (error) {
-    console.error("Error marking message as read:", error);
-    return false;
-  }
-}
-
-/**
- * Update conversation UI with current conversation data
- */
-function updateConversationUI() {
-  if (!chatState.activeConversation) return;
-
-  // Get elements
-  const chatName = document.querySelector(".nameUserMensages");
-  const chatStatus = document.querySelector(".userStatusText");
-  const chatAvatar = document.querySelector(".ProfileMensagesPic");
-  const statusDot = document.querySelector(".userStatusMensages");
-
-  if (!chatName || !chatStatus || !chatAvatar) return;
-
-  const conversation = chatState.activeConversation;
-
-  if (conversation.isGroup) {
-    // Group chat UI
-    chatName.textContent = conversation.name || "Grupo";
-    chatStatus.textContent = `${conversation.participants.length} participantes`;
-
-    if (statusDot) {
-      statusDot.style.backgroundColor = "#ccc"; // Neutral color for groups
-    }
-
-    // Group avatar (display first letter of group name)
-    chatAvatar.innerHTML = `
-      <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: #1d2b3a; border-radius: 50%; color: #00dfc4; font-weight: bold; font-size: 20px;">
-        ${(conversation.name || "G").charAt(0).toUpperCase()}
-      </div>
+    const header = document.createElement("div");
+    header.style.cssText =
+      "display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #00dfc4; padding-bottom: 10px;";
+    header.innerHTML = `
+      <h3 style="margin: 0;">Nova conversa</h3>
+      <button class="close-dialog" style="background: none; border: none; color: #00dfc4; font-size: 24px; cursor: pointer;">×</button>
     `;
-  } else {
-    // Direct chat UI - get the other user's data
-    const otherUserId = conversation.participants.find(
-      (id) => id !== chatState.currentUser.uid
-    );
 
-    if (otherUserId) {
-      // Try to get from cache first
-      let userData = chatState.usersCache[otherUserId];
+    const searchInput = document.createElement("input");
+    searchInput.type = "text";
+    searchInput.placeholder = "Procurar usuário...";
+    searchInput.style.cssText =
+      "width: 100%; padding: 12px; border-radius: 5px; border: 1px solid #00dfc4; background-color: #1d2b3a; color: #fff; box-sizing: border-box; margin-bottom: 15px;";
 
-      if (!userData) {
-        // If not in cache, load from Firestore
-        fetchUserData(otherUserId).then((data) => {
-          if (data) {
-            chatState.usersCache[otherUserId] = data;
-            updateConversationUI(); // Re-run this function after getting data
-          }
-        });
+    const usersList = document.createElement("div");
+    usersList.style.cssText = "max-height: 400px; overflow-y: auto;";
 
-        // Show loading state
-        chatName.textContent = "Carregando...";
-        chatStatus.textContent = "";
-        chatAvatar.innerHTML = `
-          <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: #1d2b3a; border-radius: 50%;">
-            <div class="loading-spinner" style="width: 20px; height: 20px; border: 2px solid rgba(0, 223, 196, 0.3); border-radius: 50%; border-top-color: #00dfc4; animation: spin 1s linear infinite;"></div>
-          </div>
-        `;
-        return;
-      }
+    // Function to render users list with loading state
+    async function renderUsersList(searchTerm = "") {
+      // Show loading indicator
+      usersList.innerHTML = `
+        <div style="text-align: center; padding: 20px; color: #00dfc4;">
+          <div class="loading-spinner" style="width: 30px; height: 30px; border: 3px solid rgba(0, 223, 196, 0.3); border-radius: 50%; border-top-color: #00dfc4; animation: spin 1s linear infinite; display: inline-block; margin-bottom: 10px;"></div>
+          <p>Buscando usuários...</p>
+        </div>
+      `;
 
-      // Display user info
-      chatName.textContent = userData.name || "Usuário";
-      chatStatus.textContent = userData.isOnline
-        ? "Online"
-        : userData.lastSeen
-        ? `Visto por último ${timeUtils.getTimeSince(userData.lastSeen)}`
-        : "Offline";
+      try {
+        // Get users from cache or fetch from server
+        const users = await getAllUsers(chatState.currentUser.uid, searchTerm);
 
-      // Show online status color
-      chatStatus.style.color = userData.isOnline ? "#4CAF50" : "#ccc";
+        // Filter users based on search
+        const filteredUsers = searchTerm
+          ? users.filter(
+              (user) =>
+                user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (user.email &&
+                  user.email.toLowerCase().includes(searchTerm.toLowerCase()))
+            )
+          : users;
 
-      if (statusDot) {
-        statusDot.style.backgroundColor = userData.isOnline
-          ? "#4CAF50"
-          : "#ccc";
-      }
-
-      // User avatar
-      if (userData.photoURL) {
-        chatAvatar.innerHTML = `<img src="${userData.photoURL}" alt="Foto de perfil" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
-      } else {
-        // Default avatar with user initials
-        const initials = (userData.name || "U")
-          .split(" ")
-          .map((n) => n[0])
-          .slice(0, 2)
-          .join("")
-          .toUpperCase();
-
-        chatAvatar.innerHTML = `
-          <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: #1d2b3a; border-radius: 50%; color: #00dfc4; font-weight: bold; font-size: 18px;">
-            ${initials}
-          </div>
-        `;
-      }
-    }
-  }
-
-  // Enable message input and buttons
-  const messageInput = document.querySelector(".messageInput");
-  const sendButton = document.querySelector(".sendButton");
-  const attachButton = document.querySelector(".attachButton");
-  const emojiButton = document.querySelector(".emojiButton");
-  const voiceButton = document.querySelector(".voiceButton");
-
-  if (messageInput) messageInput.disabled = false;
-  if (sendButton) sendButton.disabled = false;
-  if (attachButton) attachButton.disabled = false;
-  if (emojiButton) emojiButton.disabled = false;
-  if (voiceButton) voiceButton.disabled = false;
-}
-
-/**
- * Show new chat dialog
- */
-function showNewChatDialog() {
-  try {
-    showPopup("info", "Carregando usuários...");
-
-    // Fetch all users for the dialog
-    getAllUsers()
-      .then((users) => {
-        // Filter out current user and existing direct conversations
-        const existingChats = new Set();
-        chatState.conversations.forEach((conv) => {
-          if (!conv.isGroup) {
-            conv.participants.forEach((participant) => {
-              if (participant !== chatState.currentUser.uid) {
-                existingChats.add(participant);
-              }
-            });
-          }
-        });
-
-        const availableUsers = users.filter(
-          (user) =>
-            user.id !== chatState.currentUser.uid && !existingChats.has(user.id)
-        );
-
-        if (availableUsers.length === 0) {
-          showPopup("info", "Não há usuários disponíveis para conversar.");
+        // Show no results message if needed
+        if (filteredUsers.length === 0) {
+          usersList.innerHTML = `<div style="text-align: center; padding: 20px; color: #00dfc4;">Nenhum usuário encontrado</div>`;
           return;
         }
 
-        // Create users selection dialog
-        createSelectUserDialog(
-          availableUsers,
-          "Nova Conversa",
-          "Selecione um usuário para iniciar uma conversa:",
-          (selectedUserId) => {
-            if (selectedUserId) {
-              createConversation(selectedUserId);
-            }
+        // Render users
+        usersList.innerHTML = "";
+
+        // Create sections for online and offline users
+        const sections = {
+          online: [],
+          offline: [],
+        };
+
+        // Sort users into sections
+        filteredUsers.forEach((user) => {
+          if (user.isOnline) {
+            sections.online.push(user);
+          } else {
+            sections.offline.push(user);
           }
-        );
-      })
-      .catch((error) => {
-        console.error("Error loading users:", error);
-        showPopup("error", "Erro ao carregar usuários");
-      });
-  } catch (error) {
-    console.error("Error showing new chat dialog:", error);
-    showPopup("error", "Erro ao abrir diálogo");
-  }
-}
+        });
 
-/**
- * Create select user dialog with user list
- */
-function createSelectUserDialog(users, title, message, callback) {
-  // Create dialog container
-  const dialogContainer = document.createElement("div");
-  dialogContainer.className = "select-user-dialog";
-  dialogContainer.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  `;
+        // Function to create a user item
+        function createUserItem(user) {
+          const existingConversation = chatState.conversations.find(
+            (conv) =>
+              !conv.isGroup &&
+              conv.participants.includes(user.id) &&
+              conv.participants.includes(chatState.currentUser.uid)
+          );
 
-  // Create dialog content
-  const dialog = document.createElement("div");
-  dialog.style.cssText = `
-    background-color: #1d2b3a;
-    border-radius: 10px;
-    width: 90%;
-    max-width: 500px;
-    max-height: 80vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-  `;
+          const userItem = document.createElement("div");
+          userItem.style.cssText =
+            "display: flex; align-items: center; padding: 12px; border-radius: 5px; cursor: pointer; transition: background-color 0.2s;";
+          userItem.innerHTML = `
+            <div style="width: 50px; height: 50px; border-radius: 50%; overflow: hidden; margin-right: 15px; flex-shrink: 0;">
+              ${
+                user.photoURL
+                  ? `<img src="${user.photoURL}" alt="${user.name}" style="width: 100%; height: 100%; object-fit: cover;">`
+                  : `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: #00dfc4; color: #1d2b3a; font-weight: bold; font-size: 20px;">${
+                      user.name ? user.name.charAt(0).toUpperCase() : "U"
+                    }</div>`
+              }
+            </div>
+            <div style="flex-grow: 1;">
+              <div style="font-weight: bold; margin-bottom: 3px;">${
+                user.name
+              }</div>
+              <div style="font-size: 0.8em; opacity: 0.7; display: flex; align-items: center;">
+                <span style="margin-right: 5px;">${
+                  existingConversation
+                    ? "Conversa existente"
+                    : "Iniciar conversa"
+                }</span>
+                ${
+                  user.userType
+                    ? `<span style="display: inline-block; padding: 2px 6px; background-color: ${
+                        user.userType === "paciente"
+                          ? "#2196F3"
+                          : user.userType === "medico"
+                          ? "#FF9800"
+                          : "#00dfc4"
+                      }; border-radius: 10px; font-size: 0.8em; margin-left: 5px;">${
+                        user.userType
+                      }</span>`
+                    : ""
+                }
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; margin-left: 10px;">
+              <span style="width: 10px; height: 10px; border-radius: 50%; background-color: ${
+                user.isOnline ? "#4CAF50" : "#ccc"
+              }; margin-right: 5px;"></span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00dfc4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h13M12 5l7 7-7 7"/>
+              </svg>
+            </div>
+          `;
 
-  // Create dialog header
-  const header = document.createElement("div");
-  header.style.cssText = `
-    padding: 15px;
-    border-bottom: 1px solid rgba(0, 223, 196, 0.2);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  `;
-  header.innerHTML = `
-    <h3 style="margin: 0; color: #00dfc4;">${title}</h3>
-    <button class="close-dialog" style="background: none; border: none; color: #00dfc4; font-size: 24px; cursor: pointer;">×</button>
-  `;
+          userItem.addEventListener("mouseenter", () => {
+            userItem.style.backgroundColor = "rgba(0, 223, 196, 0.1)";
+          });
 
-  // Create message
-  const messageElement = document.createElement("p");
-  messageElement.style.cssText = `
-    padding: 10px 15px;
-    margin: 0;
-    color: #fff;
-  `;
-  messageElement.textContent = message;
+          userItem.addEventListener("mouseleave", () => {
+            userItem.style.backgroundColor = "transparent";
+          });
 
-  // Create users list container
-  const usersContainer = document.createElement("div");
-  usersContainer.style.cssText = `
-    flex-grow: 1;
-    overflow-y: auto;
-    padding: 0 15px;
-    max-height: 50vh;
-  `;
+          userItem.addEventListener("click", async () => {
+            // Show loading state
+            userItem.style.opacity = "0.7";
+            userItem.style.pointerEvents = "none";
 
-  // Create search input
-  const searchContainer = document.createElement("div");
-  searchContainer.style.cssText = `
-    padding: 10px 15px;
-    border-bottom: 1px solid rgba(0, 223, 196, 0.2);
-  `;
+            try {
+              document.body.removeChild(backdrop);
 
-  const searchInput = document.createElement("input");
-  searchInput.type = "text";
-  searchInput.placeholder = "Buscar usuários...";
-  searchInput.style.cssText = `
-    width: 100%;
-    padding: 10px;
-    border-radius: 20px;
-    border: 1px solid rgba(0, 223, 196, 0.3);
-    background-color: rgba(0, 0, 0, 0.2);
-    color: #fff;
-    box-sizing: border-box;
-  `;
+              if (existingConversation) {
+                await openConversation(existingConversation.id);
+              } else {
+                await createConversation(user.id);
+              }
 
-  searchContainer.appendChild(searchInput);
+              renderContacts();
+              showConversationView();
+            } catch (error) {
+              console.error("Error creating conversation:", error);
+              showPopup("error", "Erro ao iniciar conversa");
+            }
+          });
 
-  // Create user list
-  const usersList = document.createElement("ul");
-  usersList.style.cssText = `
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  `;
+          return userItem;
+        }
 
-  // Populate user list
-  function renderUsers(userArray, searchValue = "") {
-    usersList.innerHTML = "";
+        // Render online users first
+        if (sections.online.length > 0) {
+          const onlineHeader = document.createElement("div");
+          onlineHeader.style.cssText =
+            "padding: 5px 15px; color: #00dfc4; font-size: 0.8em; opacity: 0.8;";
+          onlineHeader.textContent = "Online";
+          usersList.appendChild(onlineHeader);
 
-    const filteredUsers = searchValue.trim()
-      ? userArray.filter(
-          (user) =>
-            user.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-            (user.email &&
-              user.email.toLowerCase().includes(searchValue.toLowerCase()))
-        )
-      : userArray;
+          sections.online.forEach((user) => {
+            usersList.appendChild(createUserItem(user));
+          });
+        }
 
-    if (filteredUsers.length === 0) {
-      usersList.innerHTML = `
-        <li style="padding: 15px; text-align: center; color: #ccc;">
-          Nenhum usuário encontrado
-        </li>
-      `;
-      return;
+        // Then render offline users
+        if (sections.offline.length > 0) {
+          const offlineHeader = document.createElement("div");
+          offlineHeader.style.cssText =
+            "padding: 5px 15px; color: #00dfc4; font-size: 0.8em; opacity: 0.8; margin-top: 10px;";
+          offlineHeader.textContent = "Offline";
+          usersList.appendChild(offlineHeader);
+
+          sections.offline.forEach((user) => {
+            usersList.appendChild(createUserItem(user));
+          });
+        }
+      } catch (error) {
+        console.error("Error rendering users list:", error);
+        usersList.innerHTML = `<div style="text-align: center; padding: 20px; color: #f44336;">Erro ao buscar usuários</div>`;
+      }
     }
 
-    filteredUsers.forEach((user) => {
-      const userItem = document.createElement("li");
-      userItem.style.cssText = `
-        padding: 10px;
-        margin: 5px 0;
-        border-radius: 5px;
-        cursor: pointer;
-        transition: background-color 0.2s;
-        display: flex;
-        align-items: center;
-      `;
-
-      userItem.innerHTML = `
-        ${
-          user.photoURL
-            ? `<img src="${user.photoURL}" alt="${user.name}" style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px;">`
-            : `<div style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px; background-color: rgba(0, 223, 196, 0.2); display: flex; align-items: center; justify-content: center; color: #00dfc4; font-weight: bold;">${
-                user.name ? user.name.charAt(0).toUpperCase() : "U"
-              }</div>`
-        }
-        <div>
-          <div style="color: #fff; font-weight: bold;">${user.name}</div>
-          ${
-            user.email
-              ? `<div style="color: #ccc; font-size: 0.8em;">${user.email}</div>`
-              : ""
-          }
-        </div>
-        <div style="margin-left: auto; margin-right: 5px; width: 8px; height: 8px; border-radius: 50%; background-color: ${
-          user.isOnline ? "#4CAF50" : "#ccc"
-        };"></div>
-      `;
-
-      userItem.addEventListener("mouseenter", () => {
-        userItem.style.backgroundColor = "rgba(0, 223, 196, 0.1)";
-      });
-
-      userItem.addEventListener("mouseleave", () => {
-        userItem.style.backgroundColor = "transparent";
-      });
-
-      userItem.addEventListener("click", () => {
-        dialogContainer.remove();
-        callback(user.id);
-      });
-
-      usersList.appendChild(userItem);
+    // Add debounce to search
+    let searchTimeout;
+    searchInput.addEventListener("input", () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        renderUsersList(searchInput.value.trim());
+      }, 300);
     });
-  }
 
-  // Initial render
-  renderUsers(users);
+    // Initial render
+    renderUsersList();
 
-  // Setup search functionality
-  searchInput.addEventListener("input", (e) => {
-    renderUsers(users, e.target.value);
-  });
+    // Assemble dialog
+    dialog.appendChild(header);
+    dialog.appendChild(searchInput);
+    dialog.appendChild(usersList);
+    backdrop.appendChild(dialog);
 
-  // Create buttons container
-  const buttons = document.createElement("div");
-  buttons.style.cssText = `
-    padding: 15px;
-    border-top: 1px solid rgba(0, 223, 196, 0.2);
-    display: flex;
-    justify-content: flex-end;
-  `;
+    // Close dialog handlers
+    header.querySelector(".close-dialog").addEventListener("click", () => {
+      document.body.removeChild(backdrop);
+    });
 
-  const cancelButton = document.createElement("button");
-  cancelButton.textContent = "Cancelar";
-  cancelButton.style.cssText = `
-    background: none;
-    border: 1px solid #00dfc4;
-    color: #00dfc4;
-    padding: 8px 15px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  `;
-
-  cancelButton.addEventListener("mouseenter", () => {
-    cancelButton.style.backgroundColor = "rgba(0, 223, 196, 0.1)";
-  });
-
-  cancelButton.addEventListener("mouseleave", () => {
-    cancelButton.style.backgroundColor = "transparent";
-  });
-
-  cancelButton.addEventListener("click", () => {
-    dialogContainer.remove();
-    callback(null);
-  });
-
-  buttons.appendChild(cancelButton);
-
-  // Assemble dialog
-  dialog.appendChild(header);
-  dialog.appendChild(messageElement);
-  dialog.appendChild(searchContainer);
-  dialog.appendChild(usersContainer);
-  usersContainer.appendChild(usersList);
-  dialog.appendChild(buttons);
-  dialogContainer.appendChild(dialog);
-
-  // Add close button event
-  dialog.querySelector(".close-dialog").addEventListener("click", () => {
-    dialogContainer.remove();
-    callback(null);
-  });
-
-  // Add dialog to body
-  document.body.appendChild(dialogContainer);
-
-  // Add animation
-  dialog.style.animation = "scaleIn 0.2s forwards";
-
-  // Add animation style
-  if (!document.getElementById("dialog-animation-style")) {
-    const style = document.createElement("style");
-    style.id = "dialog-animation-style";
-    style.textContent = `
-      @keyframes scaleIn {
-        from { transform: scale(0.9); opacity: 0; }
-        to { transform: scale(1); opacity: 1; }
+    backdrop.addEventListener("click", (e) => {
+      if (e.target === backdrop) {
+        document.body.removeChild(backdrop);
       }
-    `;
-    document.head.appendChild(style);
-  }
+    });
 
-  // Focus search input
-  setTimeout(() => searchInput.focus(), 100);
+    document.body.appendChild(backdrop);
+
+    // Focus search input
+    setTimeout(() => searchInput.focus(), 100);
+  } catch (error) {
+    console.error("Error showing new chat dialog:", error);
+    showPopup("error", "Erro ao mostrar diálogo de nova conversa");
+  }
 }
 
 /**
- * Show create group dialog
+ * Show create group dialog with improved UI
  */
 async function showCreateGroupDialog() {
   try {
-    // Verifica se o usuário está autenticado
-    if (!chatState.currentUser) {
-      alert("Erro: Usuário não autenticado. Faça login para criar grupos.");
-      return;
-    }
+    // Create backdrop
+    const backdrop = document.createElement("div");
+    backdrop.style.cssText =
+      "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); z-index: 10000; display: flex; justify-content: center; align-items: center;";
 
-    // Obtém a lista de contatos do usuário
-    const contacts = await getUserContacts(chatState.currentUser.uid);
-    if (contacts.length === 0) {
-      alert("Você não tem contatos para adicionar ao grupo.");
-      return;
-    }
+    // Create dialog container
+    const dialog = document.createElement("div");
+    dialog.style.cssText =
+      "background-color: #1d2b3a; border-radius: 10px; padding: 20px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; color: #fff;";
 
-    // Chama a função para selecionar usuários (agora definida)
-    const selectedUserIds = await createMultiSelectUserDialog(contacts);
-    if (selectedUserIds.length === 0) {
-      alert("Nenhum usuário selecionado para o grupo.");
-      return;
-    }
-
-    // Solicita o nome do grupo
-    const groupName = prompt("Digite o nome do grupo:");
-    if (!groupName) {
-      alert("O nome do grupo é obrigatório.");
-      return;
-    }
-
-    // Cria os dados do grupo
-    const participants = [chatState.currentUser.uid, ...selectedUserIds];
-    const conversationData = {
-      name: groupName,
-      participants: participants,
-      isGroup: true,
-    };
-
-    // Adiciona o grupo ao banco de dados (exemplo com Firebase)
-    const docRef = await addDoc(collection(firestore, "conversations"), conversationData);
-
-    alert("Grupo criado com sucesso!");
-  } catch (error) {
-    console.error("Erro ao criar grupo:", error);
-    alert("Erro ao criar grupo.");
-  }
-}
-
-// Função placeholder para seleção de usuários
-async function createMultiSelectUserDialog(contacts) {
-  return contacts.slice(0, 2).map(contact => contact.id); // Exemplo temporário
-}
-
-/**
- * Render conversations list
- */
-function renderConversations(contactsList) {
-  if (!contactsList) return;
-
-  contactsList.innerHTML = "";
-
-  if (chatState.conversations.length === 0) {
-    contactsList.innerHTML = `
-      <li>
-        <div style="text-align: center; padding: 20px; color: #00dfc4; opacity: 0.8;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-          </svg>
-          <p>Nenhuma conversa ainda.</p>
-          <p>Clique em + para iniciar uma conversa.</p>
-        </div>
-      </li>
+    // Create header
+    const header = document.createElement("div");
+    header.style.cssText =
+      "display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #00dfc4; padding-bottom: 10px;";
+    header.innerHTML = `
+      <h3 style="margin: 0;">Criar Grupo</h3>
+      <button class="close-dialog" style="background: none; border: none; color: #00dfc4; font-size: 24px; cursor: pointer;">×</button>
     `;
-    return;
-  }
 
-  // Sort conversations with unread messages to the top, then by last message time
-  const sortedConversations = [...chatState.conversations].sort((a, b) => {
-    // Get unread count for current user
-    const unreadA = a.unreadCount?.[chatState.currentUser.uid] || 0;
-    const unreadB = b.unreadCount?.[chatState.currentUser.uid] || 0;
-
-    // First, sort by unread
-    if (unreadA > 0 && unreadB === 0) return -1;
-    if (unreadA === 0 && unreadB > 0) return 1;
-
-    // Then by last message time
-    const timeA = a.lastMessageAt
-      ? a.lastMessageAt instanceof Timestamp
-        ? a.lastMessageAt.toMillis()
-        : a.lastMessageAt
-      : 0;
-    const timeB = b.lastMessageAt
-      ? b.lastMessageAt instanceof Timestamp
-        ? b.lastMessageAt.toMillis()
-        : b.lastMessageAt
-      : 0;
-
-    return timeB - timeA; // Descending order
-  });
-
-  sortedConversations.forEach((conversation) => {
-    // Skip the conversation if it has no messages yet
-    if (!conversation.lastMessage && !conversation.isGroup) {
-      return;
-    }
-
-    const listItem = document.createElement("li");
-    let conversationName = "Conversa";
-    let conversationImage = "";
-    let onlineStatus = false;
-
-    // Determine conversation name and image
-    if (conversation.isGroup) {
-      // Group chat
-      conversationName = conversation.name || "Grupo";
-      conversationImage = `
-        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: #1d2b3a; border-radius: 50%; color: #00dfc4; font-weight: bold; font-size: 20px;">
-          ${conversationName.charAt(0).toUpperCase()}
+    // Create step indicator
+    const stepIndicator = document.createElement("div");
+    stepIndicator.style.cssText =
+      "display: flex; justify-content: center; margin-bottom: 20px;";
+    stepIndicator.innerHTML = `
+      <div class="step-indicator" style="display: flex; position: relative; width: 70%;">
+        <div class="step active" style="flex: 1; text-align: center; z-index: 2;">
+          <div style="width: 30px; height: 30px; background-color: #00dfc4; color: #1d2b3a; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 5px auto; font-weight: bold;">1</div>
+          <div style="font-size: 0.8em; color: #00dfc4;">Nome do grupo</div>
         </div>
-      `;
-    } else {
-      // Direct chat - get the other user
-      const otherUserId = conversation.participants.find(
-        (id) => id !== chatState.currentUser.uid
-      );
-
-      const userData = chatState.usersCache[otherUserId];
-
-      if (userData) {
-        conversationName = userData.name || "Usuário";
-        onlineStatus = userData.isOnline;
-
-        if (userData.photoURL) {
-          conversationImage = `<img src="${userData.photoURL}" alt="${conversationName}" style="width:100%;height:100%;border-radius:50%;">`;
-        } else {
-          const initials = (userData.name || "U")
-            .split(" ")
-            .map((n) => n[0])
-            .slice(0, 2)
-            .join("")
-            .toUpperCase();
-
-          conversationImage = `
-            <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: #1d2b3a; border-radius: 50%; color: #00dfc4; font-weight: bold; font-size: 16px;">
-              ${initials}
-            </div>
-          `;
-        }
-      } else {
-        // If user data isn't cached yet, show placeholder
-        conversationImage = `
-          <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: #1d2b3a; border-radius: 50%; color: #00dfc4; font-weight: bold; font-size: 16px;">
-            ?
-          </div>
-        `;
-
-        // Attempt to load user data
-        fetchUserData(otherUserId).then((data) => {
-          if (data) {
-            chatState.usersCache[otherUserId] = data;
-            renderContacts(); // Re-render when we have user data
-          }
-        });
-      }
-    }
-
-    // Get last message preview
-    let lastMessagePreview = "";
-    let lastMessageTime = "";
-
-    if (conversation.lastMessage) {
-      // Different preview based on message type
-      switch (conversation.lastMessageType) {
-        case "image":
-          lastMessagePreview = "📷 Imagem";
-          break;
-        case "audio":
-          lastMessagePreview = "🎤 Áudio";
-          break;
-        case "file":
-          lastMessagePreview = "📎 Arquivo";
-          break;
-        case "location":
-          lastMessagePreview = "📍 Localização";
-          break;
-        default:
-          // For text messages, show preview with sender name in groups
-          if (
-            conversation.isGroup &&
-            conversation.lastMessageSenderId !== chatState.currentUser.uid
-          ) {
-            const senderData =
-              chatState.usersCache[conversation.lastMessageSenderId];
-            const senderName = senderData ? senderData.name : "Alguém";
-            lastMessagePreview = `${senderName}: ${conversation.lastMessage}`;
-          } else {
-            lastMessagePreview = conversation.lastMessage;
-          }
-      }
-
-      // Get time for message
-      lastMessageTime = conversation.lastMessageAt
-        ? timeUtils.getTimeSince(conversation.lastMessageAt)
-        : "";
-    } else if (conversation.createdAt) {
-      // If no messages yet, show creation time
-      lastMessagePreview = "Conversa iniciada";
-      lastMessageTime = timeUtils.getTimeSince(conversation.createdAt);
-    }
-
-    // Get unread count for current user
-    const unreadCount =
-      conversation.unreadCount?.[chatState.currentUser.uid] || 0;
-
-    // Set active class if this is the active conversation
-    const isActive =
-      chatState.activeConversation &&
-      chatState.activeConversation.id === conversation.id;
-
-    // Create HTML for the conversation item
-    listItem.className = isActive ? "active-conversation" : "";
-    listItem.innerHTML = `
-      <div class="list" data-conversation-id="${conversation.id}">
-        <button type="button" class="button__pic">
-          ${conversationImage}
-          ${
-            onlineStatus
-              ? `<span style="position: absolute; bottom: 0; right: 0; width: 10px; height: 10px; background-color: #4CAF50; border-radius: 50%; border: 2px solid #1d2b3a;"></span>`
-              : ""
-          }
-        </button>
-        <button type="button" class="button__user">
-          <div class="container__left">
-            <span class="nameUser__message">${conversationName}</span>
-            <span class="messageUser">${
-              lastMessagePreview.length > 40
-                ? lastMessagePreview.substring(0, 40) + "..."
-                : lastMessagePreview
-            }</span>
-          </div>
-          <div class="container__right">
-            <span class="Time__message">${lastMessageTime}</span>
-            ${
-              unreadCount > 0
-                ? `<span class="count__message">${
-                    unreadCount > 99 ? "99+" : unreadCount
-                  }</span>`
-                : ""
-            }
-          </div>
-        </button>
+        <div class="step" style="flex: 1; text-align: center; z-index: 2;">
+          <div style="width: 30px; height: 30px; background-color: rgba(0, 223, 196, 0.3); color: #00dfc4; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 5px auto; font-weight: bold;">2</div>
+          <div style="font-size: 0.8em; color: #ccc;">Adicionar participantes</div>
+        </div>
+        <div style="position: absolute; top: 15px; left: 15%; width: 70%; height: 2px; background-color: rgba(0, 223, 196, 0.3); z-index: 1;"></div>
       </div>
     `;
 
-    // Add click event to open conversation
-    listItem.querySelector(".list").addEventListener("click", () => {
-      openConversation(conversation.id);
+    // Create content container
+    const content = document.createElement("div");
+
+    // Step 1: Group name
+    const step1 = document.createElement("div");
+    step1.className = "step-1";
+
+    const groupNameInput = document.createElement("input");
+    groupNameInput.type = "text";
+    groupNameInput.placeholder = "Nome do grupo";
+    groupNameInput.style.cssText =
+      "width: 100%; padding: 12px; border-radius: 5px; border: 1px solid #00dfc4; background-color: #1d2b3a; color: #fff; box-sizing: border-box; margin-bottom: 15px; font-size: 16px;";
+
+    const groupDescriptionInput = document.createElement("textarea");
+    groupDescriptionInput.placeholder = "Descrição do grupo (opcional)";
+    groupDescriptionInput.style.cssText =
+      "width: 100%; padding: 12px; border-radius: 5px; border: 1px solid #00dfc4; background-color: #1d2b3a; color: #fff; box-sizing: border-box; margin-bottom: 30px; min-height: 80px; resize: vertical; font-size: 16px;";
+
+    const nextButton = document.createElement("button");
+    nextButton.textContent = "Avançar";
+    nextButton.style.cssText =
+      "width: 100%; padding: 12px; border: none; border-radius: 5px; background-color: #00dfc4; color: #1d2b3a; cursor: pointer; font-weight: bold; font-size: 16px;";
+    nextButton.addEventListener("click", () => {
+      const groupName = groupNameInput.value.trim();
+
+      if (!groupName) {
+        showPopup("warning", "Por favor, informe um nome para o grupo.");
+        groupNameInput.focus();
+        return;
+      }
+
+      // Show step 2
+      step1.style.display = "none";
+      step2.style.display = "block";
+
+      // Update step indicator
+      stepIndicator
+        .querySelector(".step:nth-child(1)")
+        .classList.remove("active");
+      stepIndicator.querySelector(".step:nth-child(2)").classList.add("active");
+      stepIndicator.querySelector(
+        ".step:nth-child(2) div:first-child"
+      ).style.backgroundColor = "#00dfc4";
+      stepIndicator.querySelector(
+        ".step:nth-child(2) div:first-child"
+      ).style.color = "#1d2b3a";
+      stepIndicator.querySelector(
+        ".step:nth-child(2) div:last-child"
+      ).style.color = "#00dfc4";
+
+      // Focus search input
+      setTimeout(() => {
+        participantSearchInput.focus();
+        renderUsersList();
+      }, 100);
     });
 
-    contactsList.appendChild(listItem);
-  });
+    step1.appendChild(groupNameInput);
+    step1.appendChild(groupDescriptionInput);
+    step1.appendChild(nextButton);
 
-  // Add highlight for active conversation
-  if (chatState.activeConversation) {
-    const activeItem = contactsList.querySelector(
-      `.list[data-conversation-id="${chatState.activeConversation.id}"]`
-    );
-    if (activeItem) {
-      activeItem.classList.add("active");
+    // Step 2: Add participants
+    const step2 = document.createElement("div");
+    step2.className = "step-2";
+    step2.style.display = "none";
+
+    const selectedParticipantsContainer = document.createElement("div");
+    selectedParticipantsContainer.style.cssText =
+      "display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; min-height: 40px;";
+
+    const participantSearchInput = document.createElement("input");
+    participantSearchInput.type = "text";
+    participantSearchInput.placeholder = "Buscar usuários...";
+    participantSearchInput.style.cssText =
+      "width: 100%; padding: 12px; border-radius: 5px; border: 1px solid #00dfc4; background-color: #1d2b3a; color: #fff; box-sizing: border-box; margin-bottom: 15px; font-size: 16px;";
+
+    const participantsList = document.createElement("div");
+    participantsList.style.cssText =
+      "max-height: 250px; overflow-y: auto; margin-bottom: 20px;";
+
+    const createGroupButton = document.createElement("button");
+    createGroupButton.textContent = "Criar Grupo";
+    createGroupButton.style.cssText =
+      "width: 100%; padding: 12px; border: none; border-radius: 5px; background-color: #00dfc4; color: #1d2b3a; cursor: pointer; font-weight: bold; font-size: 16px;";
+
+    const backButton = document.createElement("button");
+    backButton.textContent = "Voltar";
+    backButton.style.cssText =
+      "width: 100%; padding: 12px; border: 1px solid #00dfc4; border-radius: 5px; background-color: transparent; color: #00dfc4; cursor: pointer; margin-top: 10px; font-size: 16px;";
+    backButton.addEventListener("click", () => {
+      // Show step 1
+      step2.style.display = "none";
+      step1.style.display = "block";
+
+      // Update step indicator
+      stepIndicator
+        .querySelector(".step:nth-child(2)")
+        .classList.remove("active");
+      stepIndicator.querySelector(".step:nth-child(1)").classList.add("active");
+      stepIndicator.querySelector(
+        ".step:nth-child(2) div:first-child"
+      ).style.backgroundColor = "rgba(0, 223, 196, 0.3)";
+      stepIndicator.querySelector(
+        ".step:nth-child(2) div:first-child"
+      ).style.color = "#00dfc4";
+      stepIndicator.querySelector(
+        ".step:nth-child(2) div:last-child"
+      ).style.color = "#ccc";
+    });
+
+    step2.appendChild(selectedParticipantsContainer);
+    step2.appendChild(participantSearchInput);
+    step2.appendChild(participantsList);
+    step2.appendChild(createGroupButton);
+    step2.appendChild(backButton);
+
+    // Add to content
+    content.appendChild(step1);
+    content.appendChild(step2);
+
+    // Selected participants
+    let selectedUsers = [];
+
+    // Render selected participants
+    function renderSelectedParticipants() {
+      selectedParticipantsContainer.innerHTML = "";
+
+      if (selectedUsers.length === 0) {
+        selectedParticipantsContainer.innerHTML = `<div style="width: 100%; color: #ccc; padding: 10px 0;">Nenhum participante selecionado</div>`;
+        return;
+      }
+
+      selectedUsers.forEach((user) => {
+        const participantTag = document.createElement("div");
+        participantTag.style.cssText =
+          "display: flex; align-items: center; padding: 5px 10px; background-color: rgba(0, 223, 196, 0.2); border-radius: 20px;";
+
+        participantTag.innerHTML = `
+          <div style="width: 20px; height: 20px; border-radius: 50%; overflow: hidden; margin-right: 5px;">
+            ${
+              user.photoURL
+                ? `<img src="${user.photoURL}" alt="${user.name}" style="width: 100%; height: 100%; object-fit: cover;">`
+                : `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: #00dfc4; color: #1d2b3a; font-size: 10px; font-weight: bold;">${user.name
+                    .charAt(0)
+                    .toUpperCase()}</div>`
+            }
+          </div>
+          <span style="margin-right: 5px;">${user.name}</span>
+          <button style="background: none; border: none; color: #00dfc4; cursor: pointer; font-size: 18px; line-height: 1;">×</button>
+        `;
+
+        participantTag.querySelector("button").addEventListener("click", () => {
+          selectedUsers = selectedUsers.filter((u) => u.id !== user.id);
+          renderSelectedParticipants();
+          renderUsersList(participantSearchInput.value.trim());
+        });
+
+        selectedParticipantsContainer.appendChild(participantTag);
+      });
     }
-  }
-}
 
-/**
- * Play notification sound for new messages
- */
-function playNotificationSound() {
-  try {
-    const audio = new Audio("../../assets/sounds/notification.mp3");
-    audio.volume = 0.5;
-    audio.play().catch((error) => {
-      console.error("Error playing notification sound:", error);
+    // Initial render
+    renderSelectedParticipants();
+
+    // Search and render users
+    let searchTimeout;
+
+    participantSearchInput.addEventListener("input", () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        renderUsersList(participantSearchInput.value.trim());
+      }, 300);
     });
-  } catch (error) {
-    console.error("Error creating notification sound:", error);
-  }
-}
 
-/**
- * Show browser notification for new messages
- */
-function showBrowserNotification(message) {
-  try {
-    if (
-      !("Notification" in window) ||
-      Notification.permission !== "granted" ||
-      document.visibilityState === "visible"
-    ) {
-      return;
-    }
+    // Render users list
+    async function renderUsersList(searchTerm = "") {
+      // Show loading
+      participantsList.innerHTML = `
+        <div style="text-align: center; padding: 20px; color: #00dfc4;">
+          <div class="loading-spinner" style="width: 20px; height: 20px; border: 2px solid rgba(0, 223, 196, 0.3); border-radius: 50%; border-top-color: #00dfc4; animation: spin 1s linear infinite; display: inline-block; margin-bottom: 10px;"></div>
+          <p>Buscando usuários...</p>
+        </div>
+      `;
 
-    // Get sender info
-    const senderName = chatState.usersCache[message.senderId]
-      ? chatState.usersCache[message.senderId].name
-      : "Nova mensagem";
+      try {
+        // Get all users except current user
+        const allUsers = await getAllUsers(chatState.currentUser.uid);
 
-    // Create notification
-    let notificationTitle = senderName;
-    let notificationOptions = {
-      body: message.text || "Nova mensagem recebida",
-      icon: "../../assets/img/logo.png",
-      badge: "../../assets/img/logo.png",
-      tag: `chat-${message.senderId}`,
-      renotify: true,
-    };
+        // Filter by search term if provided
+        const filteredUsers = searchTerm
+          ? allUsers.filter(
+              (user) =>
+                user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (user.email &&
+                  user.email.toLowerCase().includes(searchTerm.toLowerCase()))
+            )
+          : allUsers;
 
-    // Show notification
-    const notification = new Notification(
-      notificationTitle,
-      notificationOptions
-    );
-
-    // Handle click on notification
-    notification.addEventListener("click", () => {
-      window.focus();
-      if (
-        chatState.activeConversation &&
-        chatState.activeConversation.id === message.conversationId
-      ) {
-        scrollToBottom();
-      } else if (message.conversationId) {
-        openConversation(message.conversationId);
-      }
-    });
-  } catch (error) {
-    console.error("Error showing notification:", error);
-  }
-}
-
-/**
- * Logout function for user menu
- */
-function logout() {
-  confirmDialog("Sair", "Tem certeza que deseja sair?", async () => {
-    try {
-      // Update online status
-      if (chatState.currentUser) {
-        await updateOnlineStatus(chatState.currentUser.uid, false);
-      }
-
-      // Unsubscribe from all listeners
-      if (chatState.unsubscribeListeners.conversations) {
-        chatState.unsubscribeListeners.conversations();
-      }
-
-      if (chatState.unsubscribeListeners.messages) {
-        chatState.unsubscribeListeners.messages();
-      }
-
-      Object.values(chatState.unsubscribeListeners.userStatus).forEach(
-        (unsubscribe) => {
-          if (typeof unsubscribe === "function") {
-            unsubscribe();
-          }
+        if (filteredUsers.length === 0) {
+          participantsList.innerHTML = `<div style="text-align: center; padding: 20px; color: #ccc;">Nenhum usuário encontrado</div>`;
+          return;
         }
-      );
 
-      // Save cache before logout
-      cacheManager.saveLastSeen();
+        // Clear list
+        participantsList.innerHTML = "";
 
-      // Sign out from Firebase
-      await auth.signOut();
+        // Render each user
+        filteredUsers.forEach((user) => {
+          const isSelected = selectedUsers.some((u) => u.id === user.id);
 
-      // Redirect to login page
-      window.location.href = "../splash.html";
-    } catch (error) {
-      console.error("Error logging out:", error);
-      showPopup("error", "Erro ao sair");
+          const userItem = document.createElement("div");
+          userItem.style.cssText = `
+            display: flex; 
+            align-items: center; 
+            padding: 10px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            background-color: ${
+              isSelected ? "rgba(0, 223, 196, 0.2)" : "transparent"
+            }; 
+            margin-bottom: 5px;
+            transition: background-color 0.2s;
+          `;
+
+          userItem.innerHTML = `
+            <div style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; margin-right: 10px;">
+              ${
+                user.photoURL
+                  ? `<img src="${user.photoURL}" alt="${user.name}" style="width: 100%; height: 100%; object-fit: cover;">`
+                  : `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: #1d2b3a; color: #00dfc4; font-weight: bold;">${
+                      user.name ? user.name.charAt(0).toUpperCase() : "U"
+                    }</div>`
+              }
+            </div>
+            <div style="flex-grow: 1;">
+              <div style="font-weight: bold;">${user.name}</div>
+              <div style="font-size: 0.8em; color: #ccc;">${
+                user.email || user.userType || ""
+              }</div>
+            </div>
+            <div style="margin-left: 10px;">
+              ${
+                isSelected
+                  ? `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00dfc4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`
+                  : `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>`
+              }
+            </div>
+          `;
+
+          userItem.addEventListener("mouseenter", () => {
+            if (!isSelected)
+              userItem.style.backgroundColor = "rgba(0, 223, 196, 0.1)";
+          });
+
+          userItem.addEventListener("mouseleave", () => {
+            if (!isSelected) userItem.style.backgroundColor = "transparent";
+          });
+
+          userItem.addEventListener("click", () => {
+            if (isSelected) {
+              // Remove from selection
+              selectedUsers = selectedUsers.filter((u) => u.id !== user.id);
+            } else {
+              // Add to selection
+              selectedUsers.push(user);
+            }
+            renderSelectedParticipants();
+            renderUsersList(participantSearchInput.value.trim());
+          });
+
+          participantsList.appendChild(userItem);
+        });
+      } catch (error) {
+        console.error("Error rendering users list:", error);
+        participantsList.innerHTML = `<div style="text-align: center; padding: 20px; color: #f44336;">Erro ao buscar usuários</div>`;
+      }
     }
-  });
+
+    // Handle create group button
+    createGroupButton.addEventListener("click", async () => {
+      const groupName = groupNameInput.value.trim();
+      const groupDescription = groupDescriptionInput.value.trim();
+
+      if (!groupName) {
+        showPopup("warning", "Por favor, informe um nome para o grupo.");
+        return;
+      }
+
+      if (selectedUsers.length === 0) {
+        showPopup(
+          "warning",
+          "Selecione pelo menos um participante para o grupo."
+        );
+        return;
+      }
+
+      try {
+        // Show loading state
+        dialog.innerHTML = `
+          <div style="text-align: center; padding: 40px 20px; color: #00dfc4;">
+            <div class="loading-spinner" style="width: 40px; height: 40px; border: 3px solid rgba(0, 223, 196, 0.3); border-radius: 50%; border-top-color: #00dfc4; animation: spin 1s linear infinite; display: inline-block; margin-bottom: 20px;"></div>
+            <p>Criando grupo...</p>
+          </div>
+        `;
+
+        // Include current user in participants
+        const participants = [
+          chatState.currentUser.uid,
+          ...selectedUsers.map((user) => user.id),
+        ];
+
+        // Create group data
+        const groupData = {
+          name: groupName,
+          description: groupDescription || null,
+          participants,
+          isGroup: true,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          creator: chatState.currentUser.uid,
+          unreadCount: {},
+        };
+
+        // Add to Firestore
+        const docRef = await addDoc(
+          collection(firestore, "conversations"),
+          groupData
+        );
+
+        // Add to local state
+        const newGroup = { id: docRef.id, ...groupData };
+        chatState.conversations.unshift(newGroup);
+        cacheManager.saveConversations();
+
+        // Send welcome message
+        await sendSystemMessage(
+          docRef.id,
+          `Grupo "${groupName}" criado por ${
+            chatState.currentUser.name || "Usuário"
+          }`
+        );
+
+        // Close dialog and show success
+        document.body.removeChild(backdrop);
+        showPopup("success", "Grupo criado com sucesso!");
+
+        // Open new conversation
+        await openConversation(docRef.id);
+        renderContacts();
+        showConversationView();
+      } catch (error) {
+        console.error("Error creating group:", error);
+        showPopup("error", "Erro ao criar grupo");
+
+        // Return to dialog
+        document.body.removeChild(backdrop);
+        showCreateGroupDialog();
+      }
+    });
+
+    // Assemble dialog
+    dialog.appendChild(header);
+    dialog.appendChild(stepIndicator);
+    dialog.appendChild(content);
+    backdrop.appendChild(dialog);
+
+    // Close dialog
+    header.querySelector(".close-dialog").addEventListener("click", () => {
+      document.body.removeChild(backdrop);
+    });
+
+    backdrop.addEventListener("click", (e) => {
+      if (e.target === backdrop) {
+        document.body.removeChild(backdrop);
+      }
+    });
+
+    document.body.appendChild(backdrop);
+
+    // Focus input
+    setTimeout(() => groupNameInput.focus(), 100);
+  } catch (error) {
+    console.error("Error showing create group dialog:", error);
+    showPopup("error", "Erro ao mostrar diálogo de criação de grupo");
+  }
 }
 
-// Add logout event listener to user profile
-document.addEventListener("DOMContentLoaded", () => {
-  const userProfile = document.querySelector(".userProfile");
-  if (userProfile) {
-    userProfile.addEventListener("click", () => {
-      confirmDialog(
-        "Opções",
-        "O que você deseja fazer?",
-        async () => {
-          // Logout option
-          logout();
-        },
-        null,
-        [
-          { text: "Sair", action: logout },
-          { text: "Cancelar", action: () => {} },
-        ]
-      );
-    });
-  }
-});
+// Export main functions
+export {
+  chatState,
+  sendMessage,
+  openConversation,
+  createConversation,
+  renderContacts,
+  renderMessages,
+  showNewChatDialog,
+  showCreateGroupDialog,
+};
