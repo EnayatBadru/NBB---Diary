@@ -1320,12 +1320,16 @@ function updateUserUI(user) {
   const nameEl = document.querySelector(".userName");
   const emailEl = document.querySelector(".userEmail");
   const onlineStatusEl = document.querySelector(".onlineStatus");
+  const statusTextEl = document.querySelector(".statusText");
 
   if (nameEl) nameEl.textContent = user.name || user.displayName || "Usuário";
   if (emailEl) emailEl.textContent = user.email || "";
   if (onlineStatusEl) {
     onlineStatusEl.style.backgroundColor = user.isOnline ? "#4CAF50" : "#ccc";
     onlineStatusEl.title = user.isOnline ? "Online" : "Offline";
+  }
+  if (statusTextEl) {
+    statusTextEl.textContent = user.isOnline ? "Online" : "Offline";
   }
 
   // Update profile image if available
@@ -1347,13 +1351,8 @@ function updateUserUI(user) {
       </div>
     `;
   }
-
-  // Update the menu button to show user is initialized
-  const menuButton = document.querySelector(".toggleMenu");
-  if (menuButton) {
-    menuButton.classList.add("user-loaded");
-  }
 }
+
 
 /**
  * Setup listener for user online status
@@ -1471,7 +1470,6 @@ function setupConversationsListener() {
   }
 }
 
-
 /**
  * Prefetch user data for conversations to improve loading experience
  */
@@ -1549,6 +1547,7 @@ async function prefetchConversationUsers(conversations) {
     console.error("Error prefetching users:", error);
   }
 }
+
 
 /**
  * Update loading state indicator for contacts list
