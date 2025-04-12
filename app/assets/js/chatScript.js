@@ -431,6 +431,7 @@ async function handleConnectionChange(e) {
   }
 }
 
+
 /**
  * Handle typing events to show typing indicator to other users
  */
