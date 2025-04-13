@@ -1,11 +1,10 @@
-// chatScript.js
 import { auth, firestore, realtimeDb } from "./firebaseConfig.js";
 import { showPopup, confirmDialog } from "./popup.js";
 import {
   updateOnlineStatus,
   getUserContacts,
   getAllUsers,
-  fetchUserData,
+  // fetchUserData,
 } from "./models/userModel.js";
 
 import {
@@ -53,6 +52,8 @@ const chatState = {
     conversations: null,
     messages: null,
     userStatus: {},
+    onlineStatusInterval: null,
+    visibilityChange: null,
   },
   isLoading: {
     contacts: true,
@@ -61,13 +62,22 @@ const chatState = {
   },
   searchCache: {},
   lastSeenTimestamps: {},
+  isOnline: true,
+  lastActivityTimestamp: Date.now(),
+  // Cached DOM elements
+  elements: {
+    contactsList: null,
+    messagesContainer: null,
+    messageInput: null,
+    sendButton: null,
+  },
 };
 
 /**
  * Enhanced cache functions using localStorage with versioning and TTL
  */
 const cacheManager = {
-  version: "v1.1",
+  version: "v1.2",
   ttl: 24 * 60 * 60 * 1000, // 24 hours cache TTL
 
   getKey(key) {
@@ -157,7 +167,12 @@ const cacheManager = {
 
   // Save user data to cache
   saveUserData(userId, userData) {
-    return this.set(`user_${userId}`, userData);
+    // Don't cache sensitive data
+    const safeUserData = { ...userData };
+    delete safeUserData.token;
+    delete safeUserData.authData;
+
+    return this.set(`user_${userId}`, safeUserData);
   },
 
   // Load user data from cache
@@ -179,6 +194,39 @@ const cacheManager = {
     }
     return false;
   },
+
+  // Clear expired cache items
+  clearExpired() {
+    try {
+      const keysToCheck = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith(`chat_${this.version}_`)) {
+          keysToCheck.push(key);
+        }
+      }
+
+      const now = Date.now();
+      keysToCheck.forEach((fullKey) => {
+        try {
+          const cached = localStorage.getItem(fullKey);
+          if (cached) {
+            const cacheItem = JSON.parse(cached);
+            if (now - cacheItem.timestamp > this.ttl) {
+              localStorage.removeItem(fullKey);
+            }
+          }
+        } catch (err) {
+          console.error(`Error checking cached item: ${fullKey}`, err);
+        }
+      });
+
+      return true;
+    } catch (e) {
+      console.error("Error clearing expired cache:", e);
+      return false;
+    }
+  },
 };
 
 /**
@@ -189,27 +237,9 @@ const timeUtils = {
   formatTime(timestamp) {
     if (!timestamp) return "";
 
-    let date;
     try {
-      if (timestamp instanceof Timestamp) {
-        date = timestamp.toDate();
-      } else if (typeof timestamp === "number") {
-        date = new Date(timestamp);
-      } else if (timestamp instanceof Date) {
-        date = timestamp;
-      } else if (typeof timestamp === "object" && timestamp.seconds) {
-        // Tenta converter um objeto estilo Firestore timestamp
-        date = new Date(timestamp.seconds * 1000);
-      } else {
-        console.warn("Timestamp inválido:", timestamp);
-        return "";
-      }
-
-      // Verifica se date é uma data válida antes de chamar toLocaleTimeString
-      if (!(date instanceof Date) || isNaN(date.getTime())) {
-        console.warn("Data inválida após conversão:", date);
-        return "";
-      }
+      let date = this.convertToDate(timestamp);
+      if (!date) return "";
 
       return date.toLocaleTimeString("pt-BR", {
         hour: "2-digit",
@@ -221,18 +251,38 @@ const timeUtils = {
     }
   },
 
+  // Convert various timestamp formats to Date object
+  convertToDate(timestamp) {
+    try {
+      if (timestamp instanceof Date) {
+        return timestamp;
+      }
+
+      if (timestamp instanceof Timestamp) {
+        return timestamp.toDate();
+      }
+
+      if (typeof timestamp === "number") {
+        return new Date(timestamp);
+      }
+
+      if (typeof timestamp === "object" && timestamp?.seconds) {
+        return new Date(timestamp.seconds * 1000);
+      }
+
+      return null;
+    } catch (error) {
+      console.error("Erro ao converter timestamp:", error, timestamp);
+      return null;
+    }
+  },
+
   // Format date for messages, showing relative time or date as needed
   formatMessageDate(timestamp) {
     if (!timestamp) return "";
 
-    let date;
-    if (timestamp instanceof Timestamp) {
-      date = timestamp.toDate();
-    } else if (typeof timestamp === "number") {
-      date = new Date(timestamp);
-    } else {
-      date = timestamp;
-    }
+    let date = this.convertToDate(timestamp);
+    if (!date) return "";
 
     const now = new Date();
     const today = new Date(
@@ -258,50 +308,277 @@ const timeUtils = {
       });
     }
   },
- // Get time passed since a given timestamp in human-readable format
- getTimeSince(timestamp) {
-  if (!timestamp) return "";
 
-  let date;
-  if (timestamp instanceof Timestamp) {
-    date = timestamp.toDate();
-  } else if (typeof timestamp === "number") {
-    date = new Date(timestamp);
-  } else {
-    date = timestamp;
-  }
+  // Get time passed since a given timestamp in human-readable format
+  getTimeSince(timestamp) {
+    if (!timestamp) return "";
 
-  const now = new Date();
-  const diffMinutes = Math.floor((now - date) / (1000 * 60));
+    let date = this.convertToDate(timestamp);
+    if (!date) return "";
 
-  if (diffMinutes < 1) return "agora";
-  if (diffMinutes < 60) return `${diffMinutes}m`;
+    const now = new Date();
+    const diffMinutes = Math.floor((now - date) / (1000 * 60));
 
-  const diffHours = Math.floor(diffMinutes / 60);
-  if (diffHours < 24) return `${diffHours}h`;
+    if (diffMinutes < 1) return "agora";
+    if (diffMinutes < 60) return `${diffMinutes}m`;
 
-  const diffDays = Math.floor(diffHours / 24);
-  if (diffDays < 7) return `${diffDays}d`;
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours}h`;
 
-  return date.toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-  });
-},
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 7) return `${diffDays}d`;
+
+    return date.toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+    });
+  },
 };
 
+/**
+ * Utility functions for UI components
+ */
+const uiComponents = {
+  // Create user avatar component
+  createUserAvatar(user, size = 45) {
+    if (!user) return "";
+
+    if (user.photoURL) {
+      return `<img src="${user.photoURL}" alt="${
+        user.name || "Usuário"
+      }" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;">`;
+    } else {
+      // Get initials for avatar
+      const initial = user.name ? user.name.charAt(0).toUpperCase() : "U";
+      return `<div style="width:${size}px;height:${size}px;border-radius:50%;display:flex;align-items:center;justify-content:center;background-color:#1d2b3a;color:#00dfc4;font-weight:bold;font-size:${
+        size * 0.4
+      }px;">${initial}</div>`;
+    }
+  },
+
+  // Create loading spinner
+  createLoadingSpinner(size = 30, color = "#00dfc4", text = "Carregando...") {
+    return `
+      <div style="text-align:center;padding:20px;color:${color};">
+        <div class="loading-spinner" style="width:${size}px;height:${size}px;border:${
+      size * 0.1
+    }px solid rgba(0,223,196,0.3);border-radius:50%;border-top-color:${color};animation:spin 1s linear infinite;display:inline-block;margin-bottom:10px;"></div>
+        <p>${text}</p>
+      </div>
+    `;
+  },
+
+  // Create confirmation dialog
+  createConfirmDialog(
+    title,
+    message,
+    confirmText,
+    cancelText,
+    onConfirm,
+    onCancel
+  ) {
+    const backdrop = document.createElement("div");
+    backdrop.style.cssText =
+      "position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(0,0,0,0.7);z-index:10000;display:flex;justify-content:center;align-items:center;";
+
+    const dialog = document.createElement("div");
+    dialog.style.cssText =
+      "background-color:#1d2b3a;border-radius:10px;padding:20px;width:90%;max-width:400px;color:#fff;";
+
+    dialog.innerHTML = `
+      <h3 style="margin-top:0;border-bottom:1px solid #00dfc4;padding-bottom:10px;">${title}</h3>
+      <p>${message}</p>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
+        <button class="cancel-btn" style="padding:8px 16px;border-radius:5px;border:1px solid #00dfc4;background:transparent;color:#00dfc4;cursor:pointer;">${
+          cancelText || "Cancelar"
+        }</button>
+        <button class="confirm-btn" style="padding:8px 16px;border-radius:5px;border:none;background-color:#00dfc4;color:#1d2b3a;cursor:pointer;font-weight:bold;">${
+          confirmText || "Confirmar"
+        }</button>
+      </div>
+    `;
+
+    dialog.querySelector(".cancel-btn").addEventListener("click", () => {
+      document.body.removeChild(backdrop);
+      if (onCancel) onCancel();
+    });
+
+    dialog.querySelector(".confirm-btn").addEventListener("click", () => {
+      document.body.removeChild(backdrop);
+      if (onConfirm) onConfirm();
+    });
+
+    backdrop.appendChild(dialog);
+    document.body.appendChild(backdrop);
+
+    return backdrop;
+  },
+
+  // Create a dialog with custom content
+  createDialog(title, content, width = 450, closeCallback) {
+    const backdrop = document.createElement("div");
+    backdrop.style.cssText =
+      "position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(0,0,0,0.7);z-index:10000;display:flex;justify-content:center;align-items:center;";
+
+    const dialog = document.createElement("div");
+    dialog.style.cssText = `background-color:#1d2b3a;border-radius:10px;padding:20px;width:90%;max-width:${width}px;max-height:80vh;overflow:auto;color:#fff;`;
+
+    const header = document.createElement("div");
+    header.style.cssText =
+      "display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;border-bottom:1px solid #00dfc4;padding-bottom:10px;";
+    header.innerHTML = `
+      <h3 style="margin:0;">${title}</h3>
+      <button class="close-dialog" style="background:none;border:none;color:#00dfc4;font-size:24px;cursor:pointer;">×</button>
+    `;
+
+    const contentContainer = document.createElement("div");
+    if (typeof content === "string") {
+      contentContainer.innerHTML = content;
+    } else if (content instanceof HTMLElement) {
+      contentContainer.appendChild(content);
+    }
+
+    dialog.appendChild(header);
+    dialog.appendChild(contentContainer);
+    backdrop.appendChild(dialog);
+
+    // Close dialog handlers
+    const closeDialog = () => {
+      if (document.body.contains(backdrop)) {
+        document.body.removeChild(backdrop);
+        if (closeCallback) closeCallback();
+      }
+    };
+
+    header
+      .querySelector(".close-dialog")
+      .addEventListener("click", closeDialog);
+
+    backdrop.addEventListener("click", (e) => {
+      if (e.target === backdrop) closeDialog();
+    });
+
+    document.body.appendChild(backdrop);
+
+    return {
+      dialog,
+      contentContainer,
+      backdrop,
+      close: closeDialog,
+    };
+  },
+
+  // Add ripple effect to element
+  addRippleEffect(element) {
+    element.addEventListener("click", function (e) {
+      const ripple = document.createElement("span");
+      ripple.classList.add("ripple-effect");
+
+      const rect = this.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height);
+
+      ripple.style.width = ripple.style.height = `${size}px`;
+      ripple.style.left = `${e.clientX - rect.left - size / 2}px`;
+      ripple.style.top = `${e.clientY - rect.top - size / 2}px`;
+
+      this.appendChild(ripple);
+
+      setTimeout(() => {
+        ripple.remove();
+      }, 600);
+    });
+
+    // Add ripple style if not already added
+    if (!document.getElementById("ripple-style")) {
+      const style = document.createElement("style");
+      style.id = "ripple-style";
+      style.textContent = `
+        .list {
+          position: relative;
+          overflow: hidden;
+        }
+        .ripple-effect {
+          position: absolute;
+          border-radius: 50%;
+          transform: scale(0);
+          background: rgba(255, 255, 255, 0.1);
+          animation: ripple 0.6s linear;
+          pointer-events: none;
+        }
+        @keyframes ripple {
+          to {
+            transform: scale(4);
+            opacity: 0;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  },
+};
+
+/**
+ * Utility for event management to prevent memory leaks
+ */
+const eventManager = {
+  listeners: {},
+
+  // Add event with automatic cleanup
+  addEvent(element, type, handler, options) {
+    if (!element) return null;
+
+    const id = Math.random().toString(36).substring(2);
+    element.addEventListener(type, handler, options);
+
+    this.listeners[id] = {
+      element,
+      type,
+      handler,
+    };
+
+    return id;
+  },
+
+  // Remove specific event
+  removeEvent(id) {
+    if (!id || !this.listeners[id]) return;
+
+    const { element, type, handler } = this.listeners[id];
+    element.removeEventListener(type, handler);
+    delete this.listeners[id];
+  },
+
+  // Add document click handler with automatic removal
+  addDocumentClickHandler(handler, exceptElement) {
+    const documentHandler = (e) => {
+      if (!exceptElement || !exceptElement.contains(e.target)) {
+        handler(e);
+        document.removeEventListener("click", documentHandler);
+      }
+    };
+
+    document.addEventListener("click", documentHandler);
+    return documentHandler;
+  },
+};
 
 /**
  * Initialize chat application
  */
 document.addEventListener("DOMContentLoaded", () => {
   try {
+    // Add styles for animations
+    addGlobalStyles();
+
     initChatElements();
     setupAuth();
 
     // Try to show cached data first for instant loading
     cacheManager.loadConversations();
     cacheManager.loadLastSeen();
+
+    // Clean expired cache items
+    cacheManager.clearExpired();
   } catch (error) {
     console.error("Chat initialization error:", error);
     showPopup("error", "Erro ao iniciar o chat. Tente atualizar a página.");
@@ -309,9 +586,42 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /**
+ * Add global styles needed for animations and components
+ */
+function addGlobalStyles() {
+  if (!document.getElementById("chat-global-styles")) {
+    const style = document.createElement("style");
+    style.id = "chat-global-styles";
+    style.textContent = `
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes typingAnimation {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-5px); }
+        100% { transform: translateY(0px); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+}
+
+/**
  * Initialize UI elements and add event listeners
  */
 function initChatElements() {
+  // Cache DOM elements for better performance
+  chatState.elements.contactsList = document.getElementById("menu");
+  chatState.elements.messagesContainer = document.querySelector(
+    ".mainSelectedMensages"
+  );
+  chatState.elements.messageInput = document.querySelector(".messageInput");
+  chatState.elements.sendButton = document.querySelector(".sendButton");
+
   // Search functionality
   const searchInput = document.getElementById("searchUser");
   if (searchInput) {
@@ -324,25 +634,25 @@ function initChatElements() {
   }
 
   // Message sending
-  const sendButton = document.querySelector(".sendButton");
-  const messageInput = document.querySelector(".messageInput");
-
-  if (sendButton && messageInput) {
-    sendButton.addEventListener("click", () => {
-      const text = messageInput.value.trim();
+  if (chatState.elements.sendButton && chatState.elements.messageInput) {
+    chatState.elements.sendButton.addEventListener("click", () => {
+      const text = chatState.elements.messageInput.value.trim();
       if (text) sendMessage(text);
     });
 
-    messageInput.addEventListener("keypress", (e) => {
+    chatState.elements.messageInput.addEventListener("keypress", (e) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
-        const text = messageInput.value.trim();
+        const text = chatState.elements.messageInput.value.trim();
         if (text) sendMessage(text);
       }
     });
 
     // Add typing indicator
-    messageInput.addEventListener("input", handleTypingEvent);
+    chatState.elements.messageInput.addEventListener(
+      "input",
+      handleTypingEvent
+    );
   }
 
   // Navigation and UI buttons
@@ -371,9 +681,11 @@ function initChatElements() {
   window.addEventListener("resize", adjustLayout);
 
   // Add scroll event listener for messages container for lazy loading
-  const messagesContainer = document.querySelector(".mainSelectedMensages");
-  if (messagesContainer) {
-    messagesContainer.addEventListener("scroll", handleMessagesScroll);
+  if (chatState.elements.messagesContainer) {
+    chatState.elements.messagesContainer.addEventListener(
+      "scroll",
+      handleMessagesScroll
+    );
   }
 
   // Setup notification permission request
@@ -381,6 +693,9 @@ function initChatElements() {
 
   // Setup online/offline status detection
   setupConnectionStatusListener();
+
+  // Setup page visibility detection
+  setupVisibilityChangeDetection();
 }
 
 /**
@@ -406,15 +721,128 @@ function setupConnectionStatusListener() {
 }
 
 /**
+ * Setup online status periodic check
+ */
+function setupOnlineStatusCheck() {
+  // Clear previous interval if exists
+  if (chatState.unsubscribeListeners.onlineStatusInterval) {
+    clearInterval(chatState.unsubscribeListeners.onlineStatusInterval);
+  }
+
+  // Set online status initially
+  updateUserOnlineStatus(true);
+
+  // Setup interval for every 30 seconds
+  chatState.unsubscribeListeners.onlineStatusInterval = setInterval(
+    async () => {
+      // Update last activity timestamp
+      chatState.lastActivityTimestamp = Date.now();
+
+      // Only update if user is still in chat app and we have authentication
+      if (
+        chatState.currentUser &&
+        document.visibilityState === "visible" &&
+        chatState.isOnline
+      ) {
+        try {
+          await updateUserOnlineStatus(true);
+        } catch (error) {
+          console.error("Error updating online status:", error);
+        }
+      }
+    },
+    30000
+  ); // 30 seconds
+
+  // Setup event listener for user activity
+  ["click", "keypress", "scroll", "mousemove"].forEach((eventType) => {
+    document.addEventListener(eventType, () => {
+      chatState.lastActivityTimestamp = Date.now();
+    });
+  });
+}
+
+/**
+ * Update user online status
+ */
+async function updateUserOnlineStatus(isOnline) {
+  try {
+    if (!chatState.currentUser?.uid) return;
+
+    chatState.isOnline = isOnline;
+
+    // Update in Firestore
+    await updateDoc(doc(firestore, "users", chatState.currentUser.uid), {
+      isOnline: isOnline,
+      lastSeen: serverTimestamp(),
+    });
+
+    // Update in Realtime Database for faster access
+    await set(ref(realtimeDb, `status/${chatState.currentUser.uid}`), {
+      isOnline: isOnline,
+      lastSeen: rtServerTimestamp(),
+    });
+
+    // Update UI
+    if (chatState.currentUser) {
+      chatState.currentUser.isOnline = isOnline;
+      updateUserUI(chatState.currentUser);
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error updating online status:", error);
+    return false;
+  }
+}
+
+/**
+ * Setup visibility change detection
+ */
+function setupVisibilityChangeDetection() {
+  // Remove previous listener if exists
+  if (chatState.unsubscribeListeners.visibilityChange) {
+    document.removeEventListener(
+      "visibilitychange",
+      chatState.unsubscribeListeners.visibilityChange
+    );
+  }
+
+  // Create handler
+  const visibilityChangeHandler = async () => {
+    if (document.visibilityState === "visible") {
+      // User came back to the app - set online
+      if (chatState.currentUser?.uid) {
+        await updateUserOnlineStatus(true);
+        chatState.lastActivityTimestamp = Date.now();
+      }
+    } else {
+      // User left the app - set offline
+      if (chatState.currentUser?.uid) {
+        await updateUserOnlineStatus(false);
+      }
+    }
+  };
+
+  // Add event listener
+  document.addEventListener("visibilitychange", visibilityChangeHandler);
+
+  // Store the handler for later cleanup
+  chatState.unsubscribeListeners.visibilityChange = visibilityChangeHandler;
+}
+
+/**
  * Handle connection status change
  */
 async function handleConnectionChange(e) {
   const isOnline = navigator.onLine;
   console.log(`Connection status: ${isOnline ? "online" : "offline"}`);
 
+  chatState.isOnline = isOnline;
+
   if (isOnline && chatState.currentUser) {
     // Reconnect and update online status
-    await updateOnlineStatus(chatState.currentUser.uid, true);
+    await updateUserOnlineStatus(true);
     showPopup("success", "Conexão restabelecida!", 2000);
 
     // Re-initialize listeners if they were broken
@@ -430,7 +858,6 @@ async function handleConnectionChange(e) {
     );
   }
 }
-
 
 /**
  * Handle typing events to show typing indicator to other users
@@ -491,6 +918,46 @@ function setupTypingIndicatorsListener(conversationId) {
   });
 }
 
+async function fetchUserData(userId) {
+  try {
+    if (!userId) {
+      console.error("fetchUserData: userID is undefined");
+      return null;
+    }
+
+    // Verificar cache primeiro
+    const cachedUser = chatState.usersCache[userId];
+    if (cachedUser) {
+      return cachedUser;
+    }
+
+    console.log("Fetching user data for ID:", userId);
+
+    const userDoc = await getDoc(doc(firestore, "users", userId));
+
+    if (!userDoc.exists()) {
+      console.log("User document does not exist:", userId);
+      return null;
+    }
+
+    const userData = userDoc.data();
+
+    // Adicionar o ID ao objeto de dados
+    userData.id = userId;
+
+    // Armazenar em cache
+    chatState.usersCache[userId] = userData;
+    cacheManager.saveUserData(userId, userData);
+
+    console.log("User data fetched:", userData);
+
+    return userData;
+  } catch (error) {
+    console.error(`Error fetching user data for ${userId}:`, error);
+    return null;
+  }
+}
+
 /**
  * Show typing indicator in the UI
  */
@@ -545,17 +1012,6 @@ function createTypingIndicator() {
     <span class="typingText"></span>
   `;
 
-  // Add animation style
-  const style = document.createElement("style");
-  style.textContent = `
-    @keyframes typingAnimation {
-      0% { transform: translateY(0px); }
-      50% { transform: translateY(-5px); }
-      100% { transform: translateY(0px); }
-    }
-  `;
-  document.head.appendChild(style);
-
   // Insert before the message input area
   const inputArea =
     container.querySelector(".containerInput") || container.lastElementChild;
@@ -593,21 +1049,15 @@ async function handleMessagesScroll(e) {
     // Show loading indicator at the top
     const loadingIndicator = document.createElement("div");
     loadingIndicator.className = "messages-loading-more";
-    loadingIndicator.innerHTML = `
-      <div style="text-align: center; padding: 10px; color: #00dfc4;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid">
-          <circle cx="50" cy="50" r="32" stroke-width="8" stroke="#00dfc4" stroke-dasharray="50.26548245743669 50.26548245743669" fill="none" stroke-linecap="round">
-            <animateTransform attributeName="transform" type="rotate" dur="1s" repeatCount="indefinite" keyTimes="0;1" values="0 50 50;360 50 50"></animateTransform>
-          </circle>
-        </svg>
-        <span style="margin-left: 5px;">Carregando mensagens anteriores...</span>
-      </div>
-    `;
+    loadingIndicator.innerHTML = uiComponents.createLoadingSpinner(
+      20,
+      "#00dfc4",
+      "Carregando mensagens anteriores..."
+    );
 
-    const messagesList = document.querySelector(".mainSelectedMensages");
-    if (messagesList) {
-      const scrollHeight = messagesList.scrollHeight;
-      messagesList.prepend(loadingIndicator);
+    if (chatState.elements.messagesContainer) {
+      const scrollHeight = chatState.elements.messagesContainer.scrollHeight;
+      chatState.elements.messagesContainer.prepend(loadingIndicator);
 
       try {
         // Get the oldest message timestamp to use as a cursor
@@ -637,8 +1087,10 @@ async function handleMessagesScroll(e) {
             renderMessages();
 
             // Adjust the scroll position to maintain the same view
-            const newScrollHeight = messagesList.scrollHeight;
-            messagesList.scrollTop = newScrollHeight - scrollHeight;
+            const newScrollHeight =
+              chatState.elements.messagesContainer.scrollHeight;
+            chatState.elements.messagesContainer.scrollTop =
+              newScrollHeight - scrollHeight;
 
             // Update the cache with the new messages
             cacheManager.saveMessages(conversationId);
@@ -703,7 +1155,7 @@ async function loadOlderMessages(
       messagesRef,
       where("timestamp", "<", timestampToQuery),
       orderBy("timestamp", "desc"),
-      limit(messageLimit) // 'limit' agora é a função importada, 'messageLimit' é o parâmetro
+      limit(messageLimit)
     );
 
     const messagesSnapshot = await getDocs(q);
@@ -766,15 +1218,19 @@ function setupAuth() {
         // Update UI with latest data
         updateUserUI(chatState.currentUser);
 
-        // Set online status and setup offline cleanup
-        await updateOnlineStatus(user.uid, true);
+        // Set online status and setup online status check
+        await updateUserOnlineStatus(true);
+        setupOnlineStatusCheck();
+
+        // Setup visibility change detection
+        setupVisibilityChangeDetection();
 
         window.addEventListener("beforeunload", async (e) => {
           // We need to use synchronous localStorage to ensure data is saved before unload
           if (chatState.lastSeenTimestamps) {
             try {
               localStorage.setItem(
-                "chat_v1.1_lastSeen",
+                "chat_v1.2_lastSeen",
                 JSON.stringify({
                   timestamp: Date.now(),
                   data: chatState.lastSeenTimestamps,
@@ -786,7 +1242,7 @@ function setupAuth() {
           }
 
           // Update online status
-          await updateOnlineStatus(user.uid, false);
+          await updateUserOnlineStatus(false);
         });
 
         // Load contacts and conversations
@@ -878,17 +1334,11 @@ function showAttachmentOptions() {
   attachOptions.appendChild(documentInput);
 
   // Close when clicking outside
-  document.addEventListener("click", function closeAttachOptions(e) {
-    if (
-      !attachOptions.contains(e.target) &&
-      e.target !== document.querySelector(".attachButton")
-    ) {
-      if (document.body.contains(attachOptions)) {
-        document.body.removeChild(attachOptions);
-      }
-      document.removeEventListener("click", closeAttachOptions);
+  const documentClickHandler = eventManager.addDocumentClickHandler(() => {
+    if (document.body.contains(attachOptions)) {
+      document.body.removeChild(attachOptions);
     }
-  });
+  }, attachOptions);
 
   document.body.appendChild(attachOptions);
 
@@ -942,81 +1392,46 @@ function previewImageBeforeSend(file) {
   const reader = new FileReader();
 
   reader.onload = (e) => {
-    const preview = document.createElement("div");
-    preview.className = "image-preview-container";
-    preview.style.cssText =
-      "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center;";
-
-    // Main content container
-    const content = document.createElement("div");
-    content.style.cssText =
-      "background-color: #1d2b3a; border-radius: 10px; padding: 20px; width: 90%; max-width: 500px; max-height: 80vh; overflow: hidden; display: flex; flex-direction: column;";
-
-    // Header
-    const header = document.createElement("div");
-    header.style.cssText =
-      "display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;";
-    header.innerHTML = `
-      <h3 style="margin: 0; color: #fff;">Enviar imagem</h3>
-      <button class="close-preview" style="background: none; border: none; color: #00dfc4; font-size: 24px; cursor: pointer;">×</button>
+    const dialogContent = `
+      <div style="display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: center; margin-bottom: 15px; max-height: 300px; overflow: hidden;">
+          <img src="${e.target.result}" style="max-width: 100%; max-height: 300px; object-fit: contain;">
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 5px; color: #fff;">Adicionar legenda (opcional)</label>
+          <input type="text" class="image-caption" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #00dfc4; background-color: #1d2b3a; color: #fff; box-sizing: border-box;">
+        </div>
+        
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button class="cancel-send" style="padding: 10px 15px; border-radius: 5px; border: 1px solid #00dfc4; background-color: transparent; color: #00dfc4; cursor: pointer;">Cancelar</button>
+          <button class="confirm-send" style="padding: 10px 15px; border-radius: 5px; border: none; background-color: #00dfc4; color: #1d2b3a; cursor: pointer;">Enviar</button>
+        </div>
+      </div>
     `;
 
-    // Image preview
-    const imageContainer = document.createElement("div");
-    imageContainer.style.cssText =
-      "display: flex; justify-content: center; margin-bottom: 15px; max-height: 300px; overflow: hidden;";
-    imageContainer.innerHTML = `<img src="${e.target.result}" style="max-width: 100%; max-height: 300px; object-fit: contain;">`;
+    const dialog = uiComponents.createDialog("Enviar imagem", dialogContent);
 
-    // Caption input
-    const captionContainer = document.createElement("div");
-    captionContainer.style.cssText = "margin-bottom: 20px;";
-    captionContainer.innerHTML = `
-      <label style="display: block; margin-bottom: 5px; color: #fff;">Adicionar legenda (opcional)</label>
-      <input type="text" class="image-caption" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #00dfc4; background-color: #1d2b3a; color: #fff; box-sizing: border-box;">
-    `;
+    dialog.contentContainer
+      .querySelector(".cancel-send")
+      .addEventListener("click", () => {
+        dialog.close();
+      });
 
-    // Buttons
-    const buttons = document.createElement("div");
-    buttons.style.cssText =
-      "display: flex; justify-content: flex-end; gap: 10px;";
-    buttons.innerHTML = `
-      <button class="cancel-send" style="padding: 10px 15px; border-radius: 5px; border: 1px solid #00dfc4; background-color: transparent; color: #00dfc4; cursor: pointer;">Cancelar</button>
-      <button class="confirm-send" style="padding: 10px 15px; border-radius: 5px; border: none; background-color: #00dfc4; color: #1d2b3a; cursor: pointer;">Enviar</button>
-    `;
-
-    // Assemble the preview
-    content.appendChild(header);
-    content.appendChild(imageContainer);
-    content.appendChild(captionContainer);
-    content.appendChild(buttons);
-    preview.appendChild(content);
-
-    // Add event listeners
-    preview.querySelector(".close-preview").addEventListener("click", () => {
-      document.body.removeChild(preview);
-    });
-
-    preview.querySelector(".cancel-send").addEventListener("click", () => {
-      document.body.removeChild(preview);
-    });
-
-    preview
+    dialog.contentContainer
       .querySelector(".confirm-send")
-      .addEventListener("click", async () => {
-        const caption = preview.querySelector(".image-caption").value.trim();
-        document.body.removeChild(preview);
+      .addEventListener("click", () => {
+        const caption = dialog.contentContainer
+          .querySelector(".image-caption")
+          .value.trim();
+        dialog.close();
 
         // Here you would upload the image and send the message
         showPopup(
           "info",
           "Funcionalidade de envio de imagens será implementada em breve!"
         );
-
-        // This is a placeholder - in a real implementation, you would upload the image to Firebase Storage
-        // and then send a message with the image URL and optional caption
       });
-
-    document.body.appendChild(preview);
   };
 
   reader.readAsDataURL(file);
@@ -1118,17 +1533,11 @@ function showEmojiSelector() {
   emojiSelector.appendChild(emojiGrid);
 
   // Close when clicking outside
-  document.addEventListener("click", function closeEmojiSelector(e) {
-    if (
-      !emojiSelector.contains(e.target) &&
-      e.target !== document.querySelector(".emojiButton")
-    ) {
-      if (document.body.contains(emojiSelector)) {
-        document.body.removeChild(emojiSelector);
-      }
-      document.removeEventListener("click", closeEmojiSelector);
+  const documentClickHandler = eventManager.addDocumentClickHandler(() => {
+    if (document.body.contains(emojiSelector)) {
+      document.body.removeChild(emojiSelector);
     }
-  });
+  }, emojiSelector);
 
   document.body.appendChild(emojiSelector);
 
@@ -1158,22 +1567,21 @@ function showEmojiSelector() {
   }
 
   function insertEmojiIntoInput(emoji) {
-    const messageInput = document.querySelector(".messageInput");
-    if (messageInput) {
-      const startPos = messageInput.selectionStart;
-      const endPos = messageInput.selectionEnd;
-      const text = messageInput.value;
+    if (chatState.elements.messageInput) {
+      const startPos = chatState.elements.messageInput.selectionStart;
+      const endPos = chatState.elements.messageInput.selectionEnd;
+      const text = chatState.elements.messageInput.value;
 
       // Insert emoji at cursor position
-      messageInput.value =
+      chatState.elements.messageInput.value =
         text.substring(0, startPos) + emoji + text.substring(endPos);
 
       // Move cursor after the inserted emoji
-      messageInput.selectionStart = messageInput.selectionEnd =
-        startPos + emoji.length;
+      chatState.elements.messageInput.selectionStart =
+        chatState.elements.messageInput.selectionEnd = startPos + emoji.length;
 
       // Focus the input
-      messageInput.focus();
+      chatState.elements.messageInput.focus();
     }
   }
 }
@@ -1263,22 +1671,11 @@ function showRecordingIndicator() {
       </svg>
     `;
 
-    // Add animation style
-    const style = document.createElement("style");
-    style.textContent = `
-      @keyframes pulse {
-        0% { transform: scale(1); opacity: 1; }
-        50% { transform: scale(1.5); opacity: 0.7; }
-        100% { transform: scale(1); opacity: 1; }
-      }
-    `;
-    document.head.appendChild(style);
-
     // Change message input placeholder
-    const messageInput = document.querySelector(".messageInput");
-    if (messageInput) {
-      messageInput.placeholder = "Gravando mensagem de voz...";
-      messageInput.disabled = true;
+    if (chatState.elements.messageInput) {
+      chatState.elements.messageInput.placeholder =
+        "Gravando mensagem de voz...";
+      chatState.elements.messageInput.disabled = true;
     }
   }
 }
@@ -1302,11 +1699,10 @@ function hideRecordingIndicator() {
     `;
 
     // Reset message input
-    const messageInput = document.querySelector(".messageInput");
-    if (messageInput) {
-      messageInput.placeholder = "Digite uma mensagem...";
-      messageInput.disabled = false;
-      messageInput.focus();
+    if (chatState.elements.messageInput) {
+      chatState.elements.messageInput.placeholder = "Digite uma mensagem...";
+      chatState.elements.messageInput.disabled = false;
+      chatState.elements.messageInput.focus();
     }
   }
 }
@@ -1334,44 +1730,51 @@ function updateUserUI(user) {
 
   // Update profile image if available
   const profileContainer = document.querySelector(".imgProfile");
-  if (profileContainer && user.photoURL) {
-    profileContainer.innerHTML = `<img src="${user.photoURL}" alt="Foto de perfil" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
-  } else if (profileContainer) {
-    // Default avatar with user initials
-    const initials = (user.name || user.displayName || "U")
-      .split(" ")
-      .map((n) => n[0])
-      .slice(0, 2)
-      .join("")
-      .toUpperCase();
-
-    profileContainer.innerHTML = `
-      <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: #1d2b3a; border-radius: 50%; color: #00dfc4; font-weight: bold; font-size: 18px;">
-        ${initials}
-      </div>
-    `;
+  if (profileContainer) {
+    profileContainer.innerHTML = uiComponents.createUserAvatar(user, 100);
   }
 }
-
 
 /**
  * Setup listener for user online status
  */
 function setupUserStatusListener(userId) {
-  const userStatusRef = ref(realtimeDb, `users/${userId}/isOnline`);
+  // Primeiramente, configurar escuta no Realtime Database para atualizações mais rápidas
+  const userStatusRef = ref(realtimeDb, `status/${userId}`);
 
-  const unsubscribe = onValue(userStatusRef, (snapshot) => {
-    const isOnline = snapshot.val();
-    if (chatState.currentUser) {
-      chatState.currentUser.isOnline = isOnline;
+  const unsubscribeRealtime = onValue(userStatusRef, (snapshot) => {
+    const status = snapshot.val();
+    if (status && chatState.currentUser) {
+      chatState.currentUser.isOnline = status.isOnline;
       updateUserUI(chatState.currentUser);
     }
   });
 
-  // Store the unsubscribe function
-  chatState.unsubscribeListeners.userStatus[userId] = unsubscribe;
+  // Também escutar mudanças no Firestore
+  const userDoc = doc(firestore, "users", userId);
 
-  return unsubscribe;
+  const unsubscribeFirestore = onSnapshot(userDoc, (docSnapshot) => {
+    if (docSnapshot.exists()) {
+      const userData = docSnapshot.data();
+      if (chatState.currentUser) {
+        chatState.currentUser.isOnline = userData.isOnline;
+        // Atualizar outros campos que possam ter mudado
+        chatState.currentUser = { ...chatState.currentUser, ...userData };
+        updateUserUI(chatState.currentUser);
+      }
+    }
+  });
+
+  // Store the unsubscribe functions
+  chatState.unsubscribeListeners.userStatus[userId] = () => {
+    unsubscribeRealtime();
+    unsubscribeFirestore();
+  };
+
+  return () => {
+    unsubscribeRealtime();
+    unsubscribeFirestore();
+  };
 }
 
 /**
@@ -1500,7 +1903,7 @@ async function prefetchConversationUsers(conversations) {
       }
     });
 
-    // Fetch user data in batches
+    // Fetch user data in batches for better performance
     const userIdBatches = Array.from(userIdsToFetch).reduce(
       (batches, userId, index) => {
         const batchIndex = Math.floor(index / 10); // 10 users per batch
@@ -1548,7 +1951,6 @@ async function prefetchConversationUsers(conversations) {
   }
 }
 
-
 /**
  * Update loading state indicator for contacts list
  */
@@ -1556,7 +1958,7 @@ function updateContactsLoadingState(
   isLoading,
   message = "Carregando conversas..."
 ) {
-  const contactsList = document.getElementById("menu");
+  const contactsList = chatState.elements.contactsList;
   if (!contactsList) return;
 
   if (isLoading) {
@@ -1565,26 +1967,11 @@ function updateContactsLoadingState(
     if (!loadingItem) {
       loadingItem = document.createElement("li");
       loadingItem.className = "chat-loading";
-      loadingItem.innerHTML = `
-        <div class="list loading-item">
-          <div class="loading-animation" style="width: 100%; height: 60px; display: flex; align-items: center; justify-content: center;">
-            <div class="loading-spinner" style="width: 30px; height: 30px; border: 3px solid rgba(0, 223, 196, 0.3); border-radius: 50%; border-top-color: #00dfc4; animation: spin 1s linear infinite;"></div>
-            <span style="margin-left: 10px; color: #00dfc4;">${message}</span>
-          </div>
-        </div>
-      `;
-
-      // Add spinning animation
-      if (!document.getElementById("loading-spinner-style")) {
-        const style = document.createElement("style");
-        style.id = "loading-spinner-style";
-        style.textContent = `
-          @keyframes spin {
-            to { transform: rotate(360deg); }
-          }
-        `;
-        document.head.appendChild(style);
-      }
+      loadingItem.innerHTML = uiComponents.createLoadingSpinner(
+        30,
+        "#00dfc4",
+        message
+      );
 
       contactsList.innerHTML = "";
       contactsList.appendChild(loadingItem);
@@ -1601,7 +1988,7 @@ function updateContactsLoadingState(
  * Render contacts list with conversations or search results
  */
 function renderContacts() {
-  const contactsList = document.getElementById("menu");
+  const contactsList = chatState.elements.contactsList;
   if (!contactsList || chatState.isLoading.contacts) return;
 
   contactsList.innerHTML = "";
@@ -1616,61 +2003,9 @@ function renderContacts() {
   }
 
   // Add ripple effect to all list items
-  addRippleEffect();
-}
-
-/**
- * Add ripple effect to list items
- */
-function addRippleEffect() {
-  const items = document.querySelectorAll("#menu li .list");
-
-  items.forEach((item) => {
-    item.addEventListener("click", function (e) {
-      const ripple = document.createElement("span");
-      ripple.classList.add("ripple-effect");
-
-      const rect = this.getBoundingClientRect();
-      const size = Math.max(rect.width, rect.height);
-
-      ripple.style.width = ripple.style.height = `${size}px`;
-      ripple.style.left = `${e.clientX - rect.left - size / 2}px`;
-      ripple.style.top = `${e.clientY - rect.top - size / 2}px`;
-
-      this.appendChild(ripple);
-
-      setTimeout(() => {
-        ripple.remove();
-      }, 600);
-    });
+  document.querySelectorAll("#menu li .list").forEach((item) => {
+    uiComponents.addRippleEffect(item);
   });
-
-  // Add ripple style if not already added
-  if (!document.getElementById("ripple-style")) {
-    const style = document.createElement("style");
-    style.id = "ripple-style";
-    style.textContent = `
-      .list {
-        position: relative;
-        overflow: hidden;
-      }
-      .ripple-effect {
-        position: absolute;
-        border-radius: 50%;
-        transform: scale(0);
-        background: rgba(255, 255, 255, 0.1);
-        animation: ripple 0.6s linear;
-        pointer-events: none;
-      }
-      @keyframes ripple {
-        to {
-          transform: scale(4);
-          opacity: 0;
-        }
-      }
-    `;
-    document.head.appendChild(style);
-  }
 }
 
 /**
@@ -1794,13 +2129,7 @@ function displaySearchResults(contactsList, results) {
       existingConversation ? existingConversation.id : ""
     }">
         <button type="button" class="button__pic">
-          ${
-            user.photoURL
-              ? `<img src="${user.photoURL}" alt="${user.name}" style="width:45px;height:45px;border-radius:50%;">`
-              : `<div style="width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: #1d2b3a; color: #00dfc4; font-weight: bold; font-size: 16px;">${
-                  user.name ? user.name.charAt(0).toUpperCase() : "U"
-                }</div>`
-          }
+          ${uiComponents.createUserAvatar(user, 45)}
         </button>
         <button type="button" class="button__user">
           <div class="container__left">
@@ -1902,12 +2231,8 @@ function renderConversations(contactsList) {
 
   // Sort conversations into groups
   chatState.conversations.forEach((conversation) => {
-    const lastMessageDate = conversation.lastMessageAt
-      ? conversation.lastMessageAt instanceof Timestamp
-        ? conversation.lastMessageAt.toDate()
-        : new Date(conversation.lastMessageAt)
-      : new Date(0);
-
+    const lastMessageDate =
+      timeUtils.convertToDate(conversation.lastMessageAt) || new Date(0);
     lastMessageDate.setHours(0, 0, 0, 0);
 
     if (lastMessageDate.getTime() === today.getTime()) {
@@ -2010,9 +2335,6 @@ function renderConversationItem(contactsList, conversation) {
   const lastMessageTime = conversation.lastMessageAt
     ? timeUtils.formatTime(conversation.lastMessageAt)
     : "";
-  const lastMessageDate = conversation.lastMessageAt
-    ? timeUtils.formatMessageDate(conversation.lastMessageAt)
-    : "";
 
   // Determine if this is the active conversation
   const isActive = chatState.activeConversation?.id === conversation.id;
@@ -2054,11 +2376,7 @@ function renderConversationItem(contactsList, conversation) {
                   ? conversation.name.charAt(0).toUpperCase()
                   : "G"
               }</div>`
-            : otherParticipantData.photoURL
-            ? `<img src="${otherParticipantData.photoURL}" alt="${displayName}" style="width:45px;height:45px;border-radius:50%;">`
-            : `<div style="width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: #1d2b3a; color: #00dfc4; font-weight: bold; font-size: 16px;">${
-                displayName ? displayName.charAt(0).toUpperCase() : "U"
-              }</div>`
+            : uiComponents.createUserAvatar(otherParticipantData, 45)
         }
         ${
           !conversation.isGroup && otherParticipantData?.isOnline
@@ -2272,11 +2590,15 @@ async function openConversation(conversationId) {
           }
         }
 
-        participants.push(
-          userData || { id: otherParticipantId, name: "Usuário" }
-        );
+        if (userData) {
+          participants.push(userData);
+        } else {
+          participants.push({ id: otherParticipantId, name: "Usuário" });
+        }
       }
     }
+
+    console.log("Participants loaded:", participants);
 
     // Update active conversation state
     chatState.activeConversation = {
@@ -2418,19 +2740,17 @@ async function markMessagesAsRead(conversationId) {
  * Show loading indicator while messages are being fetched
  */
 function showMessagesLoading(isLoading) {
-  const conversationArea = document.querySelector(".mainSelectedMensages");
+  const conversationArea = chatState.elements.messagesContainer;
   if (!conversationArea) return;
 
   if (isLoading) {
-    conversationArea.innerHTML = `
-      <div class="loading-messages" style="display: flex; justify-content: center; align-items: center; height: 100%; flex-direction: column;">
-        <div style="width: 40px; height: 40px; border: 4px solid rgba(0, 223, 196, 0.3); border-radius: 50%; border-top-color: #00dfc4; animation: spin 1s linear infinite;"></div>
-        <p style="color: #00dfc4; margin-top: 15px;">Carregando mensagens...</p>
-      </div>
-    `;
-  } else {
-    // We'll leave the clearance of content to the rendering function
+    conversationArea.innerHTML = uiComponents.createLoadingSpinner(
+      40,
+      "#00dfc4",
+      "Carregando mensagens..."
+    );
   }
+  // We'll leave the clearance of content to the rendering function
 }
 
 /**
@@ -2476,20 +2796,10 @@ function updateConversationUI() {
     } else {
       // Show user avatar
       const otherParticipant = participants[0];
-      if (otherParticipant?.photoURL) {
-        headerPhoto.innerHTML = `<img src="${otherParticipant.photoURL}" alt="Foto de perfil" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
-      } else {
-        // Default avatar with initial
-        headerPhoto.innerHTML = `
-          <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: #1d2b3a; border-radius: 50%; color: #00dfc4; font-weight: bold; font-size: 18px;">
-            ${
-              otherParticipant?.name
-                ? otherParticipant.name.charAt(0).toUpperCase()
-                : "U"
-            }
-          </div>
-        `;
-      }
+      headerPhoto.innerHTML = uiComponents.createUserAvatar(
+        otherParticipant,
+        40
+      );
     }
   }
 
@@ -2518,11 +2828,10 @@ function updateConversationUI() {
   }
 
   // Enable message input
-  const messageInput = document.querySelector(".messageInput");
-  if (messageInput) {
-    messageInput.disabled = false;
-    messageInput.placeholder = "Digite uma mensagem...";
-    messageInput.focus();
+  if (chatState.elements.messageInput) {
+    chatState.elements.messageInput.disabled = false;
+    chatState.elements.messageInput.placeholder = "Digite uma mensagem...";
+    chatState.elements.messageInput.focus();
   }
 
   // Show conversation actions button
@@ -2622,7 +2931,9 @@ function showConversationMenu(e) {
     });
 
     item.addEventListener("click", () => {
-      document.body.removeChild(menu);
+      if (document.body.contains(menu)) {
+        document.body.removeChild(menu);
+      }
       option.action();
     });
 
@@ -2633,17 +2944,11 @@ function showConversationMenu(e) {
   document.body.appendChild(menu);
 
   // Close when clicking outside
-  document.addEventListener("click", function closeMenu(e) {
-    if (
-      !menu.contains(e.target) &&
-      e.target !== document.querySelector(".conversationActions")
-    ) {
-      if (document.body.contains(menu)) {
-        document.body.removeChild(menu);
-      }
-      document.removeEventListener("click", closeMenu);
+  const documentClickHandler = eventManager.addDocumentClickHandler(() => {
+    if (document.body.contains(menu)) {
+      document.body.removeChild(menu);
     }
-  });
+  }, menu);
 
   // Helper function to get SVG path for icons
   function getIconPath(icon) {
@@ -2678,22 +2983,6 @@ function showGroupInfo() {
 
   const { name, participants, createdAt } = chatState.activeConversation;
 
-  const backdrop = document.createElement("div");
-  backdrop.style.cssText =
-    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); z-index: 10000; display: flex; justify-content: center; align-items: center;";
-
-  const dialog = document.createElement("div");
-  dialog.style.cssText =
-    "background-color: #1d2b3a; border-radius: 10px; padding: 20px; width: 90%; max-width: 450px; max-height: 80vh; overflow: auto; color: #fff;";
-
-  const header = document.createElement("div");
-  header.style.cssText =
-    "display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #00dfc4; padding-bottom: 10px;";
-  header.innerHTML = `
-    <h3 style="margin: 0;">Informações do Grupo</h3>
-    <button class="close-dialog" style="background: none; border: none; color: #00dfc4; font-size: 24px; cursor: pointer;">×</button>
-  `;
-
   const content = document.createElement("div");
 
   // Group avatar and name
@@ -2707,7 +2996,8 @@ function showGroupInfo() {
     <h2 style="margin: 0;">${name || "Grupo"}</h2>
     <p style="margin: 5px 0; color: #ccc; font-size: 0.9em;">Criado em ${
       createdAt
-        ? new Date(createdAt.seconds * 1000).toLocaleDateString()
+        ? timeUtils.convertToDate(createdAt)?.toLocaleDateString() ||
+          "data desconhecida"
         : "data desconhecida"
     }</p>
   `;
@@ -2755,15 +3045,7 @@ function showGroupInfo() {
 
     item.innerHTML = `
       <div style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; margin-right: 10px;">
-        ${
-          participant.photoURL
-            ? `<img src="${participant.photoURL}" alt="${participant.name}" style="width: 100%; height: 100%; object-fit: cover;">`
-            : `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: #1d2b3a; color: #00dfc4; font-weight: bold;">${
-                participant.name
-                  ? participant.name.charAt(0).toUpperCase()
-                  : "U"
-              }</div>`
-        }
+        ${uiComponents.createUserAvatar(participant, 40)}
       </div>
       <div style="flex-grow: 1;">
         <div style="font-weight: bold;">${participant.name}${
@@ -2795,16 +3077,24 @@ function showGroupInfo() {
   participantsList
     .querySelector(".add-participant")
     .addEventListener("click", () => {
-      document.body.removeChild(backdrop);
+      dialog.close();
       addGroupParticipant();
     });
 
   participantsList.querySelectorAll(".remove-participant").forEach((button) => {
     button.addEventListener("click", (e) => {
       const userId = e.currentTarget.getAttribute("data-user-id");
-      if (confirm("Remover este participante do grupo?")) {
-        removeGroupParticipant(chatState.activeConversation.id, userId);
-      }
+
+      uiComponents.createConfirmDialog(
+        "Remover participante",
+        "Tem certeza que deseja remover este participante do grupo?",
+        "Remover",
+        "Cancelar",
+        () => {
+          removeGroupParticipant(chatState.activeConversation.id, userId);
+          dialog.close();
+        }
+      );
     });
   });
 
@@ -2814,27 +3104,29 @@ function showGroupInfo() {
     "width: 100%; background-color: #f44336; color: white; border: none; padding: 10px; border-radius: 5px; margin-top: 20px; cursor: pointer;";
   leaveButton.textContent = "Sair do grupo";
   leaveButton.addEventListener("click", () => {
-    if (confirm("Tem certeza que deseja sair deste grupo?")) {
-      document.body.removeChild(backdrop);
-      leaveGroup();
-    }
+    uiComponents.createConfirmDialog(
+      "Sair do grupo",
+      "Tem certeza que deseja sair deste grupo?",
+      "Sair",
+      "Cancelar",
+      () => {
+        dialog.close();
+        leaveGroup();
+      }
+    );
   });
 
-  // Assemble dialog
+  // Assemble content
   content.appendChild(groupInfo);
   content.appendChild(participantsList);
   content.appendChild(leaveButton);
 
-  dialog.appendChild(header);
-  dialog.appendChild(content);
-  backdrop.appendChild(dialog);
-
-  // Close dialog
-  dialog.querySelector(".close-dialog").addEventListener("click", () => {
-    document.body.removeChild(backdrop);
-  });
-
-  document.body.appendChild(backdrop);
+  // Create dialog
+  const dialog = uiComponents.createDialog(
+    "Informações do Grupo",
+    content,
+    450
+  );
 }
 
 /**
@@ -2873,22 +3165,13 @@ function addGroupParticipant() {
     (p) => (typeof p === "string" ? p : p.id)
   );
 
-  // Create dialog
-  const backdrop = document.createElement("div");
-  backdrop.style.cssText =
-    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); z-index: 10000; display: flex; justify-content: center; align-items: center;";
+  // Create search container
+  const content = document.createElement("div");
 
-  const dialog = document.createElement("div");
-  dialog.style.cssText =
-    "background-color: #1d2b3a; border-radius: 10px; padding: 20px; width: 90%; max-width: 450px; max-height: 80vh; overflow: auto; color: #fff;";
-
-  const header = document.createElement("div");
-  header.style.cssText =
-    "display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #00dfc4; padding-bottom: 10px;";
-  header.innerHTML = `
-    <h3 style="margin: 0;">Adicionar Participantes</h3>
-    <button class="close-dialog" style="background: none; border: none; color: #00dfc4; font-size: 24px; cursor: pointer;">×</button>
-  `;
+  // Selected users container
+  const selectedContainer = document.createElement("div");
+  selectedContainer.style.cssText =
+    "display: flex; flex-wrap: wrap; gap: 5px; margin: 15px 0;";
 
   // Search input
   const searchInput = document.createElement("input");
@@ -2900,11 +3183,6 @@ function addGroupParticipant() {
   // Results container
   const resultsContainer = document.createElement("div");
   resultsContainer.style.cssText = "max-height: 300px; overflow-y: auto;";
-
-  // Selected users container
-  const selectedContainer = document.createElement("div");
-  selectedContainer.style.cssText =
-    "display: flex; flex-wrap: wrap; gap: 5px; margin: 15px 0;";
 
   // Selected users array
   let selectedUsers = [];
@@ -2954,12 +3232,11 @@ function addGroupParticipant() {
         return;
       }
 
-      resultsContainer.innerHTML = `
-        <div style="text-align: center; padding: 10px; color: #00dfc4;">
-          <div class="loading-spinner" style="width: 20px; height: 20px; border: 2px solid rgba(0, 223, 196, 0.3); border-radius: 50%; border-top-color: #00dfc4; animation: spin 1s linear infinite; display: inline-block; margin-right: 10px;"></div>
-          Buscando usuários...
-        </div>
-      `;
+      resultsContainer.innerHTML = uiComponents.createLoadingSpinner(
+        20,
+        "#00dfc4",
+        "Buscando usuários..."
+      );
 
       try {
         // Get users that aren't already in the group
@@ -3000,13 +3277,7 @@ function addGroupParticipant() {
 
           userItem.innerHTML = `
             <div style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; margin-right: 10px;">
-              ${
-                user.photoURL
-                  ? `<img src="${user.photoURL}" alt="${user.name}" style="width: 100%; height: 100%; object-fit: cover;">`
-                  : `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: #1d2b3a; color: #00dfc4; font-weight: bold;">${
-                      user.name ? user.name.charAt(0).toUpperCase() : "U"
-                    }</div>`
-              }
+              ${uiComponents.createUserAvatar(user, 40)}
             </div>
             <div style="flex-grow: 1;">
               <div style="font-weight: bold;">${user.name}</div>
@@ -3041,7 +3312,6 @@ function addGroupParticipant() {
               selectedUsers.push(user);
             }
             renderSelectedUsers();
-            renderSearchResults();
           });
 
           resultsContainer.appendChild(userItem);
@@ -3067,12 +3337,11 @@ function addGroupParticipant() {
       return;
     }
 
-    dialog.innerHTML = `
-      <div style="text-align: center; padding: 20px; color: #00dfc4;">
-        <div class="loading-spinner" style="width: 30px; height: 30px; border: 3px solid rgba(0, 223, 196, 0.3); border-radius: 50%; border-top-color: #00dfc4; animation: spin 1s linear infinite; display: inline-block; margin-bottom: 15px;"></div>
-        <p>Adicionando participantes...</p>
-      </div>
-    `;
+    dialog.contentContainer.innerHTML = uiComponents.createLoadingSpinner(
+      30,
+      "#00dfc4",
+      "Adicionando participantes..."
+    );
 
     try {
       await addParticipantsToGroup(
@@ -3080,42 +3349,30 @@ function addGroupParticipant() {
         selectedUsers.map((u) => u.id)
       );
 
-      document.body.removeChild(backdrop);
+      dialog.close();
       showPopup("success", "Participantes adicionados com sucesso!");
     } catch (error) {
       console.error("Error adding participants:", error);
       showPopup("error", "Erro ao adicionar participantes");
-
-      // Restore dialog
-      renderDialog();
+      dialog.close();
     }
   });
 
-  // Assemble dialog
-  function renderDialog() {
-    dialog.innerHTML = "";
-    dialog.appendChild(header);
-    dialog.appendChild(searchInput);
-    dialog.appendChild(selectedContainer);
-    dialog.appendChild(resultsContainer);
-    dialog.appendChild(addButton);
-  }
+  // Assemble content
+  content.appendChild(selectedContainer);
+  content.appendChild(searchInput);
+  content.appendChild(resultsContainer);
+  content.appendChild(addButton);
 
-  renderDialog();
-  backdrop.appendChild(dialog);
+  // Create dialog
+  const dialog = uiComponents.createDialog(
+    "Adicionar Participantes",
+    content,
+    450
+  );
 
-  // Close dialog
-  header.querySelector(".close-dialog").addEventListener("click", () => {
-    document.body.removeChild(backdrop);
-  });
-
-  document.body.appendChild(backdrop);
-  searchInput.focus();
-
-  // Function to re-render search results when selection changes
-  function renderSearchResults() {
-    searchInput.dispatchEvent(new Event("input"));
-  }
+  // Focus search input
+  setTimeout(() => searchInput.focus(), 100);
 }
 
 /**
@@ -3282,126 +3539,157 @@ function viewUserProfile() {
   if (chatState.activeConversation?.isGroup) return;
 
   const otherUser = chatState.activeConversation?.participants[0];
-  if (!otherUser) return;
+  if (!otherUser) {
+    console.error("Erro: Não foi possível encontrar informações do usuário");
+    showPopup("error", "Erro ao carregar perfil do usuário");
+    return;
+  }
 
-  const backdrop = document.createElement("div");
-  backdrop.style.cssText =
-    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); z-index: 10000; display: flex; justify-content: center; align-items: center;";
+  console.log("User profile data:", otherUser);
 
-  const dialog = document.createElement("div");
-  dialog.style.cssText =
-    "background-color: #1d2b3a; border-radius: 10px; padding: 20px; width: 90%; max-width: 400px; max-height: 80vh; overflow: auto; color: #fff;";
+  // Garantir que temos dados completos do usuário
+  fetchUserData(otherUser.id).then((userData) => {
+    if (userData) {
+      // Atualizar cache
+      chatState.usersCache[otherUser.id] = userData;
 
-  const header = document.createElement("div");
-  header.style.cssText =
-    "display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #00dfc4; padding-bottom: 10px;";
-  header.innerHTML = `
-    <h3 style="margin: 0;">Perfil</h3>
-    <button class="close-dialog" style="background: none; border: none; color: #00dfc4; font-size: 24px; cursor: pointer;">×</button>
-  `;
+      // Obter a biografia do usuário
+      const userBio = getUserBio(userData);
 
-  const content = document.createElement("div");
-  content.style.cssText =
-    "display: flex; flex-direction: column; align-items: center;";
+      const content = document.createElement("div");
+      content.style.cssText =
+        "display: flex; flex-direction: column; align-items: center;";
 
-  // User avatar
-  content.innerHTML = `
-    <div style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden; margin-bottom: 15px;">
-      ${
-        otherUser.photoURL
-          ? `<img src="${otherUser.photoURL}" alt="${otherUser.name}" style="width: 100%; height: 100%; object-fit: cover;">`
-          : `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: #00dfc4; color: #1d2b3a; font-weight: bold; font-size: 40px;">${
-              otherUser.name ? otherUser.name.charAt(0).toUpperCase() : "U"
-            }</div>`
+      // User avatar and info
+      content.innerHTML = `
+        <div style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden; margin-bottom: 15px;">
+          ${uiComponents.createUserAvatar(userData, 100)}
+        </div>
+        <h2 style="margin: 0 0 5px 0;">${userData.name || "Usuário"}</h2>
+        <div style="display: flex; align-items: center; margin-bottom: 20px;">
+          <span style="width: 10px; height: 10px; border-radius: 50%; background-color: ${
+            userData.isOnline ? "#4CAF50" : "#ccc"
+          }; margin-right: 5px;"></span>
+          <span style="color: #ccc;">${
+            userData.isOnline ? "Online" : "Offline"
+          }</span>
+        </div>
+      `;
+
+      // Adicionar biografia se existir
+      if (userBio) {
+        const bioContainer = document.createElement("div");
+        bioContainer.style.cssText =
+          "background-color: rgba(0, 223, 196, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px; width: 100%; text-align: center;";
+        bioContainer.innerHTML = `
+          <div style="font-style: italic; color: #ddd;">"${userBio}"</div>
+        `;
+        content.appendChild(bioContainer);
       }
-    </div>
-    <h2 style="margin: 0 0 5px 0;">${otherUser.name}</h2>
-    <div style="display: flex; align-items: center; margin-bottom: 20px;">
-      <span style="width: 10px; height: 10px; border-radius: 50%; background-color: ${
-        otherUser.isOnline ? "#4CAF50" : "#ccc"
-      }; margin-right: 5px;"></span>
-      <span style="color: #ccc;">${
-        otherUser.isOnline ? "Online" : "Offline"
-      }</span>
-    </div>
-  `;
 
-  // User info
-  if (otherUser.email) {
-    const emailRow = document.createElement("div");
-    emailRow.style.cssText =
-      "display: flex; align-items: center; width: 100%; margin-bottom: 10px;";
-    emailRow.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00dfc4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 10px;">
-        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-        <polyline points="22,6 12,13 2,6"></polyline>
-      </svg>
-      <span>${otherUser.email}</span>
-    `;
-    content.appendChild(emailRow);
-  }
+      // User info
+      if (userData.email) {
+        const emailRow = document.createElement("div");
+        emailRow.style.cssText =
+          "display: flex; align-items: center; width: 100%; margin-bottom: 10px;";
+        emailRow.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00dfc4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 10px;">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+            <polyline points="22,6 12,13 2,6"></polyline>
+          </svg>
+          <span>${userData.email}</span>
+        `;
+        content.appendChild(emailRow);
+      }
 
-  if (otherUser.userType) {
-    const typeRow = document.createElement("div");
-    typeRow.style.cssText =
-      "display: flex; align-items: center; width: 100%; margin-bottom: 10px;";
-    typeRow.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00dfc4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 10px;">
-        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-        <circle cx="8.5" cy="7" r="4"></circle>
-        <line x1="20" y1="8" x2="20" y2="14"></line>
-        <line x1="23" y1="11" x2="17" y2="11"></line>
-      </svg>
-      <span>${
-        otherUser.userType === "paciente"
-          ? "Paciente"
-          : otherUser.userType === "medico"
-          ? "Médico"
-          : otherUser.userType
-      }</span>
-    `;
-    content.appendChild(typeRow);
-  }
+      if (userData.userType) {
+        const typeRow = document.createElement("div");
+        typeRow.style.cssText =
+          "display: flex; align-items: center; width: 100%; margin-bottom: 10px;";
+        typeRow.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00dfc4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 10px;">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="8.5" cy="7" r="4"></circle>
+            <line x1="20" y1="8" x2="20" y2="14"></line>
+            <line x1="23" y1="11" x2="17" y2="11"></line>
+          </svg>
+          <span>${
+            userData.userType === "paciente"
+              ? "Paciente"
+              : userData.userType === "medico"
+              ? "Médico"
+              : userData.userType
+          }</span>
+        `;
+        content.appendChild(typeRow);
+      }
 
-  // Action buttons
-  const actions = document.createElement("div");
-  actions.style.cssText =
-    "display: flex; justify-content: space-between; width: 100%; margin-top: 20px;";
+      // Action buttons
+      const actions = document.createElement("div");
+      actions.style.cssText =
+        "display: flex; justify-content: space-between; width: 100%; margin-top: 20px;";
 
-  const blockButton = document.createElement("button");
-  blockButton.style.cssText =
-    "flex: 1; background-color: #f44336; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; margin-right: 10px;";
-  blockButton.textContent = "Bloquear";
-  blockButton.addEventListener("click", () => {
-    if (confirm(`Tem certeza que deseja bloquear ${otherUser.name}?`)) {
-      document.body.removeChild(backdrop);
-      blockUser();
+      const blockButton = document.createElement("button");
+      blockButton.style.cssText =
+        "flex: 1; background-color: #f44336; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; margin-right: 10px;";
+      blockButton.textContent = "Bloquear";
+
+      const messageButton = document.createElement("button");
+      messageButton.style.cssText =
+        "flex: 1; background-color: #00dfc4; color: #1d2b3a; border: none; padding: 10px; border-radius: 5px; cursor: pointer;";
+      messageButton.textContent = "Mensagem";
+
+      actions.appendChild(blockButton);
+      actions.appendChild(messageButton);
+      content.appendChild(actions);
+
+      // Criar dialog ANTES de adicionar event listeners
+      const dialog = uiComponents.createDialog("Perfil", content, 400);
+
+      // Agora que a dialog já está criada, podemos adicionar event listeners que a referenciam
+      blockButton.addEventListener("click", () => {
+        uiComponents.createConfirmDialog(
+          "Bloquear usuário",
+          `Tem certeza que deseja bloquear ${userData.name || "este usuário"}?`,
+          "Bloquear",
+          "Cancelar",
+          () => {
+            dialog.close();
+            blockUser(userData);
+          }
+        );
+      });
+
+      messageButton.addEventListener("click", () => dialog.close());
+    } else {
+      showPopup(
+        "error",
+        "Não foi possível carregar os dados completos do usuário"
+      );
     }
   });
+}
 
-  const messageButton = document.createElement("button");
-  messageButton.style.cssText =
-    "flex: 1; background-color: #00dfc4; color: #1d2b3a; border: none; padding: 10px; border-radius: 5px; cursor: pointer;";
-  messageButton.textContent = "Mensagem";
-  messageButton.addEventListener("click", () => {
-    document.body.removeChild(backdrop);
-  });
+/**
+ * Busca a biografia do usuário em vários campos possíveis
+ */
+function getUserBio(userData) {
+  if (!userData) return null;
 
-  actions.appendChild(blockButton);
-  actions.appendChild(messageButton);
+  // Verificar campos possíveis para biografia
+  if (userData.bio) return userData.bio;
+  if (userData.about) return userData.about;
+  if (userData.description) return userData.description;
+  if (userData.aboutMe) return userData.aboutMe;
+  if (
+    userData.status &&
+    typeof userData.status === "string" &&
+    userData.status.length > 5
+  ) {
+    return userData.status;
+  }
 
-  // Assemble dialog
-  dialog.appendChild(header);
-  dialog.appendChild(content);
-  dialog.appendChild(actions);
-  backdrop.appendChild(dialog);
-
-  // Close dialog
-  dialog.querySelector(".close-dialog").addEventListener("click", () => {
-    document.body.removeChild(backdrop);
-  });
-
-  document.body.appendChild(backdrop);
+  return null;
 }
 
 /**
@@ -3410,79 +3698,172 @@ function viewUserProfile() {
 async function clearConversation() {
   if (!chatState.activeConversation) return;
 
-  if (
-    !confirm(
-      "Tem certeza que deseja limpar todas as mensagens desta conversa? Esta ação não pode ser desfeita."
-    )
-  ) {
-    return;
-  }
+  uiComponents.createConfirmDialog(
+    "Limpar conversa",
+    "Tem certeza que deseja limpar todas as mensagens desta conversa? Esta ação não pode ser desfeita.",
+    "Limpar",
+    "Cancelar",
+    async () => {
+      try {
+        showPopup("info", "Limpando conversa...");
+        const conversationId = chatState.activeConversation.id;
 
-  try {
-    showPopup("info", "Limpando conversa...");
+        // Armazenar referência à conversa ativa antes de limpar
+        const activeConversation = {...chatState.activeConversation};
 
-    const conversationId = chatState.activeConversation.id;
+        // Atualizar no Firebase
+        await updateDoc(doc(firestore, "conversations", conversationId), {
+          lastMessage: "",
+          lastMessageAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
 
-    // Update conversation with empty last message
-    await updateDoc(doc(firestore, "conversations", conversationId), {
-      lastMessage: "",
-      lastMessageAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
+        // Limpar mensagens locais
+        chatState.messages = [];
+        cacheManager.saveMessages(conversationId);
+        
+        // Manter a mesma conversa ativa
+        chatState.activeConversation = activeConversation;
+        
+        // Renderizar UI atualizada
+        renderMessages();
+        renderContacts();
 
-    // Clear local messages
-    chatState.messages = [];
-
-    // Update cache
-    cacheManager.saveMessages(conversationId);
-
-    // Render empty messages
-    renderMessages();
-
-    // Send system message
-    await sendSystemMessage(conversationId, "Conversa limpa");
-
-    showPopup("success", "Conversa limpa com sucesso!");
-  } catch (error) {
-    console.error("Error clearing conversation:", error);
-    showPopup("error", "Erro ao limpar conversa");
-  }
+        // Enviar mensagem do sistema
+        await sendSystemMessage(conversationId, "Conversa limpa");
+        showPopup("success", "Conversa limpa com sucesso!");
+      } catch (error) {
+        console.error("Error clearing conversation:", error);
+        showPopup("error", "Erro ao limpar conversa");
+      }
+    }
+  );
 }
 
 /**
  * Block user
  */
-async function blockUser() {
+async function blockUser(userToBlock) {
   if (chatState.activeConversation?.isGroup) return;
 
-  const otherUser = chatState.activeConversation?.participants[0];
-  if (!otherUser) return;
+  // Usar o parâmetro userToBlock se disponível, ou tentar obter do activeConversation
+  const otherUser = userToBlock || chatState.activeConversation?.participants[0];
+
+  // Verificação explícita para garantir que otherUser existe e tem um ID
+  if (!otherUser) {
+    console.error("Error: User to block is undefined");
+    showPopup("error", "Erro ao identificar usuário para bloquear");
+    return;
+  }
+
+  const userIdToBlock = otherUser.id;
+  if (!userIdToBlock) {
+    console.error("Error: User ID to block is undefined", otherUser);
+    showPopup("error", "ID do usuário não encontrado");
+    return;
+  }
 
   try {
     showPopup("info", "Bloqueando usuário...");
 
     // Update user document with blocked user
     const userRef = doc(firestore, "users", chatState.currentUser.uid);
-    await updateDoc(userRef, {
-      blockedUsers: arrayUnion(otherUser.id),
-    });
+
+    // Obter documento atual para verificar se já existe um array blockedUsers
+    const userDoc = await getDoc(userRef);
+
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+
+      // Se o documento existe mas não tem blockedUsers, criar um novo array
+      if (!userData.blockedUsers) {
+        await updateDoc(userRef, {
+          blockedUsers: [userIdToBlock]
+        });
+      }
+      // Se blockedUsers existe mas não é um array, substituir por um novo array
+      else if (!Array.isArray(userData.blockedUsers)) {
+        await updateDoc(userRef, {
+          blockedUsers: [userIdToBlock]
+        });
+      }
+      // Se blockedUsers é um array e o usuário ainda não está bloqueado, adicionar
+      else if (!userData.blockedUsers.includes(userIdToBlock)) {
+        await updateDoc(userRef, {
+          blockedUsers: arrayUnion(userIdToBlock)
+        });
+      }
+    } else {
+      // Se o documento não existir, criar com o array blockedUsers
+      await setDoc(userRef, {
+        blockedUsers: [userIdToBlock]
+      }, { merge: true });
+    }
 
     // Update conversation with blocked status
-    await updateDoc(
-      doc(firestore, "conversations", chatState.activeConversation.id),
-      {
-        [`blocked.${chatState.currentUser.uid}`]: true,
-        updatedAt: serverTimestamp(),
+    const conversationId = chatState.activeConversation?.id;
+    if (conversationId) {
+      await updateDoc(
+        doc(firestore, "conversations", conversationId),
+        {
+          [`blocked.${chatState.currentUser.uid}`]: true,
+          updatedAt: serverTimestamp(),
+        }
+      );
+      
+      // IMPORTANTE: Atualizar o estado local para refletir o bloqueio
+      const conversationIndex = chatState.conversations.findIndex(
+        conv => conv.id === conversationId
+      );
+      
+      if (conversationIndex !== -1) {
+        // Atualizar a conversa no estado local
+        const updatedConversation = {
+          ...chatState.conversations[conversationIndex],
+          blocked: {
+            ...chatState.conversations[conversationIndex].blocked,
+            [chatState.currentUser.uid]: true
+          }
+        };
+        
+        chatState.conversations[conversationIndex] = updatedConversation;
+        cacheManager.saveConversations();
       }
-    );
+    }
 
-    showPopup("success", `${otherUser.name} foi bloqueado`);
+    showPopup("success", `${otherUser.name || "Usuário"} foi bloqueado`);
 
-    // Return to conversation list
-    handleBackToContacts();
+    // Limpar a conversa ativa e atualizar a UI
+    chatState.activeConversation = null;
+    
+    // Atualizar a UI de forma segura
+    safelyReturnToContacts();
+    
   } catch (error) {
     console.error("Error blocking user:", error);
-    showPopup("error", "Erro ao bloquear usuário");
+    showPopup("error", "Erro ao bloquear usuário: " + error.message);
+  }
+}
+
+// Nova função para retornar à lista de contatos de forma segura
+function safelyReturnToContacts() {
+  // Atualizar a UI para refletir as mudanças
+  renderContacts();
+  
+  // Ajustar a visualização
+  const selectedChat = document.querySelector(".SelectedMensages");
+  const notSelectedChat = document.querySelector(".notSelectedMensages");
+  
+  if (selectedChat) selectedChat.style.display = "none";
+  if (notSelectedChat) notSelectedChat.style.display = "flex";
+  
+  // Ajustar baseado no tamanho da tela
+  if (window.innerWidth <= 700) {
+    const containerUserChat = document.querySelector(".containerUserChat");
+    const containerMain = document.querySelector("#containerMain");
+    
+    if (containerUserChat) containerUserChat.style.display = "flex";
+    if (containerMain) containerMain.style.display = "none";
   }
 }
 
@@ -3559,8 +3940,40 @@ function setupMessagesListener(conversationId) {
       const messageData = snapshot.val();
       const messageId = snapshot.key;
 
-      // Check if we already have this message
-      if (!chatState.messages.some((m) => m.id === messageId)) {
+      // Verificar se já existe uma mensagem com este ID no estado
+      const existingMessageIndex = chatState.messages.findIndex(
+        (m) => m.id === messageId
+      );
+
+      // Verificar se existe uma mensagem temporária que corresponda a esta
+      const tempMessageIndex = chatState.messages.findIndex(
+        (m) =>
+          m.id.startsWith("temp-") &&
+          m.senderId === messageData.senderId &&
+          m.text === messageData.text &&
+          Math.abs(m.timestamp - messageData.timestamp) < 5000 // Mensagens enviadas em um intervalo de 5 segundos
+      );
+
+      // Se já existe uma mensagem temporária, substitua-a
+      if (tempMessageIndex !== -1) {
+        chatState.messages[tempMessageIndex] = {
+          id: messageId,
+          ...messageData,
+        };
+        renderMessages();
+        cacheManager.saveMessages(conversationId);
+      }
+      // Se já existe uma mensagem com este ID, apenas atualize-a
+      else if (existingMessageIndex !== -1) {
+        chatState.messages[existingMessageIndex] = {
+          id: messageId,
+          ...messageData,
+        };
+        renderMessages();
+        cacheManager.saveMessages(conversationId);
+      }
+      // Se é uma mensagem nova, adicione-a
+      else {
         // Add new message to state
         chatState.messages.push({ id: messageId, ...messageData });
 
@@ -3688,7 +4101,7 @@ function showMessageNotification(messageData) {
  * Render messages with improved UI and grouped by date
  */
 function renderMessages() {
-  const conversationArea = document.querySelector(".mainSelectedMensages");
+  const conversationArea = chatState.elements.messagesContainer;
   if (!conversationArea || !chatState.messages) return;
 
   // Clear previous messages
@@ -3709,10 +4122,8 @@ function renderMessages() {
   let currentDate = null;
 
   chatState.messages.forEach((message, index) => {
-    const messageDate =
-      message.timestamp instanceof Timestamp
-        ? message.timestamp.toDate()
-        : new Date(message.timestamp);
+    const messageDate = timeUtils.convertToDate(message.timestamp);
+    if (!messageDate) return;
 
     const dateString = messageDate.toLocaleDateString();
 
@@ -3779,13 +4190,16 @@ function renderMessageItem(container, message, index) {
   if (isMyMessage) {
     switch (message.status) {
       case "read":
-        statusIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14"><path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm-7.75 7.75L5.83 10.33 4.41 11.75l5.84 5.84 1.41-1.41-1.41-1.43zm3.84-3.84L7.67 4.41 6.25 5.83l6.42 6.42 1.42-1.42z" fill="#00dfc4"/></svg>`;
+        statusIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14"><path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm-7.75 7.75L5.83 10.33 4.41 11.75l5.84 5.84 1.41-1.41-1.41-1.43z" fill="#00dfc4"/></svg>`;
         break;
       case "delivered":
         statusIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14"><path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm-7.75 7.75L5.83 10.33 4.41 11.75l5.84 5.84 1.41-1.41-1.41-1.43z" fill="#00dfc4"/></svg>`;
         break;
       case "sent":
         statusIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="#00dfc4"/></svg>`;
+        break;
+      case "pending":
+        statusIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14"><circle cx="12" cy="12" r="10" stroke="#00dfc4" stroke-width="1" fill="none"/><path d="M12 7v5l3 3" stroke="#00dfc4" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>`;
         break;
       default:
         statusIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14"><circle cx="12" cy="12" r="10" stroke="#00dfc4" stroke-width="1" fill="none"/><path d="M12 7v5l3 3" stroke="#00dfc4" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>`;
@@ -3919,7 +4333,7 @@ function renderMessageItem(container, message, index) {
  * Scroll to the bottom of the messages container
  */
 function scrollToBottom() {
-  const conversationArea = document.querySelector(".mainSelectedMensages");
+  const conversationArea = chatState.elements.messagesContainer;
   if (conversationArea) {
     // Check if user is already at bottom before scrolling
     const isAtBottom =
@@ -3971,23 +4385,10 @@ function showScrollToBottomButton() {
       </svg>
     `;
 
-    // Add animation style
-    if (!document.getElementById("scroll-button-style")) {
-      const style = document.createElement("style");
-      style.id = "scroll-button-style";
-      style.textContent = `
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `;
-      document.head.appendChild(style);
-    }
-
     scrollButton.addEventListener("click", () => {
-      const conversationArea = document.querySelector(".mainSelectedMensages");
-      if (conversationArea) {
-        conversationArea.scrollTop = conversationArea.scrollHeight;
+      if (chatState.elements.messagesContainer) {
+        chatState.elements.messagesContainer.scrollTop =
+          chatState.elements.messagesContainer.scrollHeight;
         scrollButton.remove();
       }
     });
@@ -4014,68 +4415,75 @@ async function sendMessage(text) {
     const currentUserId = chatState.currentUser.uid;
 
     // Clear input field immediately for better UX
-    const messageInput = document.querySelector(".messageInput");
-    if (messageInput) {
-      messageInput.value = "";
-      messageInput.focus();
+    if (chatState.elements.messageInput) {
+      chatState.elements.messageInput.value = "";
+      chatState.elements.messageInput.focus();
     }
+
+    // Show sending indicator
+    showSendingIndicator();
+
+    // Gerar um ID temporário
+    const tempId = `temp-${Date.now()}`;
 
     // Create message object
     const newMessage = {
+      id: tempId,
       text: text.trim(),
       senderId: currentUserId,
       timestamp: Date.now(),
-      status: "pending",
+      status: "pending", // Status inicial "pending" (mostra relógio)
       type: "text",
     };
 
-    // Add to local state for immediate display
-    const tempId = `temp-${Date.now()}`;
-    const tempMessage = { id: tempId, ...newMessage };
-    chatState.messages.push(tempMessage);
-
-    // Update UI
+    // Adicionar a mensagem temporária ao estado local para exibir o relógio
+    chatState.messages.push(newMessage);
     renderMessages();
     scrollToBottom();
 
-    // Send to Realtime Database for instant sync
-    const messagesRef = ref(realtimeDb, `messages/${conversationId}`);
-    const newMessageRef = push(messagesRef);
-    await set(newMessageRef, newMessage);
+    try {
+      // Send to Realtime Database for instant sync
+      const messagesRef = ref(realtimeDb, `messages/${conversationId}`);
+      const newMessageRef = push(messagesRef);
+      const messageId = newMessageRef.key;
 
-    // Update conversation metadata
-    const unreadCount = {};
+      await set(newMessageRef, {
+        text: text.trim(),
+        senderId: currentUserId,
+        timestamp: Date.now(),
+        status: "sent", // Inicial status quando chega no Firebase
+        type: "text",
+      });
 
-    // For each participant, increment unread count (except sender)
-    chatState.activeConversation.participants.forEach((participant) => {
-      // If it's a user object, get the ID
-      const participantId =
-        typeof participant === "string" ? participant : participant.id;
+      // Hide sending indicator
+      hideSendingIndicator();
 
-      unreadCount[participantId] =
-        (chatState.activeConversation.unreadCount?.[participantId] || 0) +
-        (participantId === currentUserId ? 0 : 1);
-    });
+      // Update conversation metadata
+      const unreadCount = {};
 
-    // Update Firestore conversation
-    const conversationRef = doc(firestore, "conversations", conversationId);
-    await updateDoc(conversationRef, {
-      lastMessage: text.trim(),
-      lastMessageType: "text",
-      lastMessageSenderId: currentUserId,
-      lastMessageAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-      unreadCount,
-    });
+      // For each participant, increment unread count (except sender)
+      chatState.activeConversation.participants.forEach((participant) => {
+        // If it's a user object, get the ID
+        const participantId =
+          typeof participant === "string" ? participant : participant.id;
 
-    // After a slight delay, update message status to "sent"
-    setTimeout(async () => {
-      await update(
-        ref(realtimeDb, `messages/${conversationId}/${newMessageRef.key}`),
-        { status: "sent" }
-      );
+        unreadCount[participantId] =
+          (chatState.activeConversation.unreadCount?.[participantId] || 0) +
+          (participantId === currentUserId ? 0 : 1);
+      });
 
-      // Also save to Firestore for persistence
+      // Update Firestore conversation
+      const conversationRef = doc(firestore, "conversations", conversationId);
+      await updateDoc(conversationRef, {
+        lastMessage: text.trim(),
+        lastMessageType: "text",
+        lastMessageSenderId: currentUserId,
+        lastMessageAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        unreadCount,
+      });
+
+      // Também salvar no Firestore para persistência
       await addDoc(
         collection(firestore, `conversations/${conversationId}/messages`),
         {
@@ -4087,44 +4495,111 @@ async function sendMessage(text) {
         }
       );
 
-      // Remove temporary message and let the listener add the real one
-      const tempIndex = chatState.messages.findIndex((m) => m.id === tempId);
-      if (tempIndex !== -1) {
-        chatState.messages.splice(tempIndex, 1);
-      }
-    }, 500);
+      // Atualizar a mensagem temporária no estado para "sent" (✓)
+      const messageIndex = chatState.messages.findIndex((m) => m.id === tempId);
+      if (messageIndex !== -1) {
+        // Atualizar a mensagem temporária com o ID real e status "sent"
+        chatState.messages[messageIndex] = {
+          ...chatState.messages[messageIndex],
+          id: messageId,
+          status: "sent",
+        };
 
-    // Update conversations list to reflect new message
-    const updatedConversation = await getDoc(conversationRef);
+        // Atualizar a UI para mostrar o ícone de enviado (✓)
+        renderMessages();
+        cacheManager.saveMessages(conversationId);
+      }
+
+      // Atualiza a lista de conversas
+      updateConversationsList(conversationId, text.trim(), currentUserId);
+
+      return true;
+    } catch (error) {
+      console.error("Error sending message:", error);
+
+      // Hide sending indicator
+      hideSendingIndicator();
+
+      // Mostrar erro ao usuário
+      showPopup("error", "Erro ao enviar mensagem. Tente novamente.");
+
+      // Marcar a mensagem como falhou no estado
+      const messageIndex = chatState.messages.findIndex((m) => m.id === tempId);
+      if (messageIndex !== -1) {
+        chatState.messages[messageIndex] = {
+          ...chatState.messages[messageIndex],
+          status: "failed",
+        };
+        renderMessages();
+      }
+
+      return false;
+    }
+  } catch (error) {
+    console.error("Error in sendMessage function:", error);
+    hideSendingIndicator();
+    showPopup("error", "Erro ao enviar mensagem");
+    return false;
+  }
+}
+
+/**
+ * Atualiza a lista de conversas após enviar uma mensagem
+ */
+function updateConversationsList(conversationId, messageText, senderId) {
+  try {
+    // Encontra a conversa na lista
     const conversationIndex = chatState.conversations.findIndex(
       (conv) => conv.id === conversationId
     );
 
     if (conversationIndex !== -1) {
+      // Atualiza os campos da conversa
       chatState.conversations[conversationIndex] = {
-        id: conversationId,
-        ...updatedConversation.data(),
+        ...chatState.conversations[conversationIndex],
+        lastMessage: messageText,
+        lastMessageType: "text",
+        lastMessageSenderId: senderId,
+        lastMessageAt: Date.now(),
+        updatedAt: Date.now(),
       };
+
+      // Reordena as conversas (mais recente primeiro)
+      chatState.conversations.sort((a, b) => {
+        const timeA = a.updatedAt || 0;
+        const timeB = b.updatedAt || 0;
+        return timeB - timeA;
+      });
+
+      // Atualiza o cache e a UI
       cacheManager.saveConversations();
+      renderContacts();
     }
-
-    renderContacts();
-
-    return true;
   } catch (error) {
-    console.error("Error sending message:", error);
-    showPopup("error", "Erro ao enviar mensagem");
+    console.error("Error updating conversations list:", error);
+  }
+}
 
-    // Remove failed message from UI
-    const tempIndex = chatState.messages.findIndex(
-      (m) => m.status === "pending"
-    );
-    if (tempIndex !== -1) {
-      chatState.messages.splice(tempIndex, 1);
-      renderMessages();
-    }
+// Adicionar funções para mostrar/esconder indicador de envio
+function showSendingIndicator() {
+  const container = document.querySelector(".SelectedMensages");
+  if (!container) return;
 
-    return false;
+  let indicator = container.querySelector(".sending-indicator");
+  if (!indicator) {
+    indicator = document.createElement("div");
+    indicator.className = "sending-indicator";
+    indicator.style.cssText =
+      "position: absolute; bottom: 80px; right: 60px; background-color: rgba(0, 223, 196, 0.2); padding: 5px 10px; border-radius: 10px; font-size: 12px; color: #00dfc4;";
+    indicator.textContent = "Enviando...";
+    container.appendChild(indicator);
+  }
+}
+
+function hideSendingIndicator() {
+  const indicator = document.querySelector(".sending-indicator");
+  if (indicator && indicator.parentNode) {
+    indicator.parentNode.removeChild(indicator);
   }
 }
 
@@ -4178,22 +4653,10 @@ function adjustLayout() {
  */
 async function showNewChatDialog() {
   try {
-    const backdrop = document.createElement("div");
-    backdrop.style.cssText =
-      "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); z-index: 10000; display: flex; justify-content: center; align-items: center;";
+    // Create dialog content
+    const content = document.createElement("div");
 
-    const dialog = document.createElement("div");
-    dialog.style.cssText =
-      "background-color: #1d2b3a; border-radius: 10px; padding: 20px; width: 90%; max-width: 450px; max-height: 80vh; overflow: auto; color: #fff; position: relative;";
-
-    const header = document.createElement("div");
-    header.style.cssText =
-      "display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #00dfc4; padding-bottom: 10px;";
-    header.innerHTML = `
-      <h3 style="margin: 0;">Nova conversa</h3>
-      <button class="close-dialog" style="background: none; border: none; color: #00dfc4; font-size: 24px; cursor: pointer;">×</button>
-    `;
-
+    // Search input
     const searchInput = document.createElement("input");
     searchInput.type = "text";
     searchInput.placeholder = "Procurar usuário...";
@@ -4206,12 +4669,11 @@ async function showNewChatDialog() {
     // Function to render users list with loading state
     async function renderUsersList(searchTerm = "") {
       // Show loading indicator
-      usersList.innerHTML = `
-        <div style="text-align: center; padding: 20px; color: #00dfc4;">
-          <div class="loading-spinner" style="width: 30px; height: 30px; border: 3px solid rgba(0, 223, 196, 0.3); border-radius: 50%; border-top-color: #00dfc4; animation: spin 1s linear infinite; display: inline-block; margin-bottom: 10px;"></div>
-          <p>Buscando usuários...</p>
-        </div>
-      `;
+      usersList.innerHTML = uiComponents.createLoadingSpinner(
+        30,
+        "#00dfc4",
+        "Buscando usuários..."
+      );
 
       try {
         // Get users from cache or fetch from server
@@ -4265,13 +4727,7 @@ async function showNewChatDialog() {
             "display: flex; align-items: center; padding: 12px; border-radius: 5px; cursor: pointer; transition: background-color 0.2s;";
           userItem.innerHTML = `
             <div style="width: 50px; height: 50px; border-radius: 50%; overflow: hidden; margin-right: 15px; flex-shrink: 0;">
-              ${
-                user.photoURL
-                  ? `<img src="${user.photoURL}" alt="${user.name}" style="width: 100%; height: 100%; object-fit: cover;">`
-                  : `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: #00dfc4; color: #1d2b3a; font-weight: bold; font-size: 20px;">${
-                      user.name ? user.name.charAt(0).toUpperCase() : "U"
-                    }</div>`
-              }
+              ${uiComponents.createUserAvatar(user, 50)}
             </div>
             <div style="flex-grow: 1;">
               <div style="font-weight: bold; margin-bottom: 3px;">${
@@ -4322,7 +4778,7 @@ async function showNewChatDialog() {
             userItem.style.pointerEvents = "none";
 
             try {
-              document.body.removeChild(backdrop);
+              dialog.close();
 
               if (existingConversation) {
                 await openConversation(existingConversation.id);
@@ -4381,27 +4837,15 @@ async function showNewChatDialog() {
       }, 300);
     });
 
+    // Assemble content
+    content.appendChild(searchInput);
+    content.appendChild(usersList);
+
+    // Create dialog
+    const dialog = uiComponents.createDialog("Nova conversa", content, 450);
+
     // Initial render
     renderUsersList();
-
-    // Assemble dialog
-    dialog.appendChild(header);
-    dialog.appendChild(searchInput);
-    dialog.appendChild(usersList);
-    backdrop.appendChild(dialog);
-
-    // Close dialog handlers
-    header.querySelector(".close-dialog").addEventListener("click", () => {
-      document.body.removeChild(backdrop);
-    });
-
-    backdrop.addEventListener("click", (e) => {
-      if (e.target === backdrop) {
-        document.body.removeChild(backdrop);
-      }
-    });
-
-    document.body.appendChild(backdrop);
 
     // Focus search input
     setTimeout(() => searchInput.focus(), 100);
@@ -4414,28 +4858,15 @@ async function showNewChatDialog() {
 /**
  * Show create group dialog with improved UI
  */
+/**
+ * Show create group dialog with improved UI
+ */
 async function showCreateGroupDialog() {
   try {
-    // Create backdrop
-    const backdrop = document.createElement("div");
-    backdrop.style.cssText =
-      "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); z-index: 10000; display: flex; justify-content: center; align-items: center;";
+    // Create content container
+    const content = document.createElement("div");
 
-    // Create dialog container
-    const dialog = document.createElement("div");
-    dialog.style.cssText =
-      "background-color: #1d2b3a; border-radius: 10px; padding: 20px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; color: #fff;";
-
-    // Create header
-    const header = document.createElement("div");
-    header.style.cssText =
-      "display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #00dfc4; padding-bottom: 10px;";
-    header.innerHTML = `
-      <h3 style="margin: 0;">Criar Grupo</h3>
-      <button class="close-dialog" style="background: none; border: none; color: #00dfc4; font-size: 24px; cursor: pointer;">×</button>
-    `;
-
-    // Create step indicator
+    // Step indicator
     const stepIndicator = document.createElement("div");
     stepIndicator.style.cssText =
       "display: flex; justify-content: center; margin-bottom: 20px;";
@@ -4453,8 +4884,8 @@ async function showCreateGroupDialog() {
       </div>
     `;
 
-    // Create content container
-    const content = document.createElement("div");
+    // Create step containers
+    const stepsContainer = document.createElement("div");
 
     // Step 1: Group name
     const step1 = document.createElement("div");
@@ -4475,40 +4906,6 @@ async function showCreateGroupDialog() {
     nextButton.textContent = "Avançar";
     nextButton.style.cssText =
       "width: 100%; padding: 12px; border: none; border-radius: 5px; background-color: #00dfc4; color: #1d2b3a; cursor: pointer; font-weight: bold; font-size: 16px;";
-    nextButton.addEventListener("click", () => {
-      const groupName = groupNameInput.value.trim();
-
-      if (!groupName) {
-        showPopup("warning", "Por favor, informe um nome para o grupo.");
-        groupNameInput.focus();
-        return;
-      }
-
-      // Show step 2
-      step1.style.display = "none";
-      step2.style.display = "block";
-
-      // Update step indicator
-      stepIndicator
-        .querySelector(".step:nth-child(1)")
-        .classList.remove("active");
-      stepIndicator.querySelector(".step:nth-child(2)").classList.add("active");
-      stepIndicator.querySelector(
-        ".step:nth-child(2) div:first-child"
-      ).style.backgroundColor = "#00dfc4";
-      stepIndicator.querySelector(
-        ".step:nth-child(2) div:first-child"
-      ).style.color = "#1d2b3a";
-      stepIndicator.querySelector(
-        ".step:nth-child(2) div:last-child"
-      ).style.color = "#00dfc4";
-
-      // Focus search input
-      setTimeout(() => {
-        participantSearchInput.focus();
-        renderUsersList();
-      }, 100);
-    });
 
     step1.appendChild(groupNameInput);
     step1.appendChild(groupDescriptionInput);
@@ -4537,31 +4934,12 @@ async function showCreateGroupDialog() {
     createGroupButton.textContent = "Criar Grupo";
     createGroupButton.style.cssText =
       "width: 100%; padding: 12px; border: none; border-radius: 5px; background-color: #00dfc4; color: #1d2b3a; cursor: pointer; font-weight: bold; font-size: 16px;";
+    createGroupButton.disabled = true; // Inicialmente desativado até ter participantes
 
     const backButton = document.createElement("button");
     backButton.textContent = "Voltar";
     backButton.style.cssText =
       "width: 100%; padding: 12px; border: 1px solid #00dfc4; border-radius: 5px; background-color: transparent; color: #00dfc4; cursor: pointer; margin-top: 10px; font-size: 16px;";
-    backButton.addEventListener("click", () => {
-      // Show step 1
-      step2.style.display = "none";
-      step1.style.display = "block";
-
-      // Update step indicator
-      stepIndicator
-        .querySelector(".step:nth-child(2)")
-        .classList.remove("active");
-      stepIndicator.querySelector(".step:nth-child(1)").classList.add("active");
-      stepIndicator.querySelector(
-        ".step:nth-child(2) div:first-child"
-      ).style.backgroundColor = "rgba(0, 223, 196, 0.3)";
-      stepIndicator.querySelector(
-        ".step:nth-child(2) div:first-child"
-      ).style.color = "#00dfc4";
-      stepIndicator.querySelector(
-        ".step:nth-child(2) div:last-child"
-      ).style.color = "#ccc";
-    });
 
     step2.appendChild(selectedParticipantsContainer);
     step2.appendChild(participantSearchInput);
@@ -4569,9 +4947,19 @@ async function showCreateGroupDialog() {
     step2.appendChild(createGroupButton);
     step2.appendChild(backButton);
 
-    // Add to content
-    content.appendChild(step1);
-    content.appendChild(step2);
+    // Add steps to container
+    stepsContainer.appendChild(step1);
+    stepsContainer.appendChild(step2);
+
+    // Add elements to content
+    content.appendChild(stepIndicator);
+    content.appendChild(stepsContainer);
+
+    // Create dialog
+    const dialog = uiComponents.createDialog("Criar Grupo", content, 500);
+
+    // Focus on input
+    setTimeout(() => groupNameInput.focus(), 100);
 
     // Selected participants
     let selectedUsers = [];
@@ -4582,8 +4970,14 @@ async function showCreateGroupDialog() {
 
       if (selectedUsers.length === 0) {
         selectedParticipantsContainer.innerHTML = `<div style="width: 100%; color: #ccc; padding: 10px 0;">Nenhum participante selecionado</div>`;
+        createGroupButton.disabled = true;
+        createGroupButton.style.opacity = "0.6";
         return;
       }
+
+      // Habilitar botão de criar grupo se houver participantes selecionados
+      createGroupButton.disabled = false;
+      createGroupButton.style.opacity = "1";
 
       selectedUsers.forEach((user) => {
         const participantTag = document.createElement("div");
@@ -4592,13 +4986,7 @@ async function showCreateGroupDialog() {
 
         participantTag.innerHTML = `
           <div style="width: 20px; height: 20px; border-radius: 50%; overflow: hidden; margin-right: 5px;">
-            ${
-              user.photoURL
-                ? `<img src="${user.photoURL}" alt="${user.name}" style="width: 100%; height: 100%; object-fit: cover;">`
-                : `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: #00dfc4; color: #1d2b3a; font-size: 10px; font-weight: bold;">${user.name
-                    .charAt(0)
-                    .toUpperCase()}</div>`
-            }
+            ${uiComponents.createUserAvatar(user, 20)}
           </div>
           <span style="margin-right: 5px;">${user.name}</span>
           <button style="background: none; border: none; color: #00dfc4; cursor: pointer; font-size: 18px; line-height: 1;">×</button>
@@ -4617,25 +5005,14 @@ async function showCreateGroupDialog() {
     // Initial render
     renderSelectedParticipants();
 
-    // Search and render users
-    let searchTimeout;
-
-    participantSearchInput.addEventListener("input", () => {
-      clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(() => {
-        renderUsersList(participantSearchInput.value.trim());
-      }, 300);
-    });
-
     // Render users list
     async function renderUsersList(searchTerm = "") {
       // Show loading
-      participantsList.innerHTML = `
-        <div style="text-align: center; padding: 20px; color: #00dfc4;">
-          <div class="loading-spinner" style="width: 20px; height: 20px; border: 2px solid rgba(0, 223, 196, 0.3); border-radius: 50%; border-top-color: #00dfc4; animation: spin 1s linear infinite; display: inline-block; margin-bottom: 10px;"></div>
-          <p>Buscando usuários...</p>
-        </div>
-      `;
+      participantsList.innerHTML = uiComponents.createLoadingSpinner(
+        20,
+        "#00dfc4",
+        "Buscando usuários..."
+      );
 
       try {
         // Get all users except current user
@@ -4655,6 +5032,16 @@ async function showCreateGroupDialog() {
           participantsList.innerHTML = `<div style="text-align: center; padding: 20px; color: #ccc;">Nenhum usuário encontrado</div>`;
           return;
         }
+
+        // Sort users by online status first, then by name
+        filteredUsers.sort((a, b) => {
+          // Primeiro por status online
+          if (a.isOnline && !b.isOnline) return -1;
+          if (!a.isOnline && b.isOnline) return 1;
+
+          // Depois por nome
+          return a.name.localeCompare(b.name);
+        });
 
         // Clear list
         participantsList.innerHTML = "";
@@ -4679,19 +5066,29 @@ async function showCreateGroupDialog() {
 
           userItem.innerHTML = `
             <div style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; margin-right: 10px;">
-              ${
-                user.photoURL
-                  ? `<img src="${user.photoURL}" alt="${user.name}" style="width: 100%; height: 100%; object-fit: cover;">`
-                  : `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: #1d2b3a; color: #00dfc4; font-weight: bold;">${
-                      user.name ? user.name.charAt(0).toUpperCase() : "U"
-                    }</div>`
-              }
+              ${uiComponents.createUserAvatar(user, 40)}
             </div>
             <div style="flex-grow: 1;">
               <div style="font-weight: bold;">${user.name}</div>
-              <div style="font-size: 0.8em; color: #ccc;">${
-                user.email || user.userType || ""
-              }</div>
+              <div style="font-size: 0.8em; color: #ccc; display: flex; align-items: center;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background-color: ${
+                  user.isOnline ? "#4CAF50" : "#ccc"
+                }; margin-right: 5px;"></span>
+                <span>${user.isOnline ? "Online" : "Offline"}</span>
+                ${
+                  user.userType
+                    ? `<span style="margin-left: 10px; padding: 2px 6px; background-color: ${
+                        user.userType === "paciente"
+                          ? "#2196F3"
+                          : user.userType === "medico"
+                          ? "#FF9800"
+                          : "#00dfc4"
+                      }; border-radius: 10px; font-size: 0.8em;">${
+                        user.userType
+                      }</span>`
+                    : ""
+                }
+              </div>
             </div>
             <div style="margin-left: 10px;">
               ${
@@ -4731,6 +5128,84 @@ async function showCreateGroupDialog() {
       }
     }
 
+    // Add step navigation and event handlers
+    nextButton.addEventListener("click", () => {
+      const groupName = groupNameInput.value.trim();
+
+      if (!groupName) {
+        showPopup("warning", "Por favor, informe um nome para o grupo.");
+        groupNameInput.focus();
+        return;
+      }
+
+      // Show step 2
+      step1.style.display = "none";
+      step2.style.display = "block";
+
+      // Update step indicator
+      stepIndicator.querySelector(
+        ".step:nth-child(1) div:first-child"
+      ).style.backgroundColor = "#1d2b3a";
+      stepIndicator.querySelector(
+        ".step:nth-child(1) div:first-child"
+      ).style.color = "#00dfc4";
+      stepIndicator.querySelector(
+        ".step:nth-child(1) div:last-child"
+      ).style.color = "#ccc";
+
+      stepIndicator.querySelector(
+        ".step:nth-child(2) div:first-child"
+      ).style.backgroundColor = "#00dfc4";
+      stepIndicator.querySelector(
+        ".step:nth-child(2) div:first-child"
+      ).style.color = "#1d2b3a";
+      stepIndicator.querySelector(
+        ".step:nth-child(2) div:last-child"
+      ).style.color = "#00dfc4";
+
+      // Focus search input and render users list
+      setTimeout(() => {
+        participantSearchInput.focus();
+        renderUsersList();
+      }, 100);
+    });
+
+    backButton.addEventListener("click", () => {
+      // Show step 1
+      step2.style.display = "none";
+      step1.style.display = "block";
+
+      // Update step indicator
+      stepIndicator.querySelector(
+        ".step:nth-child(1) div:first-child"
+      ).style.backgroundColor = "#00dfc4";
+      stepIndicator.querySelector(
+        ".step:nth-child(1) div:first-child"
+      ).style.color = "#1d2b3a";
+      stepIndicator.querySelector(
+        ".step:nth-child(1) div:last-child"
+      ).style.color = "#00dfc4";
+
+      stepIndicator.querySelector(
+        ".step:nth-child(2) div:first-child"
+      ).style.backgroundColor = "rgba(0, 223, 196, 0.3)";
+      stepIndicator.querySelector(
+        ".step:nth-child(2) div:first-child"
+      ).style.color = "#00dfc4";
+      stepIndicator.querySelector(
+        ".step:nth-child(2) div:last-child"
+      ).style.color = "#ccc";
+    });
+
+    // Add search input handler with debounce
+    let searchTimeout;
+    participantSearchInput.addEventListener("input", () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        renderUsersList(participantSearchInput.value.trim());
+      }, 300);
+    });
+
     // Handle create group button
     createGroupButton.addEventListener("click", async () => {
       const groupName = groupNameInput.value.trim();
@@ -4750,13 +5225,16 @@ async function showCreateGroupDialog() {
       }
 
       try {
+        // Desativar botão para evitar cliques duplos
+        createGroupButton.disabled = true;
+        createGroupButton.textContent = "Criando...";
+
         // Show loading state
-        dialog.innerHTML = `
-          <div style="text-align: center; padding: 40px 20px; color: #00dfc4;">
-            <div class="loading-spinner" style="width: 40px; height: 40px; border: 3px solid rgba(0, 223, 196, 0.3); border-radius: 50%; border-top-color: #00dfc4; animation: spin 1s linear infinite; display: inline-block; margin-bottom: 20px;"></div>
-            <p>Criando grupo...</p>
-          </div>
-        `;
+        dialog.contentContainer.innerHTML = uiComponents.createLoadingSpinner(
+          40,
+          "#00dfc4",
+          "Criando grupo..."
+        );
 
         // Include current user in participants
         const participants = [
@@ -4796,7 +5274,7 @@ async function showCreateGroupDialog() {
         );
 
         // Close dialog and show success
-        document.body.removeChild(backdrop);
+        dialog.close();
         showPopup("success", "Grupo criado com sucesso!");
 
         // Open new conversation
@@ -4805,35 +5283,10 @@ async function showCreateGroupDialog() {
         showConversationView();
       } catch (error) {
         console.error("Error creating group:", error);
-        showPopup("error", "Erro ao criar grupo");
-
-        // Return to dialog
-        document.body.removeChild(backdrop);
-        showCreateGroupDialog();
+        showPopup("error", "Erro ao criar grupo: " + error.message);
+        dialog.close();
       }
     });
-
-    // Assemble dialog
-    dialog.appendChild(header);
-    dialog.appendChild(stepIndicator);
-    dialog.appendChild(content);
-    backdrop.appendChild(dialog);
-
-    // Close dialog
-    header.querySelector(".close-dialog").addEventListener("click", () => {
-      document.body.removeChild(backdrop);
-    });
-
-    backdrop.addEventListener("click", (e) => {
-      if (e.target === backdrop) {
-        document.body.removeChild(backdrop);
-      }
-    });
-
-    document.body.appendChild(backdrop);
-
-    // Focus input
-    setTimeout(() => groupNameInput.focus(), 100);
   } catch (error) {
     console.error("Error showing create group dialog:", error);
     showPopup("error", "Erro ao mostrar diálogo de criação de grupo");

@@ -14,7 +14,6 @@ const firebaseConfig = {
   messagingSenderId: "582152839503",
   appId: "1:582152839503:web:67f06b4aaee3041cdd253a",
   measurementId: "G-H783JCC73Q",
-  // databaseURL: "https://ndd-diary-2f5d6-default-rtdb.firebaseio.com" // URL do Realtime Database
   databaseURL:"https://ndd-diary-2f5d6-default-rtdb.europe-west1.firebasedatabase.app",
 };
 
